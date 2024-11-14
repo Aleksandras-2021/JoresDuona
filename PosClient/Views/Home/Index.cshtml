@@ -1,0 +1,11 @@
+﻿@{
+    ViewData["Title"] = "Home Page";
+}
+
+<h2>Get Business Information</h2>
+
+<form asp-action="GetBusinessById" method="post">
+    <label for="businessId">Enter Business ID:</label>
+    <input type="number" id="businessId" name="businessId" required min="1" />
+    <button type="submit">Get Business</button>
+</form>

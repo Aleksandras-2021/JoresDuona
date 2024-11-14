@@ -1,0 +1,30 @@
+﻿@using PosShared.Models;
+@model Business
+
+@{
+    ViewData["Title"] = "Business Information";
+}
+
+<h2>Business Information</h2>
+
+@if (Model != null)
+{
+    <div>
+        <p><strong>ID:</strong> @Model.Id</p>
+        <p><strong>Name:</strong> @Model.Name</p>
+        <p><strong>Phone Number:</strong> @Model.PhoneNumber</p>
+        <p><strong>Email:</strong> @Model.Email</p>
+        <p><strong>Address:</strong> @Model.Address</p>
+        <p><strong>VAT Code:</strong> @Model.VATCode</p>
+        <p><strong>Type:</strong> @Model.Type</p>
+        <p><strong>Users:</strong> @Model.Users?.ToString() ?? "No Users"</p>
+        <p><strong>Services:</strong> @Model.Services?.ToString() ?? "No Services"</p>
+        <p><strong>Items:</strong> @Model.Items?.ToString() ?? "No Items"</p>
+        <p><strong>Discounts:</strong> @Model.Discounts?.ToString() ?? "No Discounts"</p>
+        <p><strong>Taxes:</strong> @Model.Taxes?.ToString() ?? "No Taxes"</p>
+    </div>
+}
+else
+{
+    <p>No data to display.</p>
+}
