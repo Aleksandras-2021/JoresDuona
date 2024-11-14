@@ -1,0 +1,48 @@
+﻿@model List<PosShared.Models.Business>
+
+<h1>Businesses</h1>
+
+<p>
+    <a href="@Url.Action("Create", "Business")">Create New Business</a>
+</p>
+
+@if (Model != null && Model.Count > 0)
+{
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Id</th>
+                <th>Name</th>
+                <th>Phone Number</th>
+                <th>Email</th>
+                <th>Address</th>
+                <th>VAT Code</th>
+                <th>Type</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var business in Model)
+            {
+                <tr>
+                    <td>@business.Id</td>
+                    <td>@business.Name</td>
+                    <td>@business.PhoneNumber</td>
+                    <td>@business.Email</td>
+                    <td>@business.Address</td>
+                    <td>@business.VATCode</td>
+                    <td>@business.Type</td>
+                    <td>
+                        <!-- Add Edit and Delete actions here -->
+                        <a href="/Business/Edit/@business.Id">Edit</a> |
+                        <a href="/Business/Delete/@business.Id">Delete</a>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+else
+{
+    <p>No businesses available.</p>
+}
