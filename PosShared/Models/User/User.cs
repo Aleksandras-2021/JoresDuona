@@ -5,13 +5,13 @@ public class User
     public int Id { get; set; }
 
     public int BusinessId { get; set; }
-    public Business Business { get; set; }
+    public Business? Business { get; set; }
 
     public string Username { get; set; }
 
     public string PasswordHash { get; set; }
 
-    public string PasswordSalt { get; set; }
+    public string? PasswordSalt { get; set; } //Ignore this for now, no need
 
     public string Name { get; set; }
 
@@ -25,10 +25,10 @@ public class User
 
     public EmploymentStatus EmploymentStatus { get; set; }
 
-    public ICollection<Schedule> Schedules { get; set; }
-    public ICollection<TimeOff> TimeOffs { get; set; }
-    public ICollection<DefaultShiftPattern> DefaultShiftPatterns { get; set; }
-    public ICollection<Order> Orders { get; set; }
-    public ICollection<Service> Services { get; set; }
-    public ICollection<Reservation> Reservations { get; set; }
+    public ICollection<Schedule>? Schedules { get; set; }
+    public ICollection<TimeOff>? TimeOffs { get; set; }
+    public ICollection<DefaultShiftPattern>? DefaultShiftPatterns { get; set; }
+    public ICollection<Order>? Orders { get; set; }
+    public ICollection<Service>? Services { get; set; }
+    public ICollection<Reservation>? Reservations { get; set; }
 }

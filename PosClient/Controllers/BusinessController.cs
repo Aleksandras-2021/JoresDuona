@@ -63,8 +63,6 @@ namespace PosClient.Controllers
             return View(business);
         }
 
-        // Additional actions for Edit, Details, and Delete can be added similarly
-
         // GET: Business/Edit/5
         [HttpGet]
         public async Task<IActionResult> Edit(int id)
@@ -148,7 +146,6 @@ namespace PosClient.Controllers
                 return RedirectToAction("Index");
             }
 
-            // Return an error message if the delete failed
             ViewBag.ErrorMessage = "Failed to delete business.";
             return RedirectToAction("Index");
         }

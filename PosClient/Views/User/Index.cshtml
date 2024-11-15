@@ -1,0 +1,46 @@
+﻿@model IEnumerable<PosShared.Models.User>
+
+<h1>Users</h1>
+
+<p>
+    <a href="@Url.Action("Create", "User")">Create New User</a>
+</p>
+
+@if (Model != null && Model.Any())
+{
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Id</th>
+                <th>Name</th>
+                <th>Email</th>
+                <th>Phone Number</th>
+                <th>Role</th>  <!-- Added Role -->
+                <th>Employment Status</th>  <!-- Added Employment Status -->
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var user in Model)
+            {
+                <tr>
+                    <td>@user.Id</td>
+                    <td>@user.Name</td>
+                    <td>@user.Email</td>
+                    <td>@user.Phone</td>
+                    <td>@user.Role</td> <!-- Display Role -->
+                    <td>@user.EmploymentStatus</td> <!-- Display Employment Status -->
+                    <td>
+                        <!-- Edit and Delete Actions -->
+                        <a href="@Url.Action("Edit", "User", new { id = user.Id })">Edit</a> |
+                        <a href="@Url.Action("Delete", "User", new { id = user.Id })">Delete</a>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+else
+{
+    <p>No users available.</p>
+}
