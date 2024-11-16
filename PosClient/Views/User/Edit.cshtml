@@ -1,6 +1,7 @@
 ﻿@model PosShared.Models.User
 
-<h2>Edit User</h2>
+<h2>Edit User @Model.Name</h2>
+
 
 <form asp-action="Edit" method="post">
     <input type="hidden" asp-for="Id" />
@@ -33,19 +34,20 @@
     <div class="form-group">
         <label asp-for="Role">Role</label>
         <select asp-for="Role" class="form-control">
-            <option value="SuperAdmin">Admin</option>
-            <option value="User">User</option>
-            <!-- Add other roles if needed -->
+            @foreach (var role in Enum.GetValues(typeof(PosShared.Models.UserRole)))
+            {
+                <option value="@role">@role</option>
+            }
         </select>
     </div>
 
-    <!-- Employment Status Field -->
     <div class="form-group">
         <label asp-for="EmploymentStatus">Employment Status</label>
         <select asp-for="EmploymentStatus" class="form-control">
-            <option value="Active">Active</option>
-            <option value="Inactive">Inactive</option>
-            <!-- Add other statuses if needed -->
+            @foreach (var status in Enum.GetValues(typeof(PosShared.Models.EmploymentStatus)))
+            {
+                <option value="@status">@status</option>
+            }
         </select>
     </div>
 

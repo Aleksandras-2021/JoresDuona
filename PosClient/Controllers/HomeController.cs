@@ -6,6 +6,7 @@ using System.Security.Claims;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using PosShared;
+using System.IdentityModel.Tokens.Jwt;
 
 namespace PosClient.Controllers
 {
@@ -13,10 +14,12 @@ namespace PosClient.Controllers
     {
         private readonly HttpClient _httpClient;
         private readonly string _apiUrl = UrlConstants.ApiBaseUrl;
+        private readonly ILogger<HomeController> _logger;
 
-        public HomeController(HttpClient httpClient)
+        public HomeController(HttpClient httpClient, ILogger<HomeController> logger)
         {
             _httpClient = httpClient;
+            _logger = logger;
         }
 
         // GET: Home/Index
@@ -40,7 +43,6 @@ namespace PosClient.Controllers
             return View();
         }
 
-        // POST: Home/Login
         [HttpPost]
         public async Task<IActionResult> Login(string email, string password)
         {
@@ -48,27 +50,28 @@ namespace PosClient.Controllers
 
             // Call API to validate login
             var response = await _httpClient.PostAsJsonAsync(_apiUrl + "/api/login", loginRequest);
-            Console.WriteLine(response);
+
             if (response.IsSuccessStatusCode)
             {
+                // Extract token from the response JSON (assuming token is returned in JSON format)
+                var responseData = await response.Content.ReadAsStringAsync();
+                var jsonDocument = JsonDocument.Parse(responseData);
+                string token = jsonDocument.RootElement.GetProperty("token").GetString(); // Modify if your API structure is different
+
                 // Store the JWT token in a cookie (HttpOnly, Secure)
-                var token = await response.Content.ReadAsStringAsync();
                 var cookieOptions = new CookieOptions
                 {
                     HttpOnly = true,
-                    Secure = true,
-                    Expires = DateTime.UtcNow.AddMinutes(10), // Session cookie if coomented
-                    SameSite = SameSiteMode.None  // Important for cross-origin requests
+                    Secure = true, // Use true in production
+                    Expires = DateTime.UtcNow.AddMinutes(10), // Adjust based on your needs
+                    SameSite = SameSiteMode.None  // Important for cross-origin requests, if applicable
                 };
 
+                // Set the cookie with the token
                 Response.Cookies.Append("authToken", token, cookieOptions);
 
-                // Check if the cookie is successfully set and redirect accordingly
-                if (Request.Cookies["authToken"] != null)
-                {
-                    // Redirect to the home page after successful login
-                    return RedirectToAction("Index");
-                }
+                // Redirect to home page after successful login
+                return RedirectToAction("Index");
             }
 
             // If login failed, display an error
@@ -76,36 +79,50 @@ namespace PosClient.Controllers
             return RedirectToAction("Login");
         }
 
+        public IActionResult Logout()
+        {
+            return View("Login");
+        }
 
-        // POST: Home/GetBusinessById
+        [HttpPost]
+        public async Task<IActionResult> Logout(string email, string password)
+        {
+
+            // Delete Cookie
+            Response.Cookies.Delete("authToken");
+            HttpContext.Session.Clear();
+
+            // Redirect to home page after successful login
+            return RedirectToAction("Login");
+        }
+
+
+
+
         [HttpPost]
         public async Task<IActionResult> GetBusinessById(int businessId)
         {
-            // Check if user is authenticated
-            if (!User.Identity.IsAuthenticated)
-            {
-                return RedirectToAction("Login");
-            }
+            string? token = Request.Cookies["authToken"]; // Retrieve the token from cookies
+
+            int? userId = ExtractUserIdFromToken(token); //Extract userId from Token
+
+            _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token); // Put the token into authroization header
 
             var apiUrl = _apiUrl + $"/api/Businesses/{businessId}";
-            var response = await _httpClient.GetAsync(apiUrl);
 
-            Console.WriteLine(response.ToString());
+            var response = await _httpClient.GetAsync(apiUrl); //
 
             if (response.IsSuccessStatusCode)
             {
                 var businessJson = await response.Content.ReadAsStringAsync();
-                Console.WriteLine("Response Content: " + businessJson);
 
-                // Deserialize the JSON response into a Business object
+                // Deserialize the JSON response
                 var options = new JsonSerializerOptions
                 {
                     PropertyNameCaseInsensitive = true
                 };
-
                 var business = JsonSerializer.Deserialize<Business>(businessJson, options);
 
-                // Store the deserialized business object in TempData (serialize it back to string)
                 TempData["BusinessData"] = JsonSerializer.Serialize(business);
                 return RedirectToAction("Result");
             }
@@ -113,6 +130,7 @@ namespace PosClient.Controllers
             TempData["BusinessData"] = "Business not found or an error occurred.";
             return RedirectToAction("Result");
         }
+
 
         // GET: Home/Result
         public IActionResult Result()
@@ -131,5 +149,40 @@ namespace PosClient.Controllers
 
             return View(business); // Pass the object to the view
         }
+
+        private int? ExtractUserIdFromToken(string token)
+        {
+            if (string.IsNullOrWhiteSpace(token))
+            {
+                return null; // Token is missing
+            }
+
+            try
+            {
+                var tokenHandler = new JwtSecurityTokenHandler();
+
+                // Validate and read the token. Since we are just extracting claims,
+                // you can optionally disable certain validations if not needed.
+                var jwtToken = tokenHandler.ReadJwtToken(token);
+
+                // Extract the "UserId" claim (assuming it exists in the token)
+                var userIdClaim = jwtToken.Claims.FirstOrDefault(claim => claim.Type == "UserId");
+                if (userIdClaim != null && int.TryParse(userIdClaim.Value, out int userId))
+                {
+                    return userId;
+                }
+            }
+            catch (Exception ex)
+            {
+                // Handle any errors (e.g., invalid token format)
+                _logger.LogInformation($"Error extracting user ID from token: {ex.Message}");
+            }
+
+            return null; // Return null if extraction fails
+        }
+
+
+
+
     }
 }

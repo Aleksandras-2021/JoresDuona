@@ -12,7 +12,7 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowAllOrigins",
         policy => policy
-            .WithOrigins("http://localhost:5149")
+            .WithOrigins("https://localhost:5001")
             .AllowAnyHeader()
             .AllowAnyMethod()
             .AllowCredentials()); // Allow cookies with CORS requests
@@ -30,12 +30,6 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
 
 var app = builder.Build();
 
-//Create admin
-
-
-
-
-
 
 
 // Configure the HTTP request pipeline.
@@ -45,7 +39,6 @@ if (!app.Environment.IsDevelopment())
     app.UseHsts();
 }
 
-// Enable CORS with the "AllowAllOrigins" policy
 app.UseCors("AllowAllOrigins");
 
 app.UseHttpsRedirection();

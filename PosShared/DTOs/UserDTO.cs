@@ -10,11 +10,9 @@ namespace PosShared.DTOs;
 
 public class UserDTO
 {
-    [Required] public int Id { get; set; }
-    [Required] public string Username { get; init; } = string.Empty;
-    [Required] public string Name { get; init; } = string.Empty;
-    [Required] public string Password { get; init; } = string.Empty;
-    [Required] public int BusinessId { get; set; }
+    public string Username { get; init; } = string.Empty;
+    public string Name { get; init; } = string.Empty;
+    public int BusinessId { get; set; }
 
     public string Email { get; set; }
 

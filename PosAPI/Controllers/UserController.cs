@@ -1,8 +1,10 @@
-﻿using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Mvc;
-using PosAPI.Data.DbContext;
-using PosAPI.Migrations;
+﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
+using PosAPI.Repositories;
 using PosShared.Models;
+using System;
+using System.Collections.Generic;
+using System.Threading.Tasks;
 
 namespace PosAPI.Controllers
 {
@@ -10,101 +12,136 @@ namespace PosAPI.Controllers
     [ApiController]
     public class UsersController : ControllerBase
     {
-        private readonly ApplicationDbContext _dbContext;
         private readonly ILogger<UsersController> _logger;
+        private readonly IUserRepository _userRepository;
 
-        // Inject ILogger<UsersController> into the constructor
-        public UsersController(ApplicationDbContext context, ILogger<UsersController> logger)
+        public UsersController(IUserRepository userRepository, ILogger<UsersController> logger)
         {
-            _dbContext = context;
-            _logger = logger; // Save the logger instance
+            _userRepository = userRepository;
+            _logger = logger;
         }
 
         // GET: api/Users
         [HttpGet]
-        public IActionResult GetAllUsers()
+        public async Task<IActionResult> GetAllUsers()
         {
-            var users = _dbContext.Users.ToList();
-            _logger.LogInformation(users.GetType().Name);
-
-            foreach (var user in users)
+            try
             {
-                _logger.LogInformation($"User Id: {user.Id}, Name: {user.Name}, Email: {user.Email}");
+                var users = await _userRepository.GetAllUsersAsync();
 
+                if (users == null || users.Count == 0)
+                {
+                    return NotFound("No users found.");
+                }
+
+                foreach (var user in users)
+                {
+                    _logger.LogInformation($"User Id: {user.Id}, Name: {user.Name}, Email: {user.Email}");
+                }
+
+                return Ok(users);
             }
-
-            Console.WriteLine(users.ToString());
-            return Ok(users);
+            catch (Exception ex)
+            {
+                _logger.LogError($"Error retrieving all users: {ex.Message}");
+                return StatusCode(500, "Internal server error");
+            }
         }
 
-        // GET: api/Users/5
+        // GET: api/Users/{id}
         [HttpGet("{id}")]
-        public IActionResult GetUserById(int id)
+        public async Task<IActionResult> GetUserById(int id)
         {
-            var user = _dbContext.Users.Find(id);
-            if (user == null)
+            try
             {
-                return NotFound();
+                var user = await _userRepository.GetUserByIdAsync(id);
+                if (user == null)
+                {
+                    return NotFound($"User with ID {id} not found.");
+                }
+
+                return Ok(user);
             }
-            return Ok(user);
+            catch (Exception ex)
+            {
+                _logger.LogError($"Error retrieving user with ID {id}: {ex.Message}");
+                return StatusCode(500, "Internal server error");
+            }
         }
 
         // POST: api/Users
         [HttpPost]
-        public IActionResult CreateUser(User user)
+        public async Task<IActionResult> CreateUser([FromBody] User user)
         {
             if (user == null)
             {
-                return BadRequest();
+                return BadRequest("User data is null.");
             }
 
-            _dbContext.Users.Add(user);
-            _dbContext.SaveChanges();
-
-            return CreatedAtAction(nameof(GetUserById), new { id = user.Id }, user);
+            try
+            {
+                await _userRepository.AddUserAsync(user);
+                return CreatedAtAction(nameof(GetUserById), new { id = user.Id }, user);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError($"Error creating user: {ex.Message}");
+                return StatusCode(500, "Internal server error");
+            }
         }
 
-        // PUT: api/Users/5
+        // PUT: api/Users/{id}
         [HttpPut("{id}")]
-        public IActionResult UpdateUser(int id, User user)
+        public async Task<IActionResult> UpdateUser(int id, [FromBody] User user)
         {
-            if (id != user.Id)
+            if (user == null || id != user.Id)
             {
-                return BadRequest();
+                return BadRequest("Invalid user data.");
             }
 
-            var existingUser = _dbContext.Users.Find(id);
-            if (existingUser == null)
+            try
             {
-                return NotFound();
+                var existingUser = await _userRepository.GetUserByIdAsync(id);
+                if (existingUser == null)
+                {
+                    return NotFound($"User with ID {id} not found.");
+                }
+
+                await _userRepository.UpdateUserAsync(user);
+                return NoContent();
             }
-
-            // Update properties
-            existingUser.Name = user.Name;
-            existingUser.Email = user.Email;
-            existingUser.Phone = user.Phone;
-            existingUser.Business = user.Business;
-            // Add other properties as needed
-
-            _dbContext.SaveChanges();
-
-            return NoContent();
+            catch (KeyNotFoundException ex)
+            {
+                _logger.LogWarning($"User with ID {id} not found: {ex.Message}");
+                return NotFound(ex.Message);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError($"Error updating user with ID {id}: {ex.Message}");
+                return StatusCode(500, "Internal server error");
+            }
         }
 
-        // DELETE: api/Users/5
+        // DELETE: api/Users/{id}
         [HttpDelete("{id}")]
-        public IActionResult DeleteUser(int id)
+        public async Task<IActionResult> DeleteUser(int id)
         {
-            var user = _dbContext.Users.Find(id);
-            if (user == null)
+            try
             {
-                return NotFound();
+                var user = await _userRepository.GetUserByIdAsync(id);
+                if (user == null)
+                {
+                    return NotFound($"User with ID {id} not found.");
+                }
+
+                await _userRepository.DeleteUserAsync(id);
+                return NoContent();
             }
-
-            _dbContext.Users.Remove(user);
-            _dbContext.SaveChanges();
-
-            return NoContent();
+            catch (Exception ex)
+            {
+                _logger.LogError($"Error deleting user with ID {id}: {ex.Message}");
+                return StatusCode(500, "Internal server error");
+            }
         }
     }
 }

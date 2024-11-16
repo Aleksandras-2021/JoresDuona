@@ -39,7 +39,6 @@ namespace PosAPI.Controllers
                 return BadRequest("Password is required.");
             }
 
-            // Assuming User is your user entity class
             var user = await _context.Users
                 .Where(u => u.Email.ToLower() == request.Email.ToLower())
                 .FirstOrDefaultAsync();
@@ -58,7 +57,7 @@ namespace PosAPI.Controllers
                 SameSite = SameSiteMode.None, // Required for cross-origin requests
                 Expires = DateTime.UtcNow.AddDays(1) // Cookie expiration
             });
-
+            _logger.LogInformation("LoginController: Token:" + token);
             return Ok(new { message = "Login successful", token });
         }
 

@@ -65,7 +65,7 @@ namespace PosClient.Controllers
             return View(user);
         }
 
-        // GET: User/Edit/5
+        // GET: User/Edit/
         [HttpGet]
         public async Task<IActionResult> Edit(int id)
         {
@@ -74,8 +74,12 @@ namespace PosClient.Controllers
 
             if (response.IsSuccessStatusCode)
             {
-                var userData = await response.Content.ReadAsStringAsync();
-                var user = JsonSerializer.Deserialize<User>(userData);
+                string userData = await response.Content.ReadAsStringAsync();
+                User user = JsonSerializer.Deserialize<User>(userData);
+                Console.WriteLine(userData);
+                Console.WriteLine(user.Id);
+                
+
 
                 if (user != null)
                 {
@@ -83,10 +87,10 @@ namespace PosClient.Controllers
                 }
             }
 
-            return NotFound(); // Return a 404 if the user was not found or request failed
+            return NotFound();
         }
 
-        // POST: User/Edit/5
+        // POST: User/Edit/
         [HttpPost]
         public async Task<IActionResult> Edit(int id, User user)
         {
@@ -97,6 +101,7 @@ namespace PosClient.Controllers
 
             if (ModelState.IsValid)
             {
+                Console.WriteLine("Im in Edit user");
                 var apiUrl = _apiUrl + $"/api/Users/{id}";
                 var content = new StringContent(JsonSerializer.Serialize(user), Encoding.UTF8, "application/json");
 

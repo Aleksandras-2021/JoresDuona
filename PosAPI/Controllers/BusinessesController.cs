@@ -5,21 +5,40 @@ using Microsoft.EntityFrameworkCore;
 using System.Threading.Tasks;
 using System.Linq;
 using PosShared;
+using System.IdentityModel.Tokens.Jwt;
+using Microsoft.AspNetCore.Authorization;
 
 namespace PosAPI.Controllers
 {
+    [Authorize]
     [Route("api/[controller]")]
     [ApiController]
     public class BusinessesController : ControllerBase
     {
         private readonly ApplicationDbContext _dbContext;
+        private readonly ILogger<BusinessesController> _logger;
 
-        public BusinessesController(ApplicationDbContext context) => _dbContext = context;
+
+        public BusinessesController(ApplicationDbContext context, ILogger<BusinessesController> logger)
+        {
+            _dbContext = context;
+            _logger = logger;
+        }
 
         // GET: api/Businesses
         [HttpGet("")]
         public async Task<IActionResult> GetAllBusinesses()
         {
+            string? token = HttpContext.Request.Headers["Authorization"].ToString();
+            int? workerId = ExtractUserIdFromBearerToken(token);
+            _logger.LogInformation("Token" + token);
+            User user = _dbContext.Users.Find(workerId);
+
+            //if worker, list nothing , no permissios
+            //if owner, list only his own businesses
+            //if SuperAdmin, list everythign
+
+
             var businesses = await _dbContext.Businesses.ToListAsync();
             if (businesses != null && businesses.Any())
                 return Ok(businesses);
@@ -119,5 +138,44 @@ namespace PosAPI.Controllers
                 return StatusCode(500, $"Internal server error: {e.Message}");
             }
         }
+
+
+        private int? ExtractUserIdFromBearerToken(string bearerToken)
+        {
+            string authHeader = bearerToken;
+            if (string.IsNullOrWhiteSpace(authHeader) || !authHeader.StartsWith("Bearer "))
+            {
+                return null; // Token not found or invalid format
+            }
+
+            var token = authHeader.Substring("Bearer ".Length).Trim();
+
+            try
+            {
+                var tokenHandler = new JwtSecurityTokenHandler();
+                var jwtToken = tokenHandler.ReadJwtToken(token);
+
+                // Extract the "UserId" claim (assuming it exists in the token)
+                var userIdClaim = jwtToken.Claims.FirstOrDefault(claim => claim.Type == "UserId");
+                if (userIdClaim != null && int.TryParse(userIdClaim.Value, out int userId))
+                {
+                    return userId;
+                }
+            }
+            catch (Exception ex)
+            {
+                // Handle any parsing or validation errors (optional logging can be added here)
+                Console.WriteLine($"Error extracting user ID from token: {ex.Message}");
+            }
+
+            return null; // Return null if extraction fails
+        }
+
+
     }
+
+
+
+
+
 }
