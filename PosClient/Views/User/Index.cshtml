@@ -1,4 +1,4 @@
-﻿@model IEnumerable<PosShared.Models.User>
+﻿@model List<PosShared.Models.User>
 
 <h1>Users</h1>
 
@@ -6,7 +6,7 @@
     <a href="@Url.Action("Create", "User")">Create New User</a>
 </p>
 
-@if (Model != null && Model.Any())
+@if (Model != null && Model.Count > 0)
 {
     <table class="table">
         <thead>
@@ -15,8 +15,8 @@
                 <th>Name</th>
                 <th>Email</th>
                 <th>Phone Number</th>
-                <th>Role</th>  <!-- Added Role -->
-                <th>Employment Status</th>  <!-- Added Employment Status -->
+                <th>Role</th>
+                <th>Employment Status</th>
                 <th>Actions</th>
             </tr>
         </thead>
@@ -28,12 +28,11 @@
                     <td>@user.Name</td>
                     <td>@user.Email</td>
                     <td>@user.Phone</td>
-                    <td>@user.Role</td> <!-- Display Role -->
-                    <td>@user.EmploymentStatus</td> <!-- Display Employment Status -->
+                    <td>@user.Role</td>
+                    <td>@user.EmploymentStatus</td>
                     <td>
-                        <!-- Edit and Delete Actions -->
-                        <a href="@Url.Action("Edit", "User", new { id = user.Id })">Edit</a> |
-                        <a href="@Url.Action("Delete", "User", new { id = user.Id })">Delete</a>
+                        <a href="/User/Edit/@user.Id">Edit</a> |
+                        <a href="/User/Delete/@user.Id">Delete</a>
                     </td>
                 </tr>
             }

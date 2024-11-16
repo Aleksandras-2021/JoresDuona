@@ -1,95 +1,75 @@
-﻿using BCrypt.Net;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.Rendering;
-using Microsoft.EntityFrameworkCore;
-using PosShared.DTOs;
+﻿using Microsoft.AspNetCore.Mvc;
 using PosShared.Models;
-using PosShared.ViewModels;
 using System.Net.Http;
-using System.Text;
-using System.Text.Json;
 using System.Threading.Tasks;
+using System.Text.Json;
+using System.Text;
+using System.Collections.Generic;
+using PosShared;
 
 namespace PosClient.Controllers
 {
     public class UserController : Controller
     {
         private readonly HttpClient _httpClient;
+        private readonly string _apiUrl = UrlConstants.ApiBaseUrl;
 
         public UserController(HttpClient httpClient)
         {
             _httpClient = httpClient;
         }
 
+        // GET: User/Index
         public async Task<IActionResult> Index()
         {
-            var response = await _httpClient.GetAsync("http://localhost:5149/api/Users");
-            var users = await response.Content.ReadFromJsonAsync<List<User>>();
-            return View(users);
+            var apiUrl = _apiUrl + "/api/Users";
+            var response = await _httpClient.GetAsync(apiUrl);
+
+            if (response.IsSuccessStatusCode)
+            {
+                var jsonData = await response.Content.ReadAsStringAsync();
+                var users = JsonSerializer.Deserialize<List<User>>(jsonData, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+                return View(users);
+            }
+
+            // Handle errors or empty results
+            ViewBag.ErrorMessage = "Could not retrieve users.";
+            return View(new List<User>());
         }
 
+        // GET: User/Create
         public IActionResult Create()
         {
             return View();
         }
 
+        // POST: User/Create
         [HttpPost]
-        public async Task<IActionResult> Create(UserCreateViewModel model)
+        public async Task<IActionResult> Create(User user)
         {
             if (ModelState.IsValid)
             {
-                // Create a new User object based on the ViewModel
-                var user = new User
-                {
-                    BusinessId = model.BusinessId,
-                    Username = model.Username,
-                    Name = model.Name,
-                    Email = model.Email,
-                    Phone = model.Phone,
-                    Address = model.Address,
-                    Role = model.Role,
-                    EmploymentStatus = model.EmploymentStatus
-                };
-
-                // Hash the password entered by the user
-                if (!string.IsNullOrEmpty(model.Password))
-                {
-                    user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(model.Password);
-                }
-                else
-                {
-                    // Password is required, you can add custom validation here
-                    ViewBag.ErrorMessage = "Password is required.";
-                    return View(model);
-                }
-
-                // Send the User object to your API
-                var apiUrl = "http://localhost:5149/api/Users";
+                var apiUrl = _apiUrl + "/api/Users";
                 var content = new StringContent(JsonSerializer.Serialize(user), Encoding.UTF8, "application/json");
 
                 var response = await _httpClient.PostAsync(apiUrl, content);
-
                 if (response.IsSuccessStatusCode)
                 {
                     return RedirectToAction("Index");
                 }
-                else
-                {
-                    // Handle error response
-                    var errorResponse = await response.Content.ReadAsStringAsync();
-                    ViewBag.ErrorMessage = $"Failed to create user. Error: {response.StatusCode} - {errorResponse}";
-                }
+
+                // Handle error response
+                ViewBag.ErrorMessage = "Failed to create user.";
             }
 
-            ViewBag.ErrorMessage = "Model is not valid.";
-            return View(model);
+            return View(user);
         }
 
-        // GET: Business/Edit/5
+        // GET: User/Edit/5
         [HttpGet]
         public async Task<IActionResult> Edit(int id)
         {
-            var apiUrl = $"http://localhost:5149/api/Users/{id}";
+            var apiUrl = _apiUrl + $"/api/Users/{id}";
             var response = await _httpClient.GetAsync(apiUrl);
 
             if (response.IsSuccessStatusCode)
@@ -103,10 +83,10 @@ namespace PosClient.Controllers
                 }
             }
 
-            return NotFound(); // Return a 404 if the business was not found or request failed
+            return NotFound(); // Return a 404 if the user was not found or request failed
         }
 
-        // POST: User/Edit/
+        // POST: User/Edit/5
         [HttpPost]
         public async Task<IActionResult> Edit(int id, User user)
         {
@@ -117,29 +97,30 @@ namespace PosClient.Controllers
 
             if (ModelState.IsValid)
             {
-                var apiUrl = $"http://localhost:5149/api/Users/{id}";
+                var apiUrl = _apiUrl + $"/api/Users/{id}";
                 var content = new StringContent(JsonSerializer.Serialize(user), Encoding.UTF8, "application/json");
 
                 var response = await _httpClient.PutAsync(apiUrl, content);
+                Console.WriteLine("User Edit: " + response);
+
 
                 if (response.IsSuccessStatusCode)
                 {
-                    // Redirect to the Index action after successful edit
                     return RedirectToAction("Index");
                 }
 
-                ViewBag.ErrorMessage = "Failed to update business.";
+                ViewBag.ErrorMessage = "Failed to update user.";
             }
 
             return View(user); // Return to the edit view if validation fails or update fails
         }
 
+        // GET: User/Delete/5
         [HttpGet]
         public async Task<IActionResult> Delete(int id)
         {
-            var apiUrl = $"http://localhost:5149/api/Users/{id}";
+            var apiUrl = _apiUrl + $"/api/Users/{id}";
             var response = await _httpClient.GetAsync(apiUrl);
-
             if (response.IsSuccessStatusCode)
             {
                 var userData = await response.Content.ReadAsStringAsync();
@@ -151,25 +132,23 @@ namespace PosClient.Controllers
                 }
             }
 
-            return NotFound(); // Return a 404 if the business was not found or request failed
+            return NotFound(); // Return a 404 if the user was not found or request failed
         }
 
         // POST: User/Delete/5
         [HttpPost, ActionName("Delete")]
         public async Task<IActionResult> DeleteConfirmed(int id)
         {
-            var apiUrl = $"http://localhost:5149/api/Users/{id}";
+            var apiUrl = _apiUrl + $"/api/Users/{id}";
             var response = await _httpClient.DeleteAsync(apiUrl);
 
             if (response.IsSuccessStatusCode)
             {
-                // Redirect to the Index action after successful deletion
                 return RedirectToAction("Index");
             }
 
-            ViewBag.ErrorMessage = "Failed to delete business.";
+            ViewBag.ErrorMessage = "Failed to delete user.";
             return RedirectToAction("Index");
         }
-
     }
 }

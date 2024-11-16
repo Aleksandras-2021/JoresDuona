@@ -4,6 +4,7 @@ using PosAPI.Data.DbContext;
 using System.Text;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using PosShared.Models;
 
 
 var builder = WebApplication.CreateBuilder(args);
@@ -23,7 +24,7 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowReactApp", policy =>
     {
-        policy.WithOrigins("https://localhost:7052") // Frontend URL
+        policy.WithOrigins("https://localhost:5001") // Frontend URL
             .AllowAnyHeader()
             .AllowAnyMethod()
             .AllowCredentials();
@@ -74,16 +75,50 @@ builder.Services.AddAuthentication(x =>
 var app = builder.Build();
 
 
-// Configure the HTTP request pipeline.
-if (app.Environment.IsDevelopment())
+// Check and create admin user if it doesn't exist
+using (var scope = app.Services.CreateScope())
 {
-    app.UseSwagger();
-    app.UseSwaggerUI();
+    var services = scope.ServiceProvider;
+    var context = services.GetRequiredService<ApplicationDbContext>();
+
+    // Make sure the database is created (you may also want to use migrations in production)
+    context.Database.Migrate();
+
+    // Check if the admin user already exists
+    var adminUser = context.Users.FirstOrDefault(u => u.Email == "admin@gmail.com");
+
+    if (adminUser == null)
+    {
+        // If not, create the admin user
+        var newUser = new User
+        {
+            Id = 0,
+            Email = "admin@gmail.com",
+            Username = "admin",
+            PasswordHash = BCrypt.Net.BCrypt.HashPassword("admin"), // Hash the password
+            BusinessId = 1,
+            Name = "Admin User",
+            Role = UserRole.SuperAdmin, // Adjust roles based on your implementation
+            Phone = "1234567890", // Add any other details if necessary
+            Address = "123 Admin Street", // Add any other details if necessary
+            EmploymentStatus = EmploymentStatus.Active
+        };
+
+        context.Users.Add(newUser);
+        context.SaveChanges();
+    }
 }
+
+
 
 app.UseHttpsRedirection();
 
+app.UseCors("AllowReactApp");
+
 app.UseAuthorization();
+
+app.UseSwagger();
+app.UseSwaggerUI();
 
 app.MapControllers();
 

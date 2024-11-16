@@ -5,12 +5,15 @@ using System.Threading.Tasks;
 using System.Text.Json;
 using System.Text;
 using System.Collections.Generic;
+using PosShared;
 
 namespace PosClient.Controllers
 {
     public class BusinessController : Controller
     {
         private readonly HttpClient _httpClient;
+        private readonly string _apiUrl = UrlConstants.ApiBaseUrl;
+
 
         public BusinessController(HttpClient httpClient)
         {
@@ -20,7 +23,7 @@ namespace PosClient.Controllers
         // GET: Business/Index
         public async Task<IActionResult> Index()
         {
-            var apiUrl = "http://localhost:5149/api/Businesses";
+            var apiUrl = _apiUrl + "/api/Businesses";
             var response = await _httpClient.GetAsync(apiUrl);
 
             if (response.IsSuccessStatusCode)
@@ -47,7 +50,7 @@ namespace PosClient.Controllers
         {
             if (ModelState.IsValid)
             {
-                var apiUrl = "http://localhost:5149/api/Businesses";
+                var apiUrl = _apiUrl + "/api/Businesses";
                 var content = new StringContent(JsonSerializer.Serialize(business), Encoding.UTF8, "application/json");
 
                 var response = await _httpClient.PostAsync(apiUrl, content);
@@ -67,7 +70,7 @@ namespace PosClient.Controllers
         [HttpGet]
         public async Task<IActionResult> Edit(int id)
         {
-            var apiUrl = $"http://localhost:5149/api/Businesses/{id}";
+            var apiUrl = _apiUrl + $"/api/Businesses/{id}";
             var response = await _httpClient.GetAsync(apiUrl);
 
             if (response.IsSuccessStatusCode)
@@ -95,7 +98,7 @@ namespace PosClient.Controllers
 
             if (ModelState.IsValid)
             {
-                var apiUrl = $"http://localhost:5149/api/Businesses/{id}";
+                var apiUrl = _apiUrl + $"/api/Businesses/{id}";
                 var content = new StringContent(JsonSerializer.Serialize(business), Encoding.UTF8, "application/json");
 
                 var response = await _httpClient.PutAsync(apiUrl, content);
@@ -116,7 +119,7 @@ namespace PosClient.Controllers
         [HttpGet]
         public async Task<IActionResult> Delete(int id)
         {
-            var apiUrl = $"http://localhost:5149/api/Businesses/{id}";
+            var apiUrl = _apiUrl + $"/api/Businesses/{id}";
             var response = await _httpClient.GetAsync(apiUrl);
 
             if (response.IsSuccessStatusCode)
@@ -137,7 +140,7 @@ namespace PosClient.Controllers
         [HttpPost, ActionName("Delete")]
         public async Task<IActionResult> DeleteConfirmed(int id)
         {
-            var apiUrl = $"http://localhost:5149/api/Businesses/{id}";
+            var apiUrl = _apiUrl + $"/api/Businesses/{id}";
             var response = await _httpClient.DeleteAsync(apiUrl);
 
             if (response.IsSuccessStatusCode)

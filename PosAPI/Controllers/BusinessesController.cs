@@ -4,6 +4,7 @@ using PosShared.Models;
 using Microsoft.EntityFrameworkCore;
 using System.Threading.Tasks;
 using System.Linq;
+using PosShared;
 
 namespace PosAPI.Controllers
 {

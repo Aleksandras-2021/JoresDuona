@@ -1,20 +1,23 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using PosAPI.Data.DbContext;
+using PosAPI.Migrations;
 using PosShared.Models;
 
 namespace PosAPI.Controllers
 {
-    [Authorize]
     [Route("api/[controller]")]
     [ApiController]
     public class UsersController : ControllerBase
     {
         private readonly ApplicationDbContext _dbContext;
+        private readonly ILogger<UsersController> _logger;
 
-        public UsersController(ApplicationDbContext context)
+        // Inject ILogger<UsersController> into the constructor
+        public UsersController(ApplicationDbContext context, ILogger<UsersController> logger)
         {
             _dbContext = context;
+            _logger = logger; // Save the logger instance
         }
 
         // GET: api/Users
@@ -22,6 +25,15 @@ namespace PosAPI.Controllers
         public IActionResult GetAllUsers()
         {
             var users = _dbContext.Users.ToList();
+            _logger.LogInformation(users.GetType().Name);
+
+            foreach (var user in users)
+            {
+                _logger.LogInformation($"User Id: {user.Id}, Name: {user.Name}, Email: {user.Email}");
+
+            }
+
+            Console.WriteLine(users.ToString());
             return Ok(users);
         }
 

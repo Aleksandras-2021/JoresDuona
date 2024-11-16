@@ -1,31 +1,53 @@
 ﻿@model PosShared.Models.User
 
-<h2>Edit Business</h2>
+<h2>Edit User</h2>
 
 <form asp-action="Edit" method="post">
     <input type="hidden" asp-for="Id" />
 
+    <!-- Name Field -->
     <div class="form-group">
-        <label asp-for="Name">@Model.Name</label>
+        <label asp-for="Name">Name</label>
         <input asp-for="Name" class="form-control" />
     </div>
 
+    <!-- Phone Field -->
     <div class="form-group">
-        <label asp-for="Phone">@Model.Phone</label>
+        <label asp-for="Phone">Phone Number</label>
         <input asp-for="Phone" class="form-control" />
     </div>
 
+    <!-- Email Field -->
     <div class="form-group">
-        <label asp-for="Email">@Model.Email</label>
+        <label asp-for="Email">Email</label>
         <input asp-for="Email" class="form-control" />
     </div>
 
+    <!-- Address Field -->
     <div class="form-group">
-        <label asp-for="Address">@Model.Address</label>
+        <label asp-for="Address">Address</label>
         <input asp-for="Address" class="form-control" />
     </div>
 
+    <!-- Role Field -->
+    <div class="form-group">
+        <label asp-for="Role">Role</label>
+        <select asp-for="Role" class="form-control">
+            <option value="SuperAdmin">Admin</option>
+            <option value="User">User</option>
+            <!-- Add other roles if needed -->
+        </select>
+    </div>
 
+    <!-- Employment Status Field -->
+    <div class="form-group">
+        <label asp-for="EmploymentStatus">Employment Status</label>
+        <select asp-for="EmploymentStatus" class="form-control">
+            <option value="Active">Active</option>
+            <option value="Inactive">Inactive</option>
+            <!-- Add other statuses if needed -->
+        </select>
+    </div>
 
     <button type="submit" class="btn btn-primary">Save</button>
 </form>
