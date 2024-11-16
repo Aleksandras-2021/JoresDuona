@@ -17,6 +17,7 @@ namespace PosAPI.Controllers;
 public class BusinessesController : ControllerBase
 {
     private readonly ApplicationDbContext _dbContext;
+    private readonly ILogger<BusinessesController> _logger;
 
 
     public BusinessesController(ApplicationDbContext context, ILogger<BusinessesController> logger)
