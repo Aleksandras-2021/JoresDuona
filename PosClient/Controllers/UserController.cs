@@ -6,6 +6,7 @@ using System.Text.Json;
 using System.Text;
 using System.Collections.Generic;
 using PosShared;
+using PosShared.ViewModels;
 
 namespace PosClient.Controllers
 {
@@ -45,25 +46,43 @@ namespace PosClient.Controllers
 
         // POST: User/Create
         [HttpPost]
-        public async Task<IActionResult> Create(User user)
+        public async Task<IActionResult> Create(UserCreateViewModel userViewModel)
         {
             if (ModelState.IsValid)
             {
+                // Map the ViewModel to the actual User model
+                User newUser = new User
+                {
+                    Name = userViewModel.Name,
+                    Username = userViewModel.Username,
+                    PasswordHash = userViewModel.Password, // Assuming password hashing is handled elsewhere
+                    Email = userViewModel.Email,
+                    Phone = userViewModel.Phone,
+                    Address = userViewModel.Address,
+                    BusinessId = userViewModel.BusinessId,
+                    Role = userViewModel.Role,
+                    EmploymentStatus = userViewModel.EmploymentStatus
+                };
+
+                // Now send the mapped User model to the API
                 var apiUrl = _apiUrl + "/api/Users";
-                var content = new StringContent(JsonSerializer.Serialize(user), Encoding.UTF8, "application/json");
+                var content = new StringContent(JsonSerializer.Serialize(newUser), Encoding.UTF8, "application/json");
 
                 var response = await _httpClient.PostAsync(apiUrl, content);
+
                 if (response.IsSuccessStatusCode)
                 {
-                    return RedirectToAction("Index");
+                    return RedirectToAction("Index"); // Redirect on success
                 }
 
-                // Handle error response
+                // Handle API failure (e.g., validation errors, internal errors)
                 ViewBag.ErrorMessage = "Failed to create user.";
             }
 
-            return View(user);
+            // Return the View with the UserCreateViewModel for any validation errors
+            return View(userViewModel);
         }
+
 
         // GET: User/Edit/
         [HttpGet]

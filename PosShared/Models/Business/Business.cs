@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using System.Text.Json.Serialization;
 
 namespace PosShared.Models;
 
@@ -18,6 +19,7 @@ public class Business
 
     public BusinessType Type { get; set; }
 
+    [JsonIgnore]  // Ignore this property to break the infinity serialization cycle
     public ICollection<User>? Users { get; set; }
     public ICollection<Service>? Services { get; set; }
     public ICollection<Item>? Items { get; set; }

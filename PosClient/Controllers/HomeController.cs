@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using PosShared;
 using System.IdentityModel.Tokens.Jwt;
+using PosShared.Ultilities;
 
 namespace PosClient.Controllers
 {
@@ -104,7 +105,7 @@ namespace PosClient.Controllers
         {
             string? token = Request.Cookies["authToken"]; // Retrieve the token from cookies
 
-            int? userId = ExtractUserIdFromToken(token); //Extract userId from Token
+            int? userId = Ultilities.ExtractUserIdFromToken(token); //Extract userId from Token
 
             _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token); // Put the token into authroization header
 
@@ -149,40 +150,6 @@ namespace PosClient.Controllers
 
             return View(business); // Pass the object to the view
         }
-
-        private int? ExtractUserIdFromToken(string token)
-        {
-            if (string.IsNullOrWhiteSpace(token))
-            {
-                return null; // Token is missing
-            }
-
-            try
-            {
-                var tokenHandler = new JwtSecurityTokenHandler();
-
-                // Validate and read the token. Since we are just extracting claims,
-                // you can optionally disable certain validations if not needed.
-                var jwtToken = tokenHandler.ReadJwtToken(token);
-
-                // Extract the "UserId" claim (assuming it exists in the token)
-                var userIdClaim = jwtToken.Claims.FirstOrDefault(claim => claim.Type == "UserId");
-                if (userIdClaim != null && int.TryParse(userIdClaim.Value, out int userId))
-                {
-                    return userId;
-                }
-            }
-            catch (Exception ex)
-            {
-                // Handle any errors (e.g., invalid token format)
-                _logger.LogInformation($"Error extracting user ID from token: {ex.Message}");
-            }
-
-            return null; // Return null if extraction fails
-        }
-
-
-
 
     }
 }

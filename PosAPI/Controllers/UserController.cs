@@ -71,7 +71,7 @@ namespace PosAPI.Controllers
 
         // POST: api/Users
         [HttpPost]
-        public async Task<IActionResult> CreateUser([FromBody] User user)
+        public async Task<IActionResult> CreateUser(User user)
         {
             if (user == null)
             {

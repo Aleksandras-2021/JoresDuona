@@ -6,6 +6,8 @@ using System.Text.Json;
 using System.Text;
 using System.Collections.Generic;
 using PosShared;
+using PosShared.Ultilities;
+using System.Net.Http.Headers;
 
 namespace PosClient.Controllers
 {
@@ -13,16 +15,26 @@ namespace PosClient.Controllers
     {
         private readonly HttpClient _httpClient;
         private readonly string _apiUrl = UrlConstants.ApiBaseUrl;
+        private readonly ILogger<BusinessController> _logger;
 
 
-        public BusinessController(HttpClient httpClient)
+        public BusinessController(HttpClient httpClient, ILogger<BusinessController> logger)
         {
             _httpClient = httpClient;
+            _logger = logger;
         }
 
-        // GET: Business/Index
+        // GET: Business/Index (retrieves all businesses)
         public async Task<IActionResult> Index()
         {
+            string? token = Request.Cookies["authToken"]; // Retrieve the token from cookies
+
+            int? userId = Ultilities.ExtractUserIdFromToken(token); //Extract userId from Token
+
+            _logger.LogInformation("Token: " + token);
+
+            _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token); // Put the token into authroization header
+
             var apiUrl = _apiUrl + "/api/Businesses";
             var response = await _httpClient.GetAsync(apiUrl);
 
@@ -48,6 +60,9 @@ namespace PosClient.Controllers
         [HttpPost]
         public async Task<IActionResult> Create(Business business)
         {
+            string? token = Request.Cookies["authToken"];
+            _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+
             if (ModelState.IsValid)
             {
                 var apiUrl = _apiUrl + "/api/Businesses";
@@ -70,6 +85,9 @@ namespace PosClient.Controllers
         [HttpGet]
         public async Task<IActionResult> Edit(int id)
         {
+            string? token = Request.Cookies["authToken"];
+            _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+
             var apiUrl = _apiUrl + $"/api/Businesses/{id}";
             var response = await _httpClient.GetAsync(apiUrl);
 
@@ -98,6 +116,9 @@ namespace PosClient.Controllers
 
             if (ModelState.IsValid)
             {
+                string? token = Request.Cookies["authToken"];
+                _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+
                 var apiUrl = _apiUrl + $"/api/Businesses/{id}";
                 var content = new StringContent(JsonSerializer.Serialize(business), Encoding.UTF8, "application/json");
 
@@ -119,6 +140,9 @@ namespace PosClient.Controllers
         [HttpGet]
         public async Task<IActionResult> Delete(int id)
         {
+            string? token = Request.Cookies["authToken"];
+            _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+
             var apiUrl = _apiUrl + $"/api/Businesses/{id}";
             var response = await _httpClient.GetAsync(apiUrl);
 
@@ -140,6 +164,9 @@ namespace PosClient.Controllers
         [HttpPost, ActionName("Delete")]
         public async Task<IActionResult> DeleteConfirmed(int id)
         {
+            string? token = Request.Cookies["authToken"];
+            _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+
             var apiUrl = _apiUrl + $"/api/Businesses/{id}";
             var response = await _httpClient.DeleteAsync(apiUrl);
 
