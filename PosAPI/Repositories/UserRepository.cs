@@ -60,6 +60,15 @@ namespace PosAPI.Repositories
             var user = await _context.Users
                 .FindAsync(userId);
 
+
+            return user;
+        }
+
+        public async Task<User?> GetUserByEmailAsync(string email)
+        {
+            User? user = await _context.Users
+                .FirstOrDefaultAsync(e => e.Email == email);
+
             return user;
         }
 
@@ -67,14 +76,27 @@ namespace PosAPI.Repositories
         {
             try
             {
-                var existingUser = await _context.Set<User>().FindAsync(user.Id);
-
-                if (existingUser == null || user == null)
+                if (user == null)
                 {
-                    throw new KeyNotFoundException($"User with ID {existingUser.Id} not found.");
+                    throw new ArgumentNullException(nameof(user));
                 }
 
-                existingUser = user;
+                var existingUser = await _context.Users.FindAsync(user.Id);
+                if (existingUser == null)
+                {
+                    throw new KeyNotFoundException($"User with ID {user.Id} not found.");
+                }
+                existingUser.Name = user.Name;
+                existingUser.Address = user.Address;
+                existingUser.Email = user.Email;
+                existingUser.Phone = user.Phone;
+                existingUser.PasswordHash = user.PasswordHash;
+                existingUser.BusinessId = user.BusinessId;
+                existingUser.EmploymentStatus = user.EmploymentStatus;
+                existingUser.Role = user.Role;
+                existingUser.Username = user.Username;
+                _context.Users.Update(existingUser);
+
 
                 await _context.SaveChangesAsync();
             }

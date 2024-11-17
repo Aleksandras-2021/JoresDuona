@@ -1,7 +1,6 @@
 ﻿@model PosShared.Models.Business
 
 <h1>Create New Business</h1>
-
 <form asp-action="Create" method="post">
     <div class="form-group">
         <label asp-for="Name"></label>
@@ -28,10 +27,16 @@
         <input asp-for="VATCode" class="form-control" />
         <span asp-validation-for="VATCode" class="text-danger"></span>
     </div>
+
     <div class="form-group">
-        <label asp-for="Type"></label>
-        <input asp-for="Type" class="form-control" />
-        <span asp-validation-for="Type" class="text-danger"></span>
+        <label asp-for="Type">Type</label>
+        <select asp-for="Type" class="form-control">
+            @foreach (var type in Enum.GetValues(typeof(PosShared.Models.BusinessType)))
+            {
+                <option value="@type">@type</option>
+            }
+        </select>
     </div>
+
     <button type="submit" class="btn btn-primary">Create</button>
-</form>
+    </form>

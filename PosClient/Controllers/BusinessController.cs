@@ -41,7 +41,7 @@ namespace PosClient.Controllers
             if (response.IsSuccessStatusCode)
             {
                 var jsonData = await response.Content.ReadAsStringAsync();
-                var businesses = JsonSerializer.Deserialize<List<Business>>(jsonData, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+                List<Business> businesses = JsonSerializer.Deserialize<List<Business>>(jsonData, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
                 return View(businesses);
             }
 

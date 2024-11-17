@@ -7,12 +7,15 @@ using System.Text;
 using System.Collections.Generic;
 using PosShared;
 using PosShared.ViewModels;
+using Microsoft.EntityFrameworkCore.Query.Internal;
+using System.Net.Http.Headers;
 
 namespace PosClient.Controllers
 {
     public class UserController : Controller
     {
         private readonly HttpClient _httpClient;
+
         private readonly string _apiUrl = UrlConstants.ApiBaseUrl;
 
         public UserController(HttpClient httpClient)
@@ -23,6 +26,10 @@ namespace PosClient.Controllers
         // GET: User/Index
         public async Task<IActionResult> Index()
         {
+
+            string? token = Request.Cookies["authToken"];
+            _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+
             var apiUrl = _apiUrl + "/api/Users";
             var response = await _httpClient.GetAsync(apiUrl);
 
@@ -41,29 +48,18 @@ namespace PosClient.Controllers
         // GET: User/Create
         public IActionResult Create()
         {
-            return View();
+            return View(new UserCreateViewModel());
         }
 
         // POST: User/Create
         [HttpPost]
-        public async Task<IActionResult> Create(UserCreateViewModel userViewModel)
+        public async Task<IActionResult> Create(UserCreateViewModel newUser)
         {
+            string? token = Request.Cookies["authToken"];
+            _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+
             if (ModelState.IsValid)
             {
-                // Map the ViewModel to the actual User model
-                User newUser = new User
-                {
-                    Name = userViewModel.Name,
-                    Username = userViewModel.Username,
-                    PasswordHash = userViewModel.Password, // Assuming password hashing is handled elsewhere
-                    Email = userViewModel.Email,
-                    Phone = userViewModel.Phone,
-                    Address = userViewModel.Address,
-                    BusinessId = userViewModel.BusinessId,
-                    Role = userViewModel.Role,
-                    EmploymentStatus = userViewModel.EmploymentStatus
-                };
-
                 // Now send the mapped User model to the API
                 var apiUrl = _apiUrl + "/api/Users";
                 var content = new StringContent(JsonSerializer.Serialize(newUser), Encoding.UTF8, "application/json");
@@ -79,8 +75,7 @@ namespace PosClient.Controllers
                 ViewBag.ErrorMessage = "Failed to create user.";
             }
 
-            // Return the View with the UserCreateViewModel for any validation errors
-            return View(userViewModel);
+            return View(newUser);
         }
 
 
@@ -88,6 +83,9 @@ namespace PosClient.Controllers
         [HttpGet]
         public async Task<IActionResult> Edit(int id)
         {
+            string? token = Request.Cookies["authToken"];
+            _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+
             var apiUrl = _apiUrl + $"/api/Users/{id}";
             var response = await _httpClient.GetAsync(apiUrl);
 
@@ -95,14 +93,12 @@ namespace PosClient.Controllers
             {
                 string userData = await response.Content.ReadAsStringAsync();
                 User user = JsonSerializer.Deserialize<User>(userData);
-                Console.WriteLine(userData);
-                Console.WriteLine(user.Id);
-                
+
 
 
                 if (user != null)
                 {
-                    return View(user);
+                    return View(new UserCreateViewModel());
                 }
             }
 
@@ -111,21 +107,19 @@ namespace PosClient.Controllers
 
         // POST: User/Edit/
         [HttpPost]
-        public async Task<IActionResult> Edit(int id, User user)
+        public async Task<IActionResult> Edit(int id, UserCreateViewModel user)
         {
-            if (id != user.Id)
-            {
-                return BadRequest("User ID mismatch.");
-            }
+
+            string? token = Request.Cookies["authToken"];
+            _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
             if (ModelState.IsValid)
             {
-                Console.WriteLine("Im in Edit user");
                 var apiUrl = _apiUrl + $"/api/Users/{id}";
                 var content = new StringContent(JsonSerializer.Serialize(user), Encoding.UTF8, "application/json");
 
                 var response = await _httpClient.PutAsync(apiUrl, content);
-                Console.WriteLine("User Edit: " + response);
+                Console.WriteLine("User Edit: " + content);
 
 
                 if (response.IsSuccessStatusCode)
@@ -143,8 +137,13 @@ namespace PosClient.Controllers
         [HttpGet]
         public async Task<IActionResult> Delete(int id)
         {
+            string? token = Request.Cookies["authToken"];
+            _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+
             var apiUrl = _apiUrl + $"/api/Users/{id}";
             var response = await _httpClient.GetAsync(apiUrl);
+            Console.WriteLine(response);
+
             if (response.IsSuccessStatusCode)
             {
                 var userData = await response.Content.ReadAsStringAsync();
@@ -163,6 +162,9 @@ namespace PosClient.Controllers
         [HttpPost, ActionName("Delete")]
         public async Task<IActionResult> DeleteConfirmed(int id)
         {
+            string? token = Request.Cookies["authToken"];
+            _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+
             var apiUrl = _apiUrl + $"/api/Users/{id}";
             var response = await _httpClient.DeleteAsync(apiUrl);
 

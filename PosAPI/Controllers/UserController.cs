@@ -1,7 +1,10 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using PosAPI.Repositories;
 using PosShared.Models;
+using PosShared.Ultilities;
+using PosShared.ViewModels;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
@@ -52,6 +55,20 @@ namespace PosAPI.Controllers
         [HttpGet("{id}")]
         public async Task<IActionResult> GetUserById(int id)
         {
+
+            string? token = HttpContext.Request.Headers["Authorization"].ToString();
+            if (string.IsNullOrEmpty(token))
+            {
+                _logger.LogWarning("Authorization token is missing or null.");
+                return Unauthorized("Authorization token is missing.");
+            }
+            int? senderId = Ultilities.ExtractUserIdFromToken(token);
+            User senderUser = await _userRepository.GetUserByIdAsync((int)senderId);
+
+            if (senderUser.Role != UserRole.SuperAdmin)
+                return Unauthorized();
+
+
             try
             {
                 var user = await _userRepository.GetUserByIdAsync(id);
@@ -71,17 +88,32 @@ namespace PosAPI.Controllers
 
         // POST: api/Users
         [HttpPost]
-        public async Task<IActionResult> CreateUser(User user)
+        public async Task<IActionResult> CreateUser([FromBody] UserCreateViewModel user)
         {
             if (user == null)
-            {
                 return BadRequest("User data is null.");
-            }
+
+            if (_userRepository.GetUserByEmailAsync(user.Email) != null)
+                return BadRequest("User with that email already exists");
+
+
+            User newUser = new User();
+
+            newUser.Name = user.Name;
+            newUser.Address = user.Address;
+            newUser.Email = user.Email;
+            newUser.Phone = user.Phone;
+            newUser.PasswordHash = BCrypt.Net.BCrypt.HashPassword(user.Password);
+            newUser.BusinessId = user.BusinessId;
+            newUser.EmploymentStatus = user.EmploymentStatus;
+            newUser.Role = user.Role;
+            newUser.Username = user.Username;
+
 
             try
             {
-                await _userRepository.AddUserAsync(user);
-                return CreatedAtAction(nameof(GetUserById), new { id = user.Id }, user);
+                await _userRepository.AddUserAsync(newUser);
+                return CreatedAtAction(nameof(GetUserById), new { id = newUser.Id }, newUser);
             }
             catch (Exception ex)
             {
@@ -92,9 +124,9 @@ namespace PosAPI.Controllers
 
         // PUT: api/Users/{id}
         [HttpPut("{id}")]
-        public async Task<IActionResult> UpdateUser(int id, [FromBody] User user)
+        public async Task<IActionResult> UpdateUser(int id, [FromBody] UserCreateViewModel user)
         {
-            if (user == null || id != user.Id)
+            if (user == null)
             {
                 return BadRequest("Invalid user data.");
             }
@@ -107,7 +139,19 @@ namespace PosAPI.Controllers
                     return NotFound($"User with ID {id} not found.");
                 }
 
-                await _userRepository.UpdateUserAsync(user);
+
+                existingUser.Name = user.Name;
+                existingUser.Address = user.Address;
+                existingUser.Email = user.Email;
+                existingUser.Phone = user.Phone;
+                existingUser.PasswordHash = BCrypt.Net.BCrypt.HashPassword(user.Password);
+                existingUser.BusinessId = user.BusinessId;
+                existingUser.EmploymentStatus = user.EmploymentStatus;
+                existingUser.Role = user.Role;
+                existingUser.Username = user.Username;
+
+
+                await _userRepository.UpdateUserAsync(existingUser);
                 return NoContent();
             }
             catch (KeyNotFoundException ex)

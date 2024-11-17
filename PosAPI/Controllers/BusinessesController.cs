@@ -9,6 +9,7 @@ using System.IdentityModel.Tokens.Jwt;
 using Microsoft.AspNetCore.Authorization;
 using PosShared.Ultilities;
 using Microsoft.Extensions.Logging;
+using Microsoft.EntityFrameworkCore.ChangeTracking.Internal;
 
 namespace PosAPI.Controllers;
 
@@ -32,7 +33,6 @@ public class BusinessesController : ControllerBase
     {
 
         string? token = HttpContext.Request.Headers["Authorization"].ToString();
-        _logger.LogInformation("Token" + token);
 
         if (string.IsNullOrEmpty(token))
         {
@@ -41,8 +41,14 @@ public class BusinessesController : ControllerBase
         }
 
         int? userId = Ultilities.ExtractUserIdFromToken(token);
-        _logger.LogInformation(userId.ToString());
-        User user = _dbContext.Users.Find(userId);
+
+        User? user = await _dbContext.Users.FindAsync(userId);
+        if (user == null)
+        {
+            _logger.LogWarning("User not found in DB.");
+            return Unauthorized("User not in DB.");
+        }
+
         List<Business> businesses;
 
         if (user.Role == UserRole.SuperAdmin)
@@ -51,8 +57,6 @@ public class BusinessesController : ControllerBase
             businesses = await _dbContext.Businesses.Where(b => b.Id == user.BusinessId).ToListAsync();
         else
             businesses = new List<Business>();
-
-
 
         if (businesses.Count > 0)
             return Ok(businesses);
@@ -75,12 +79,37 @@ public class BusinessesController : ControllerBase
     [HttpPut("{id}")]
     public async Task<IActionResult> EditBusiness(int id, [FromBody] Business updatedBusiness)
     {
+        string? token = HttpContext.Request.Headers["Authorization"].ToString();
+
+        if (string.IsNullOrEmpty(token))
+        {
+            _logger.LogWarning("Authorization token is missing or null.");
+            return Unauthorized("Authorization token is missing.");
+        }
+
+        int? userId = Ultilities.ExtractUserIdFromToken(token);
+
+        User? user = await _dbContext.Users.FindAsync(userId);
+
+        if (user == null)
+        {
+            _logger.LogWarning("User not found in DB.");
+            return Unauthorized("User not in DB.");
+        }
+
         if (updatedBusiness == null || updatedBusiness.Id != id)
         {
             return BadRequest("Invalid business data.");
         }
 
-        var existingBusiness = await _dbContext.Businesses.FindAsync(id);
+        Business? existingBusiness = null;
+        if (user.Role == UserRole.SuperAdmin)
+            existingBusiness = await _dbContext.Businesses.FindAsync(id);
+        else if (user.Role == UserRole.Owner && user.BusinessId == id)
+            existingBusiness = await _dbContext.Businesses.FindAsync(id);
+        else
+            return Unauthorized();
+
         if (existingBusiness == null)
         {
             return NotFound($"Business with ID {id} not found.");
@@ -110,6 +139,25 @@ public class BusinessesController : ControllerBase
     [HttpPost]
     public async Task<IActionResult> CreateBusiness([FromBody] Business business)
     {
+        string? token = HttpContext.Request.Headers["Authorization"].ToString();
+
+        if (string.IsNullOrEmpty(token))
+        {
+            _logger.LogWarning("Authorization token is missing or null.");
+            return Unauthorized("Authorization token is missing.");
+        }
+
+        int? userId = Ultilities.ExtractUserIdFromToken(token);
+
+        User? user = await _dbContext.Users.FindAsync(userId);
+
+        if (user == null)
+            return Unauthorized("User not in DB.");
+
+
+        if (user.Role != UserRole.SuperAdmin)
+            return Unauthorized();
+
         if (business == null)
         {
             return BadRequest("Business data is null.");
@@ -117,9 +165,6 @@ public class BusinessesController : ControllerBase
 
         try
         {
-            // Optionally set default values for properties if needed
-            business.Type = BusinessType.Catering;
-
             await _dbContext.Businesses.AddAsync(business);
             await _dbContext.SaveChangesAsync();
 
@@ -136,6 +181,22 @@ public class BusinessesController : ControllerBase
     public async Task<IActionResult> DeleteBusiness(int id)
     {
         var business = await _dbContext.Businesses.FindAsync(id);
+
+        string? token = HttpContext.Request.Headers["Authorization"].ToString();
+
+        if (string.IsNullOrEmpty(token))
+        {
+            _logger.LogWarning("Authorization token is missing or null.");
+            return Unauthorized("Authorization token is missing.");
+        }
+
+        int? userId = Ultilities.ExtractUserIdFromToken(token);
+
+        User? user = await _dbContext.Users.FindAsync(userId);
+
+        if (user == null)
+            return Unauthorized("User not in DB");
+
         if (business == null)
         {
             return NotFound($"Business with ID {id} not found.");
