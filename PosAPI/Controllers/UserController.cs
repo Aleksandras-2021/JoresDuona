@@ -93,7 +93,7 @@ namespace PosAPI.Controllers
             if (user == null)
                 return BadRequest("User data is null.");
 
-            if (_userRepository.GetUserByEmailAsync(user.Email) != null)
+            if (await _userRepository.GetUserByEmailAsync(user.Email) != null)
                 return BadRequest("User with that email already exists");
 
 

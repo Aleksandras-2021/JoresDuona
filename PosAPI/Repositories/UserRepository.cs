@@ -72,10 +72,10 @@ namespace PosAPI.Repositories
 
         public async Task<User?> GetUserByEmailAsync(string email)
         {
-           // User? user = await _context.Users
-             //   .FirstOrDefaultAsync(e => e.Email == email);
+            User? user = await _context.Users
+                .FirstOrDefaultAsync(e => e.Email == email);
 
-            return null;
+            return user;
         }
 
         public async Task UpdateUserAsync(User user)
