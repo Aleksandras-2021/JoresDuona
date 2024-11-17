@@ -4,12 +4,9 @@
 <h2>Create User</h2>
 
 <div>
-
-    <form asp-action="Create" method="post">
-        <!-- Hidden Id field -->
-        <div class="form-group" style="display: none;">
-            <input asp-for="Id" class="form-control" readonly />
-        </div>
+    @if (Model != null)
+    {
+        <form asp-action="Create" method="post">
 
         <div class="form-group">
             <label asp-for="Name" class="control-label"></label>
@@ -23,11 +20,11 @@
             <span asp-validation-for="Username" class="text-danger"></span>
         </div>
 
-        <!-- Hidden Password field -->
-        <div class="form-group" style="display: none;">
-            <input name="Password" type="password" class="form-control" id="Password" value="@Model.Password" readonly />
-            <span asp-validation-for="Password" class="text-danger"></span>
-        </div>
+            <div class="form-group">
+                <label asp-for="Password" class="control-label"></label>
+                <input asp-for="Password" class="form-control" />
+                <span asp-validation-for="Password" class="text-danger"></span>
+            </div>
 
         <div class="form-group">
             <label asp-for="BusinessId" class="control-label"></label>
@@ -35,11 +32,12 @@
             <span asp-validation-for="BusinessId" class="text-danger"></span>
         </div>
 
-        <div class="form-group">
-            <label asp-for="Email" class="control-label"></label>
-            <input asp-for="Email" class="form-control" />
-            <span asp-validation-for="Email" class="text-danger"></span>
-        </div>
+            <div class="form-group">
+                <label asp-for="Email" class="control-label"></label>
+                <input asp-for="Email" class="form-control" placeholder="Enter your email" type="email" required />
+                <span asp-validation-for="Email" class="text-danger"></span>
+            </div>
+
 
         <div class="form-group">
             <label asp-for="Phone" class="control-label"></label>
@@ -69,6 +67,11 @@
             <input type="submit" value="Create" class="btn btn-primary" />
         </div>
     </form>
+    }
+    else
+    {
+        <p>Error: Model is null.</p>
+    }
 </div>
 
 @section Scripts {

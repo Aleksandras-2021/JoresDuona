@@ -1,54 +1,66 @@
-﻿@model PosShared.Models.User
+﻿@model PosShared.ViewModels.UserCreateViewModel;
+@using PosShared.Models;
 
 <h2>Edit User @Model.Name</h2>
 
 
 <form asp-action="Edit" method="post">
-    <input type="hidden" asp-for="Id" />
-
-    <!-- Name Field -->
     <div class="form-group">
-        <label asp-for="Name">Name</label>
+        <label asp-for="Name" class="control-label"></label>
         <input asp-for="Name" class="form-control" />
+        <span asp-validation-for="Name" class="text-danger"></span>
     </div>
 
-    <!-- Phone Field -->
     <div class="form-group">
-        <label asp-for="Phone">Phone Number</label>
-        <input asp-for="Phone" class="form-control" />
+        <label asp-for="Username" class="control-label"></label>
+        <input asp-for="Username" class="form-control" />
+        <span asp-validation-for="Username" class="text-danger"></span>
     </div>
 
-    <!-- Email Field -->
     <div class="form-group">
-        <label asp-for="Email">Email</label>
+        <label asp-for="Password" class="control-label"></label>
+        <input asp-for="Password" class="form-control" />
+        <span asp-validation-for="Password" class="text-danger"></span>
+    </div>
+
+    <div class="form-group">
+        <label asp-for="BusinessId" class="control-label"></label>
+        <input asp-for="BusinessId" class="form-control" />
+        <span asp-validation-for="BusinessId" class="text-danger"></span>
+    </div>
+
+    <div class="form-group">
+        <label asp-for="Email" class="control-label"></label>
         <input asp-for="Email" class="form-control" />
+        <span asp-validation-for="Email" class="text-danger"></span>
     </div>
 
-    <!-- Address Field -->
     <div class="form-group">
-        <label asp-for="Address">Address</label>
+        <label asp-for="Phone" class="control-label"></label>
+        <input asp-for="Phone" class="form-control" />
+        <span asp-validation-for="Phone" class="text-danger"></span>
+    </div>
+
+    <div class="form-group">
+        <label asp-for="Address" class="control-label"></label>
         <input asp-for="Address" class="form-control" />
-    </div>
-
-    <!-- Role Field -->
-    <div class="form-group">
-        <label asp-for="Role">Role</label>
-        <select asp-for="Role" class="form-control">
-            @foreach (var role in Enum.GetValues(typeof(PosShared.Models.UserRole)))
-            {
-                <option value="@role">@role</option>
-            }
-        </select>
+        <span asp-validation-for="Address" class="text-danger"></span>
     </div>
 
     <div class="form-group">
-        <label asp-for="EmploymentStatus">Employment Status</label>
-        <select asp-for="EmploymentStatus" class="form-control">
-            @foreach (var status in Enum.GetValues(typeof(PosShared.Models.EmploymentStatus)))
-            {
-                <option value="@status">@status</option>
-            }
-        </select>
+        <label asp-for="Role" class="control-label"></label>
+        <select asp-for="Role" class="form-control" asp-items="Html.GetEnumSelectList<UserRole>()"></select>
+        <span asp-validation-for="Role" class="text-danger"></span>
+    </div>
+
+    <div class="form-group">
+        <label asp-for="EmploymentStatus" class="control-label"></label>
+        <select asp-for="EmploymentStatus" class="form-control" asp-items="Html.GetEnumSelectList<EmploymentStatus>()"></select>
+        <span asp-validation-for="EmploymentStatus" class="text-danger"></span>
+    </div>
+
+    <div class="form-group">
+        <input type="submit" value="Create" class="btn btn-primary" />
     </div>
 
     <button type="submit" class="btn btn-primary">Save</button>

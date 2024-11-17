@@ -4,7 +4,6 @@ namespace PosShared.ViewModels
 {
     public class UserCreateViewModel
     {
-        public int Id { get; set; }
         public int BusinessId { get; set; }
         public string Username { get; set; }
         public string Name { get; set; }
