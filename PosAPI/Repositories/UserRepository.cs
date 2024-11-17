@@ -18,19 +18,25 @@ namespace PosAPI.Repositories
             {
                 throw new ArgumentNullException(nameof(user));
             }
+
+            // Check if BusinessId exists in the table
+            var businessExists = await _context.Businesses.AnyAsync(b => b.Id == user.BusinessId);
+            if (!businessExists)
+            {
+                throw new Exception($"Business with ID {user.BusinessId} does not exist.");
+            }
+
             try
             {
-                using var transaction = await _context.Database.BeginTransactionAsync();
-                await _context.Set<User>().AddAsync(user);
+                await _context.Users.AddAsync(user);
                 await _context.SaveChangesAsync();
-                await transaction.CommitAsync();
             }
             catch (DbUpdateException ex)
             {
-                throw new Exception("An error occurred while adding new user to the database.", ex);
+                throw new Exception("An error occurred while adding the new user to the database.", ex);
             }
-
         }
+
 
         public async Task DeleteUserAsync(int userId)
         {
@@ -66,10 +72,10 @@ namespace PosAPI.Repositories
 
         public async Task<User?> GetUserByEmailAsync(string email)
         {
-            User? user = await _context.Users
-                .FirstOrDefaultAsync(e => e.Email == email);
+           // User? user = await _context.Users
+             //   .FirstOrDefaultAsync(e => e.Email == email);
 
-            return user;
+            return null;
         }
 
         public async Task UpdateUserAsync(User user)
