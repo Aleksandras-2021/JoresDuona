@@ -48,12 +48,12 @@ namespace PosClient.Controllers
         // GET: User/Create
         public IActionResult Create()
         {
-            return View(new UserCreateViewModel());
+            return View(new User());
         }
 
         // POST: User/Create
         [HttpPost]
-        public async Task<IActionResult> Create(UserCreateViewModel newUser)
+        public async Task<IActionResult> Create(User newUser)
         {
             string? token = Request.Cookies["authToken"];
             _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
@@ -94,11 +94,9 @@ namespace PosClient.Controllers
                 string userData = await response.Content.ReadAsStringAsync();
                 User user = JsonSerializer.Deserialize<User>(userData);
 
-
-
                 if (user != null)
                 {
-                    return View(new UserCreateViewModel());
+                    return View(user);
                 }
             }
 
@@ -107,7 +105,7 @@ namespace PosClient.Controllers
 
         // POST: User/Edit/
         [HttpPost]
-        public async Task<IActionResult> Edit(int id, UserCreateViewModel user)
+        public async Task<IActionResult> Edit(int id, User user)
         {
 
             string? token = Request.Cookies["authToken"];
@@ -119,8 +117,6 @@ namespace PosClient.Controllers
                 var content = new StringContent(JsonSerializer.Serialize(user), Encoding.UTF8, "application/json");
 
                 var response = await _httpClient.PutAsync(apiUrl, content);
-                Console.WriteLine("User Edit: " + content);
-
 
                 if (response.IsSuccessStatusCode)
                 {

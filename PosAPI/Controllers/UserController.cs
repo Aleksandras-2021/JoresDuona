@@ -88,7 +88,7 @@ namespace PosAPI.Controllers
 
         // POST: api/Users
         [HttpPost]
-        public async Task<IActionResult> CreateUser([FromBody] UserCreateViewModel user)
+        public async Task<IActionResult> CreateUser([FromBody] User user)
         {
             if (user == null)
                 return BadRequest("User data is null.");
@@ -103,7 +103,7 @@ namespace PosAPI.Controllers
             newUser.Address = user.Address;
             newUser.Email = user.Email;
             newUser.Phone = user.Phone;
-            newUser.PasswordHash = BCrypt.Net.BCrypt.HashPassword(user.Password);
+            newUser.PasswordHash = BCrypt.Net.BCrypt.HashPassword(user.PasswordHash);
             newUser.BusinessId = user.BusinessId;
             newUser.EmploymentStatus = user.EmploymentStatus;
             newUser.Role = user.Role;
@@ -124,7 +124,7 @@ namespace PosAPI.Controllers
 
         // PUT: api/Users/{id}
         [HttpPut("{id}")]
-        public async Task<IActionResult> UpdateUser(int id, [FromBody] UserCreateViewModel user)
+        public async Task<IActionResult> UpdateUser(int id, [FromBody] User user)
         {
             if (user == null)
             {
@@ -133,7 +133,7 @@ namespace PosAPI.Controllers
 
             try
             {
-                var existingUser = await _userRepository.GetUserByIdAsync(id);
+                User? existingUser = await _userRepository.GetUserByIdAsync(id);
                 if (existingUser == null)
                 {
                     return NotFound($"User with ID {id} not found.");
@@ -144,7 +144,7 @@ namespace PosAPI.Controllers
                 existingUser.Address = user.Address;
                 existingUser.Email = user.Email;
                 existingUser.Phone = user.Phone;
-                existingUser.PasswordHash = BCrypt.Net.BCrypt.HashPassword(user.Password);
+                existingUser.PasswordHash = BCrypt.Net.BCrypt.HashPassword(user.PasswordHash);
                 existingUser.BusinessId = user.BusinessId;
                 existingUser.EmploymentStatus = user.EmploymentStatus;
                 existingUser.Role = user.Role;
