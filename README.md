@@ -113,12 +113,10 @@ password: `admin`
 ### How to send cookie with bearer details(Client)
 Cookies store information of users `email`, `id`, `role`. If you need to perform some validation, this can be one of the many approaches.
 ```csharp
-//extract authorization token
+    //extract authorization token
     string? token = Request.Cookies["authToken"]; 
     //Put the token into header
     _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token); 
-    //Extract user id from token if you need it.    
-    int? userId = Ultilities.ExtractUserIdFromToken(token); 
 ```
 
 ### How to receive cookie with bearer details(Server)
@@ -129,4 +127,6 @@ Cookies store information of users `email`, `id`, `role`. If you need to perform
     {
       return Unauthorized("Authorization token is missing.");
     }
+    //Extract user id from token if you need it.    
+    int? userId = Ultilities.ExtractUserIdFromToken(token); 
 ```
