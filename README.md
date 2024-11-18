@@ -1,4 +1,4 @@
-﻿# JoresDuona
+# JoresDuona
 
 ## Building and Running the application
 
@@ -110,7 +110,7 @@ Program uses cookies to authorize users. Admin account is automatically created 
 Details
 email: `admin@gmail.com`
 password: `admin`
-### How to work with cookies
+### How to send cookie with bearer details(Client)
 Cookies store information of users `email`, `id`, `role`. If you need to perform some validation, this can be one of the many approaches.
 ```csharp
 //extract authorization token
@@ -121,3 +121,12 @@ Cookies store information of users `email`, `id`, `role`. If you need to perform
     int? userId = Ultilities.ExtractUserIdFromToken(token); 
 ```
 
+### How to receive cookie with bearer details(Server)
+Cookies store information of users `email`, `id`, `role`. If you need to perform some validation, this can be one of the many approaches.
+```csharp
+    string? token = HttpContext.Request.Headers["Authorization"].ToString();
+    if (string.IsNullOrEmpty(token))
+    {
+      return Unauthorized("Authorization token is missing.");
+    }
+```
