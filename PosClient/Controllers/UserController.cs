@@ -96,6 +96,7 @@ namespace PosClient.Controllers
 
                 if (user != null)
                 {
+                    user.PasswordHash = string.Empty;
                     return View(user);
                 }
             }
