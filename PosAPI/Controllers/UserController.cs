@@ -33,7 +33,7 @@ public class UsersController : ControllerBase
         User? sender = await GetUserFromToken();
 
         if (sender == null)
-            return BadRequest();
+            return Unauthorized();
 
         try
         {
@@ -118,7 +118,7 @@ public class UsersController : ControllerBase
     {
         User? sender = await GetUserFromToken();
 
-        if (sender.Role == UserRole.Worker || sender == null)
+        if (sender == null || sender.Role == UserRole.Worker)
             return Unauthorized();
 
         if (user == null)
