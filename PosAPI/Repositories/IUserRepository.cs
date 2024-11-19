@@ -6,7 +6,9 @@ namespace PosAPI.Repositories;
 public interface IUserRepository
 {
     Task<List<User>> GetAllUsersAsync();
-    Task<User> GetUserByIdAsync(int userId);
+    Task<User?> GetUserByIdAsync(int? userId);
+    Task<List<User>> GetAllUsersByBusinessIdAsync(int businessId);
+
     Task<User?> GetUserByEmailAsync(string email);
 
     Task AddUserAsync(User user);
