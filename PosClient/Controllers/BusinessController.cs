@@ -29,10 +29,6 @@ namespace PosClient.Controllers
         {
             string? token = Request.Cookies["authToken"]; // Retrieve the token from cookies
 
-            int? userId = Ultilities.ExtractUserIdFromToken(token); //Extract userId from Token
-
-            _logger.LogInformation("Token: " + token);
-
             _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token); // Put the token into authroization header
 
             var apiUrl = _apiUrl + "/api/Businesses";

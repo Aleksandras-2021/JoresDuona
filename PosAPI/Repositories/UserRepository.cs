@@ -21,6 +21,7 @@ namespace PosAPI.Repositories
 
             // Check if BusinessId exists in the table
             var businessExists = await _context.Businesses.AnyAsync(b => b.Id == user.BusinessId);
+
             if (!businessExists)
             {
                 throw new Exception($"Business with ID {user.BusinessId} does not exist.");
@@ -58,12 +59,28 @@ namespace PosAPI.Repositories
                 .OrderBy(user => user.Id)
                 .ToListAsync();
 
+            if (users == null)
+                users = new List<User>();
+
             return users;
         }
 
-        public async Task<User> GetUserByIdAsync(int userId)
+        public async Task<List<User>> GetAllUsersByBusinessIdAsync(int businessId)
         {
-            var user = await _context.Users
+            List<User> users = await _context.Set<User>()
+                .Where(u => u.BusinessId == businessId)
+                .OrderBy(user => user.Id)
+                .ToListAsync();
+
+            if (users == null)
+                users = new List<User>();
+
+            return users;
+        }
+
+        public async Task<User?> GetUserByIdAsync(int? userId)
+        {
+            User? user = await _context.Users
                 .FindAsync(userId);
 
 
