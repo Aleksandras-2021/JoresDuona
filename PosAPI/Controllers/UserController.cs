@@ -143,7 +143,7 @@ public class UsersController : ControllerBase
         {
             newUser.BusinessId = user.BusinessId;
         }
-        else
+        else //Business owners/Managers can only create users for their business
         {
             newUser.BusinessId = sender.BusinessId;
         }
