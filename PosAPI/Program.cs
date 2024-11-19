@@ -41,6 +41,8 @@ builder.Services.AddSwaggerGen(options =>
     });
 });
 builder.Services.AddScoped<IUserRepository, UserRepository>();
+builder.Services.AddScoped<IItemRepository, ItemRepository>();
+
 
 
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
@@ -100,7 +102,7 @@ builder.Services.AddAuthentication(x =>
 
 var app = builder.Build();
 
-
+//Remove this later, this is for auto creating admin account
 using (var scope = app.Services.CreateScope())
 {
     var services = scope.ServiceProvider;
@@ -160,8 +162,7 @@ using (var scope = app.Services.CreateScope())
 
 app.UseHttpsRedirection();
 
-app.UseCors("AllowReactApp")
-    ;
+app.UseCors("AllowReactApp");
 app.UseAuthentication();
 app.UseAuthorization();
 
