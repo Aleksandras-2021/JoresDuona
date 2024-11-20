@@ -127,7 +127,6 @@ public class UsersController : ControllerBase
         if (await _userRepository.GetUserByEmailAsync(user.Email) != null)
             return BadRequest("User with that email already exists");
 
-
         User newUser = new User();
 
         newUser.Name = user.Name;
@@ -147,8 +146,6 @@ public class UsersController : ControllerBase
         {
             newUser.BusinessId = sender.BusinessId;
         }
-
-
 
         try
         {
@@ -184,7 +181,6 @@ public class UsersController : ControllerBase
             }
             if (sender == null || sender.Role == UserRole.Worker)
                 return Unauthorized();
-
 
             existingUser.Name = user.Name;
             existingUser.Address = user.Address;

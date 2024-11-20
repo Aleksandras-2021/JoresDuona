@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Http;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Internal;
@@ -11,6 +12,7 @@ using static Microsoft.EntityFrameworkCore.DbLoggerCategory.Model;
 
 namespace PosAPI.Controllers
 {
+    [Authorize]
     [Route("api/[controller]")]
     [ApiController]
     public class ItemsController : ControllerBase
@@ -101,6 +103,53 @@ namespace PosAPI.Controllers
                 return StatusCode(500, $"Internal server error: {e.Message}");
             }
         }
+
+
+        // PUT: api/Items/{id}
+        [HttpPut("{id}")]
+        public async Task<IActionResult> UpdateItem(int id, [FromBody] ItemCreateViewModel item)
+        {
+            if (item == null)
+            {
+                return BadRequest("Invalid item data.");
+            }
+
+            try
+            {
+                User? sender = await GetUserFromToken();
+
+                Item? existingItem = await _itemRepository.GetItemByIdAsync(id);
+
+                if (existingItem == null)
+                {
+                    return NotFound($"Item with ID {id} not found.");
+                }
+                if (sender == null || sender.Role == UserRole.Worker)
+                    return Unauthorized();
+
+                existingItem.Price = item.Price;
+                existingItem.Name = item.Name;
+                existingItem.Description = item.Description;
+                existingItem.BasePrice = item.Price;
+                existingItem.Quantity = item.Quantity;
+
+
+                await _itemRepository.UpdateItemAsync(existingItem);
+
+                return NoContent();
+            }
+            catch (KeyNotFoundException ex)
+            {
+                _logger.LogWarning($"Item with ID {id} not found: {ex.Message}");
+                return NotFound(ex.Message);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError($"Error updating Item with ID {id}: {ex.Message}");
+                return StatusCode(500, "Internal server error");
+            }
+        }
+
 
         // GET: api/Items/{id}
         [HttpGet("{id}")]
