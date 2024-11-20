@@ -6,6 +6,7 @@ using PosAPI.Migrations;
 using PosAPI.Repositories;
 using PosShared.Models;
 using PosShared.Ultilities;
+using PosShared.ViewModels;
 using static Microsoft.EntityFrameworkCore.DbLoggerCategory.Model;
 
 namespace PosAPI.Controllers
@@ -64,7 +65,7 @@ namespace PosAPI.Controllers
 
         // POST: api/Items
         [HttpPost]
-        public async Task<IActionResult> CreateItem([FromBody] Item item)
+        public async Task<IActionResult> CreateItem([FromBody] ItemCreateViewModel item)
         {
             User? sender = await GetUserFromToken();
 
@@ -73,19 +74,27 @@ namespace PosAPI.Controllers
             if (item == null)
                 return BadRequest("Item data is null.");
 
-
             if (sender == null)
                 return Unauthorized();
 
-            item.BusinessId = sender.BusinessId;
+            if (sender.BusinessId <= 0)
+                return BadRequest("Invalid BusinessId associated with the user.");
 
+            Item newItem = new Item();
+
+            newItem.BusinessId = sender.BusinessId;
+            newItem.Name = item.Name;
+            newItem.Description = item.Description;
+            newItem.Price = item.Price;
+            newItem.BasePrice = item.BasePrice;
+            newItem.Quantity = item.Quantity;
 
 
             try
             {
-                await _itemRepository.AddItemAsync(item);
+                await _itemRepository.AddItemAsync(newItem);
 
-                return CreatedAtAction(nameof(GetItemVariationById), new { id = item.Id }, item);
+                return CreatedAtAction(nameof(GetItemById), new { id = newItem.Id }, newItem);
             }
             catch (DbUpdateException e)
             {

@@ -6,6 +6,7 @@ using System.Text.Json;
 using PosShared;
 using PosShared.Ultilities;
 using System.Text;
+using PosShared.ViewModels;
 
 namespace PosClient.Controllers
 {
@@ -49,12 +50,12 @@ namespace PosClient.Controllers
         // GET: Items/Create
         public IActionResult Create()
         {
-            return View(new Item());
+            return View(new ItemCreateViewModel());
         }
 
         // POST: Items/Create
         [HttpPost]
-        public async Task<IActionResult> Create(Item item)
+        public async Task<IActionResult> Create(ItemCreateViewModel item)
         {
             string? token = Request.Cookies["authToken"];
             _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
