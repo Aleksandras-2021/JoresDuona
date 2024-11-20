@@ -67,7 +67,7 @@ namespace PosAPI.Controllers
 
         // POST: api/Items
         [HttpPost]
-        public async Task<IActionResult> CreateItem([FromBody] ItemCreateViewModel item)
+        public async Task<IActionResult> CreateItem([FromBody] ItemViewModel item)
         {
             User? sender = await GetUserFromToken();
 
@@ -107,7 +107,7 @@ namespace PosAPI.Controllers
 
         // PUT: api/Items/{id}
         [HttpPut("{id}")]
-        public async Task<IActionResult> UpdateItem(int id, [FromBody] ItemCreateViewModel item)
+        public async Task<IActionResult> UpdateItem(int id, [FromBody] ItemViewModel item)
         {
             if (item == null)
             {
@@ -196,6 +196,49 @@ namespace PosAPI.Controllers
             }
         }
 
+
+        // DELETE: api/Items/{id}
+        [HttpDelete("{id}")]
+        public async Task<IActionResult> DeleteItem(int id)
+        {
+            User? sender = await GetUserFromToken();
+
+            if (sender == null || sender.Role == UserRole.Worker)
+                return Unauthorized();
+
+            try
+            {
+                Item? item = await _itemRepository.GetItemByIdAsync(id);
+
+                if (item == null)
+                {
+                    return NotFound($"Item with ID {id} not found.");
+                }
+
+                if (sender.Role == UserRole.SuperAdmin)
+                {
+                    await _itemRepository.DeleteItemAsync(id);
+                }
+                else if ((sender.Role == UserRole.Owner || sender.Role == UserRole.Manager) && item.BusinessId == sender.BusinessId)
+                {
+                    await _itemRepository.DeleteItemAsync(id);
+                }
+                else
+                {
+                    return Unauthorized();
+                }
+
+                _logger.LogInformation($"User with id {sender.Id} deleted item with id {item.Id} at {DateTime.Now}");
+
+                return NoContent();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError($"Error deleting item with ID {id}: {ex.Message}");
+                return StatusCode(500, "Internal server error");
+            }
+        }
+
         // GET: api/Items/{id}/Variations
         [HttpGet("{id}/Variations")]
         public async Task<IActionResult> GetAllItemVariations(int id)
@@ -259,26 +302,42 @@ namespace PosAPI.Controllers
         [HttpPost("{id}/Variations")]
         public async Task<IActionResult> CreateVariation([FromBody] ItemVariation variation)
         {
-            User? sender = await GetUserFromToken();
-
-            if (sender == null || (variation.Item.BusinessId != sender.BusinessId) && (sender.Role != UserRole.SuperAdmin))
-                return Unauthorized();
-
             if (variation == null)
                 return BadRequest("Variation data is null.");
 
+            User? sender = await GetUserFromToken();
+
+            var item = await _itemRepository.GetItemByIdAsync(variation.ItemId);
+            if (item == null)
+                return NotFound($"Item with ID {variation.ItemId} not found.\n");
+
+            if (sender == null || (item.BusinessId != sender.BusinessId && sender.Role != UserRole.SuperAdmin))
+                return Unauthorized();
+
+            var newVariation = new ItemVariation
+            {
+                ItemId = item.Id,
+                Name = variation.Name,
+                AdditionalPrice = variation.AdditionalPrice,
+
+            };
 
             try
             {
-                await _itemRepository.AddItemVariationAsync(variation);
+                await _itemRepository.AddItemVariationAsync(newVariation);
 
-                return CreatedAtAction(nameof(GetItemVariationById), new { id = variation.Id }, variation);
+                return CreatedAtAction(
+                    nameof(GetItemVariationById),
+                    new { id = newVariation.ItemId, varId = newVariation.Id },
+                    newVariation
+                );
             }
             catch (DbUpdateException e)
             {
                 return StatusCode(500, $"Internal server error: {e.Message}");
             }
         }
+
 
 
 

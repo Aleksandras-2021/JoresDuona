@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace PosShared.ViewModels;
 
-public class ItemCreateViewModel
+public class ItemViewModel
 {
     public string Name { get; set; }
 

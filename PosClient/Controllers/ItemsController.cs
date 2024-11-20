@@ -50,12 +50,12 @@ public class ItemsController : Controller
     // GET: Items/Create
     public IActionResult Create()
     {
-        return View(new ItemCreateViewModel());
+        return View(new ItemViewModel());
     }
 
     // POST: Items/Create
     [HttpPost]
-    public async Task<IActionResult> Create(ItemCreateViewModel item)
+    public async Task<IActionResult> Create(ItemViewModel item)
     {
         string? token = Request.Cookies["authToken"];
         _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
@@ -103,7 +103,7 @@ public class ItemsController : Controller
             string itemData = await response.Content.ReadAsStringAsync();
 
             Item item = JsonSerializer.Deserialize<Item>(itemData);
-            ItemCreateViewModel itemViewModel = new ItemCreateViewModel();
+            ItemViewModel itemViewModel = new ItemViewModel();
 
             itemViewModel.Price = item.Price;
             itemViewModel.BasePrice = item.Price;
@@ -122,7 +122,7 @@ public class ItemsController : Controller
 
     // POST: Items/Edit/
     [HttpPost]
-    public async Task<IActionResult> Edit(int id, ItemCreateViewModel item)
+    public async Task<IActionResult> Edit(int id, ItemViewModel item)
     {
 
         string? token = Request.Cookies["authToken"];
@@ -145,5 +145,136 @@ public class ItemsController : Controller
 
         return View(item); // Return to the edit view if validation fails or update fails
     }
+
+    // GET: Items/Delete/{id}
+    [HttpGet]
+    public async Task<IActionResult> Delete(int id)
+    {
+        string? token = Request.Cookies["authToken"];
+        _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+
+        var apiUrl = _apiUrl + $"/api/Items/{id}";
+        var response = await _httpClient.GetAsync(apiUrl);
+        Console.WriteLine(response);
+
+        if (response.IsSuccessStatusCode)
+        {
+            var itemData = await response.Content.ReadAsStringAsync();
+            var item = JsonSerializer.Deserialize<Item>(itemData);
+
+            if (item != null)
+            {
+                return View(item);
+            }
+        }
+
+        return NotFound(); // Return a 404 if the user was not found or request failed
+    }
+
+    // POST: Items/Delete/{id}
+    [HttpPost, ActionName("Delete")]
+    public async Task<IActionResult> DeleteConfirmed(int id)
+    {
+        string? token = Request.Cookies["authToken"];
+        _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+
+        var apiUrl = _apiUrl + $"/api/Items/{id}";
+        var response = await _httpClient.DeleteAsync(apiUrl);
+
+        if (response.IsSuccessStatusCode)
+        {
+            return RedirectToAction("Index");
+        }
+
+        ViewBag.ErrorMessage = "Failed to delete item.";
+        return RedirectToAction("Index");
+    }
+
+    #region Variations
+
+    // GET: Items/Variations/{itemId}
+    [HttpGet]
+    public async Task<IActionResult> Variations(int itemId)
+    {
+        string? token = Request.Cookies["authToken"];
+        _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+
+        ViewBag.ItemId = itemId; // Pass ItemId to the view
+
+
+        // API URL for fetching item variations
+        var apiUrl = _apiUrl + $"/api/Items/{itemId}/Variations";
+        var response = await _httpClient.GetAsync(apiUrl);
+
+        if (response.IsSuccessStatusCode)
+        {
+            var jsonData = await response.Content.ReadAsStringAsync();
+            var variations = JsonSerializer.Deserialize<List<ItemVariation>>(jsonData, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+
+            // Pass the variations to the view
+            return View("Variations/Variations", variations);
+        }
+
+        // Handle errors or empty results
+        ViewBag.ErrorMessage = "Could not retrieve variations for the item.";
+        return View("Variations/Variations", new List<ItemVariation>());
+    }
+
+    // GET: Items/Variations/Create/{itemId}
+    [HttpGet]
+    public IActionResult VariationCreate(int itemId)
+    {
+        Console.WriteLine($"Received ItemId: {itemId}");
+
+
+        var model = new ItemVariationCreateViewModel
+        {
+            ItemId = itemId
+        };
+
+        return View("Variations/Create", model);
+    }
+
+    // POST: Items/Variations/Create
+    [HttpPost]
+    public async Task<IActionResult> VariationCreate(ItemVariationCreateViewModel model)
+    {
+        if (!ModelState.IsValid)
+        {
+            return View("Variations/Create", model);
+        }
+
+        string? token = Request.Cookies["authToken"];
+        _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+
+        var apiUrl = _apiUrl + $"/api/Items/{model.ItemId}/Variations";
+
+        ItemVariation variation = new ItemVariation();
+        variation.Name = model.Name;
+        variation.AdditionalPrice = model.AdditionalPrice;
+        variation.ItemId = model.ItemId;
+
+        var variationJson = JsonSerializer.Serialize(variation);
+        var content = new StringContent(variationJson, Encoding.UTF8, "application/json");
+        Console.WriteLine(variationJson);
+        var response = await _httpClient.PostAsync(apiUrl, content);
+
+        if (response.IsSuccessStatusCode)
+        {
+            // Redirect to variations list after successful creation
+            return RedirectToAction("Variations", new { itemId = model.ItemId });
+        }
+
+        // Handle errors
+        var errorMessage = await response.Content.ReadAsStringAsync();
+        ModelState.AddModelError(string.Empty, $"Error creating variation: {errorMessage}");
+        TempData["Error"] = errorMessage;
+        return View("Variations/Create", model);
+    }
+
+
+
+
+    #endregion
 
 }

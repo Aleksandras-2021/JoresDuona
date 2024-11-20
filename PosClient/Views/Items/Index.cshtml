@@ -33,7 +33,7 @@
                     <td>@item.Price</td>
                     <td>@item.Quantity</td>
                     <td>
-                        <a href="/Items/Variations/@item.Id">Variations</a>
+                        <a asp-action="Variations" asp-route-itemId="@item.Id" class="btn btn-primary">View Variations</a>
                         <a href="/Items/Edit/@item.Id">Edit</a> |
                         <a href="/Items/Delete/@item.Id">Delete</a>
                     </td>

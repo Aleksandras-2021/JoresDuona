@@ -92,15 +92,26 @@ namespace PosAPI.Repositories
 
         public async Task DeleteItemAsync(int id)
         {
+            // Find the item by ID
             var item = await _context.Set<Item>().FindAsync(id);
             if (item == null)
             {
                 throw new KeyNotFoundException($"Item with ID {id} not found.");
             }
 
+            // Fetch all associated variations
+            var variations = await _context.Set<ItemVariation>().Where(v => v.ItemId == id).ToListAsync();
+
+            // Remove all associated variations
+            _context.Set<ItemVariation>().RemoveRange(variations);
+
+            // Remove the item itself
             _context.Set<Item>().Remove(item);
+
+            // Save changes to the database
             await _context.SaveChangesAsync();
         }
+
 
         public async Task ChangeItemQuanityAsync(int? itemid, int newQuantity)
         {
