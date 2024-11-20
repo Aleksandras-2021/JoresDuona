@@ -3,7 +3,7 @@
 <h1>Items</h1>
 
 <p>
-    <a href="@Url.Action("Create", "Item")">Create new item</a>
+    <a href="@Url.Action("Create", "Items")">Create new item</a>
 </p>
 
 @if (Model != null && Model.Count > 0)
@@ -33,7 +33,7 @@
                     <td>@item.Price</td>
                     <td>@item.Quantity</td>
                     <td>
-                        <!-- Add Edit and Delete actions here -->
+                        <a href="/Items/Variations/@item.Id">Variations</a>
                         <a href="/Items/Edit/@item.Id">Edit</a> |
                         <a href="/Items/Delete/@item.Id">Delete</a>
                     </td>

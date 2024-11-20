@@ -1,10 +1,12 @@
 ﻿using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Internal;
 using PosAPI.Migrations;
 using PosAPI.Repositories;
 using PosShared.Models;
 using PosShared.Ultilities;
+using static Microsoft.EntityFrameworkCore.DbLoggerCategory.Model;
 
 namespace PosAPI.Controllers
 {
@@ -55,7 +57,7 @@ namespace PosAPI.Controllers
             }
             catch (Exception ex)
             {
-                _logger.LogError($"Error retrieving all users: {ex.Message}");
+                _logger.LogError($"Error retrieving all items: {ex.Message}");
                 return StatusCode(500, "Internal server error");
             }
         }
@@ -66,40 +68,28 @@ namespace PosAPI.Controllers
         {
             User? sender = await GetUserFromToken();
 
-            if (sender == null || sender.Role == UserRole.Worker)
-                return Unauthorized();
+            _logger.LogInformation($"{sender.Name} is sending an item {item.Name}");
 
             if (item == null)
                 return BadRequest("Item data is null.");
 
 
-            Item newItem = new Item();
+            if (sender == null)
+                return Unauthorized();
 
-            newItem.Name = item.Name;
-            newItem.Description = item.Description;
-            newItem.ImageUrl = item.ImageUrl;
-            newItem.BasePrice = item.BasePrice;
-            newItem.Price = item.Price;
-            newItem.Quantity = item.Quantity;
+            item.BusinessId = sender.BusinessId;
 
-            if (sender.Role == UserRole.SuperAdmin) //Only admins can set item business ID
-            {
-                newItem.BusinessId = item.BusinessId;
-            }
-            else //Business owners/Managers can only create items for their business
-            {
-                newItem.BusinessId = sender.BusinessId;
-            }
+
 
             try
             {
-                await _itemRepository.UpdateItemAsync(newItem);
-                return CreatedAtAction(nameof(GetItemById), new { id = newItem.Id }, newItem);
+                await _itemRepository.AddItemAsync(item);
+
+                return CreatedAtAction(nameof(GetItemVariationById), new { id = item.Id }, item);
             }
-            catch (Exception ex)
+            catch (DbUpdateException e)
             {
-                _logger.LogError($"Error creating user: {ex.Message}");
-                return StatusCode(500, "Internal server error");
+                return StatusCode(500, $"Internal server error: {e.Message}");
             }
         }
 
@@ -110,7 +100,7 @@ namespace PosAPI.Controllers
             User? senderUser = await GetUserFromToken();
 
             if (senderUser == null)
-                return BadRequest();
+                return Unauthorized();
 
             try
             {
@@ -147,6 +137,94 @@ namespace PosAPI.Controllers
                 return StatusCode(500, "Internal server error");
             }
         }
+
+        // GET: api/Items/{id}/Variations
+        [HttpGet("{id}/Variations")]
+        public async Task<IActionResult> GetAllItemVariations(int id)
+        {
+            User? sender = await GetUserFromToken();
+
+            if (sender == null)
+                return Unauthorized();
+
+            try
+            {
+                List<ItemVariation> variations = await _itemRepository.GetItemVariationsAsync(id);
+
+                if (variations == null || variations.Count == 0)
+                {
+                    return NotFound("No variations found.");
+                }
+
+                return Ok(variations);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError($"Error retrieving all variations: {ex.Message}");
+                return StatusCode(500, "Internal server error");
+            }
+        }
+
+        // GET: api/Items/{id}/Variations{varId}
+        [HttpGet("{id}/Variations/{varId}")]
+        public async Task<IActionResult> GetItemVariationById(int varId)
+        {
+            User? senderUser = await GetUserFromToken();
+
+            if (senderUser == null)
+                return Unauthorized();
+
+            try
+            {
+                ItemVariation variation = await _itemRepository.GetItemVariationByIdAsync(varId);
+
+                if (variation == null)
+                {
+                    return NotFound("No variation found.");
+                }
+
+                if (variation.Item.BusinessId != senderUser.BusinessId && senderUser.Role != UserRole.SuperAdmin)
+                {
+                    return Unauthorized();
+                }
+
+                return Ok(variation);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError($"Error retrieving variation with ID {varId}: {ex.Message}");
+                return StatusCode(500, "Internal server error");
+            }
+        }
+
+        // POST: api/Items/id/Variations
+        [HttpPost("{id}/Variations")]
+        public async Task<IActionResult> CreateVariation([FromBody] ItemVariation variation)
+        {
+            User? sender = await GetUserFromToken();
+
+            if (sender == null || (variation.Item.BusinessId != sender.BusinessId) && (sender.Role != UserRole.SuperAdmin))
+                return Unauthorized();
+
+            if (variation == null)
+                return BadRequest("Variation data is null.");
+
+
+            try
+            {
+                await _itemRepository.AddItemVariationAsync(variation);
+
+                return CreatedAtAction(nameof(GetItemVariationById), new { id = variation.Id }, variation);
+            }
+            catch (DbUpdateException e)
+            {
+                return StatusCode(500, $"Internal server error: {e.Message}");
+            }
+        }
+
+
+
+
 
 
         #region HelperMethods

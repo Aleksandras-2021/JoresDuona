@@ -5,6 +5,7 @@ using System.Net.Http;
 using System.Text.Json;
 using PosShared;
 using PosShared.Ultilities;
+using System.Text;
 
 namespace PosClient.Controllers
 {
@@ -43,5 +44,48 @@ namespace PosClient.Controllers
             ViewBag.ErrorMessage = "Could not retrieve users.";
             return View(new List<Item>());
         }
+
+
+        // GET: Items/Create
+        public IActionResult Create()
+        {
+            return View(new Item());
+        }
+
+        // POST: Items/Create
+        [HttpPost]
+        public async Task<IActionResult> Create(Item item)
+        {
+            string? token = Request.Cookies["authToken"];
+            _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+
+
+
+            if (item == null)
+            {
+                ModelState.AddModelError(string.Empty, "Invalid item data.");
+                return View(item);
+            }
+
+            Console.WriteLine(JsonSerializer.Serialize(item).ToString());
+
+            var apiUrl = _apiUrl + "/api/Items";
+            var itemJson = JsonSerializer.Serialize(item);
+            var content = new StringContent(itemJson, Encoding.UTF8, "application/json");
+
+            var response = await _httpClient.PostAsync(apiUrl, content);
+
+            if (response.IsSuccessStatusCode)
+            {
+                // Redirect to index page after successful creation
+                return RedirectToAction(nameof(Index));
+            }
+
+            // Handle errors
+            var errorMessage = await response.Content.ReadAsStringAsync();
+            ModelState.AddModelError(string.Empty, $"Error creating item: {errorMessage}");
+            return View(item);
+        }
+
     }
 }
