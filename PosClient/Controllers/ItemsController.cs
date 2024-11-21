@@ -272,6 +272,25 @@ public class ItemsController : Controller
         return View("Variations/Create", model);
     }
 
+    // POST: Items/Variations/Delete/
+    [HttpPost]
+    public async Task<IActionResult> DeleteVariation([FromForm] int id, [FromForm] int varId)
+    {
+        string? token = Request.Cookies["authToken"];
+        _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+
+        var apiUrl = $"{_apiUrl}/api/Items/Variations/{varId}";
+        var response = await _httpClient.DeleteAsync(apiUrl);
+
+        if (response.IsSuccessStatusCode)
+        {
+            return RedirectToAction("Variations", new { itemId = id });
+        }
+
+        ViewBag.ErrorMessage = "Failed to delete variation.";
+        return RedirectToAction("Variations", new { itemId = id });
+    }
+
 
 
 

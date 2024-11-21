@@ -13,7 +13,7 @@
                 <th>Name</th>
                 <th>Additional Price</th>
                 <th>Actions</th>
-                <th>Test</th>
+                <th>Var ID & itemID</th>
             </tr>
         </thead>
         <tbody>
@@ -25,8 +25,13 @@
                     <td>@variation.AdditionalPrice</td>
                     <td>
                         <a asp-action="EditVariation" asp-route-id="@variation.Id" class="btn btn-warning">Edit</a>
-                        <a asp-action="DeleteVariation" asp-route-id="@variation.Id" class="btn btn-danger">Delete</a>
+                        <form asp-action="DeleteVariation" method="post">
+                            <input type="hidden" name="id" value="@variation.ItemId" />
+                            <input type="hidden" name="varId" value="@variation.Id" />
+                            <button type="submit" class="btn btn-danger">Delete</button>
+                        </form>
                     </td>
+                    <td>@variation.Id And @variation.ItemId</td>
                 </tr>
             }
         </tbody>

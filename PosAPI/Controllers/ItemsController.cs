@@ -266,8 +266,8 @@ namespace PosAPI.Controllers
             }
         }
 
-        // GET: api/Items/{id}/Variations{varId}
-        [HttpGet("{id}/Variations/{varId}")]
+        // GET: api/Items/Variations{varId}
+        [HttpGet("Variations/{varId}")]
         public async Task<IActionResult> GetItemVariationById(int varId)
         {
             User? senderUser = await GetUserFromToken();
@@ -282,11 +282,6 @@ namespace PosAPI.Controllers
                 if (variation == null)
                 {
                     return NotFound("No variation found.");
-                }
-
-                if (variation.Item.BusinessId != senderUser.BusinessId && senderUser.Role != UserRole.SuperAdmin)
-                {
-                    return Unauthorized();
                 }
 
                 return Ok(variation);
@@ -339,7 +334,47 @@ namespace PosAPI.Controllers
         }
 
 
+        // DELETE: api/Items/Variations/{id}
+        [HttpDelete("Variations/{varId}")]
+        public async Task<IActionResult> DeleteVariation(int varId)
+        {
+            User? sender = await GetUserFromToken();
 
+            if (sender == null || sender.Role == UserRole.Worker)
+                return Unauthorized();
+
+            try
+            {
+                ItemVariation? variation = await _itemRepository.GetItemVariationByIdAsync(varId);
+
+                if (variation == null)
+                {
+                    return NotFound($"Variation with ID {varId} not found.");
+                }
+
+                if (sender.Role == UserRole.SuperAdmin)
+                {
+                    await _itemRepository.DeleteItemVariationAsync(varId);
+                }
+                else if ((sender.Role == UserRole.Owner || sender.Role == UserRole.Manager) && variation.Item.BusinessId == sender.BusinessId)
+                {
+                    await _itemRepository.DeleteItemVariationAsync(varId);
+                }
+                else
+                {
+                    return Unauthorized();
+                }
+
+                _logger.LogInformation($"Variation with id {varId} deleted at {DateTime.Now}");
+
+                return NoContent();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError($"Error deleting Variation with ID {varId}: {ex.Message}");
+                return StatusCode(500, "Internal server error");
+            }
+        }
 
 
 

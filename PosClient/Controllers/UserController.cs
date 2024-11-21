@@ -155,7 +155,7 @@ public class UserController : Controller
         return NotFound(); // Return a 404 if the user was not found or request failed
     }
 
-    // POST: User/Delete/5
+    // POST: User/Delete/
     [HttpPost, ActionName("Delete")]
     public async Task<IActionResult> DeleteConfirmed(int id)
     {
