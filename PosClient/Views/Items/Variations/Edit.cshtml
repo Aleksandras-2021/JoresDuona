@@ -1,12 +1,7 @@
 ﻿@model PosShared.DTOs.VariationsDTO
 
 <h2>Edit Item</h2>
-@if (TempData["Error"] != null)
-{
-    <div class="alert alert-danger">
-        @TempData["Error"]
-    </div>
-}
+
 <form asp-action="EditVariation" method="post">
 
     <!-- Hidden fields for Id and ItemId -->
@@ -28,3 +23,9 @@
 </form>
 
 <a asp-action="Variations" asp-route-itemId="@Model.ItemId" class="btn btn-secondary">Back to List</a>
+@if (TempData["Error"] != null)
+{
+    <div class="alert alert-danger">
+        @TempData["Error"]
+    </div>
+}

@@ -30,8 +30,6 @@ public class ItemsController : Controller
         string? token = Request.Cookies["authToken"];
         _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
-        Console.WriteLine(Ultilities.ExtractUserRoleFromToken(token));
-
         var apiUrl = _apiUrl + "/api/Items";
         var response = await _httpClient.GetAsync(apiUrl);
 
@@ -147,7 +145,7 @@ public class ItemsController : Controller
                 return RedirectToAction("Index");
             }
 
-            ViewBag.ErrorMessage = "Failed to update user.";
+            TempData["Error"] = "Failed to update item.";
         }
 
         return View(item); // Return to the edit view if validation fails or update fails
@@ -355,7 +353,7 @@ public class ItemsController : Controller
             return RedirectToAction("Variations", new { itemId = id });
         }
 
-        ViewBag.ErrorMessage = "Failed to delete variation.";
+        TempData["Error"] = "Failed to delete variation.";
         return RedirectToAction("Variations", new { itemId = id });
     }
 

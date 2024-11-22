@@ -1,6 +1,7 @@
 ﻿namespace PosClient.Services
 {
-    public class UserSessionService
+    public class UserSessionService : IUserSessionService
     {
+
     }
 }

@@ -1,6 +1,6 @@
 ﻿namespace PosClient.Services
 {
-    public class IUserSessionService
+    public interface IUserSessionService
     {
     }
 }

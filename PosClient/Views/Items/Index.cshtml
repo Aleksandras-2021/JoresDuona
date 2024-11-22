@@ -46,3 +46,9 @@ else
 {
     <p>No Items available.</p>
 }
+
+@if(TempData["Error"] != null)
+{
+    
+    <p>@TempData["Error"]</p>
+}
