@@ -7,6 +7,7 @@ using PosShared;
 using PosShared.Ultilities;
 using System.Text;
 using PosShared.ViewModels;
+using PosShared.DTOs;
 
 namespace PosClient.Controllers;
 
@@ -100,16 +101,22 @@ public class ItemsController : Controller
 
         if (response.IsSuccessStatusCode)
         {
-            string itemData = await response.Content.ReadAsStringAsync();
+            var itemData = await response.Content.ReadAsStringAsync();
+            Console.Write(itemData);
 
-            Item item = JsonSerializer.Deserialize<Item>(itemData);
+            Item? item = JsonSerializer.Deserialize<Item>(itemData);
+
             ItemViewModel itemViewModel = new ItemViewModel();
+            Console.WriteLine(item.Name);
+
 
             itemViewModel.Price = item.Price;
             itemViewModel.BasePrice = item.Price;
             itemViewModel.Name = item.Name;
             itemViewModel.Description = item.Description;
             itemViewModel.Quantity = item.Quantity;
+
+
 
             if (itemViewModel != null)
             {
@@ -161,6 +168,7 @@ public class ItemsController : Controller
         {
             var itemData = await response.Content.ReadAsStringAsync();
             var item = JsonSerializer.Deserialize<Item>(itemData);
+            Console.WriteLine(item.Name);
 
             if (item != null)
             {
@@ -271,6 +279,66 @@ public class ItemsController : Controller
         TempData["Error"] = errorMessage;
         return View("Variations/Create", model);
     }
+
+
+
+    // GET: Items/Variations/Edit/
+    [HttpGet]
+    public async Task<IActionResult> EditVariation(int id)
+    {
+        string? token = Request.Cookies["authToken"];
+        _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+
+        var apiUrl = _apiUrl + $"/api/Items/Variations/{id}";
+        var response = await _httpClient.GetAsync(apiUrl);
+
+        if (response.IsSuccessStatusCode)
+        {
+            var variationData = await response.Content.ReadAsStringAsync();
+
+            VariationsDTO variation = JsonSerializer.Deserialize<VariationsDTO>(variationData, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+
+
+            if (variation != null)
+            {
+                return View("Variations/Edit", variation);
+            }
+        }
+
+        return NotFound();
+    }
+
+    [HttpPost]
+    public async Task<IActionResult> EditVariation(int id, VariationsDTO variation)
+    {
+        string? token = Request.Cookies["authToken"];
+        _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+
+        if (!ModelState.IsValid)
+        {
+            TempData["Error"] = "Invalid input.";
+
+            return View("Variations/Edit", variation);
+        }
+
+        // Prepare the API request
+        var apiUrl = _apiUrl + $"/api/Items/Variations/{id}";
+        var content = new StringContent(JsonSerializer.Serialize(variation), Encoding.UTF8, "application/json");
+
+        var response = await _httpClient.PutAsync(apiUrl, content);
+        Console.WriteLine(response);
+        if (!response.IsSuccessStatusCode)
+        {
+            TempData["Error"] = "Failed to update the variation.";
+            return View("Variations/Edit", variation); // Return the view with the current model if the API fails
+        }
+
+        // Redirect to the Variations list on success
+        return RedirectToAction("Variations", new { itemId = variation.ItemId });
+    }
+
+
+
 
     // POST: Items/Variations/Delete/
     [HttpPost]

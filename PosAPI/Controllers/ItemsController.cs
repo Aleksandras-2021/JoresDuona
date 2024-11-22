@@ -5,6 +5,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Internal;
 using PosAPI.Migrations;
 using PosAPI.Repositories;
+using PosShared.DTOs;
 using PosShared.Models;
 using PosShared.Ultilities;
 using PosShared.ViewModels;
@@ -65,6 +66,53 @@ namespace PosAPI.Controllers
             }
         }
 
+
+
+        // GET: api/Items/{id}
+        [HttpGet("{id}")]
+        public async Task<IActionResult> GetItemById(int id)
+        {
+            User? senderUser = await GetUserFromToken();
+
+            if (senderUser == null)
+                return Unauthorized();
+
+            try
+            {
+                Item? item;
+
+                if (senderUser.Role == UserRole.SuperAdmin)
+                {
+                    item = await _itemRepository.GetItemByIdAsync(id);
+                }
+                else if (senderUser.Role == UserRole.Manager || senderUser.Role == UserRole.Owner || senderUser.Role == UserRole.Worker)
+                {
+                    item = await _itemRepository.GetItemByIdAsync(id);
+
+                    if (item.BusinessId != senderUser.BusinessId)
+                    {
+                        return Unauthorized();
+                    }
+                }
+                else
+                {
+                    return Unauthorized();
+                }
+
+                if (item == null)
+                {
+                    return NotFound($"Item with ID {id} not found.");
+                }
+
+                return Ok(item);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError($"Error retrieving user with ID {id}: {ex.Message}");
+                return StatusCode(500, "Internal server error");
+            }
+        }
+
         // POST: api/Items
         [HttpPost]
         public async Task<IActionResult> CreateItem([FromBody] ItemViewModel item)
@@ -76,7 +124,7 @@ namespace PosAPI.Controllers
             if (item == null)
                 return BadRequest("Item data is null.");
 
-            if (sender == null)
+            if (sender == null || sender.Role == UserRole.Worker)
                 return Unauthorized();
 
             if (sender.BusinessId <= 0)
@@ -150,51 +198,6 @@ namespace PosAPI.Controllers
             }
         }
 
-
-        // GET: api/Items/{id}
-        [HttpGet("{id}")]
-        public async Task<IActionResult> GetItemById(int id)
-        {
-            User? senderUser = await GetUserFromToken();
-
-            if (senderUser == null)
-                return Unauthorized();
-
-            try
-            {
-                Item? item;
-
-                if (senderUser.Role == UserRole.SuperAdmin)
-                {
-                    item = await _itemRepository.GetItemByIdAsync(id);
-                }
-                else if (senderUser.Role == UserRole.Manager || senderUser.Role == UserRole.Owner)
-                {
-                    item = await _itemRepository.GetItemByIdAsync(id);
-
-                    if (item.BusinessId != senderUser.BusinessId)
-                    {
-                        return Unauthorized();
-                    }
-                }
-                else
-                {
-                    return Unauthorized();
-                }
-
-                if (item == null)
-                {
-                    return NotFound($"Item with ID {id} not found.");
-                }
-
-                return Ok(item);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError($"Error retrieving user with ID {id}: {ex.Message}");
-                return StatusCode(500, "Internal server error");
-            }
-        }
 
 
         // DELETE: api/Items/{id}
@@ -284,7 +287,15 @@ namespace PosAPI.Controllers
                     return NotFound("No variation found.");
                 }
 
-                return Ok(variation);
+                VariationsDTO variationDTO = new VariationsDTO
+                {
+                    AdditionalPrice = variation.AdditionalPrice,
+                    Name = variation.Name,
+                    Id = variation.Id,
+                    ItemId = variation.ItemId
+                };
+
+                return Ok(variationDTO);
             }
             catch (Exception ex)
             {
@@ -306,7 +317,7 @@ namespace PosAPI.Controllers
             if (item == null)
                 return NotFound($"Item with ID {variation.ItemId} not found.\n");
 
-            if (sender == null || (item.BusinessId != sender.BusinessId && sender.Role != UserRole.SuperAdmin))
+            if (sender == null || (item.BusinessId != sender.BusinessId && sender.Role != UserRole.SuperAdmin) || sender.Role == UserRole.Worker)
                 return Unauthorized();
 
             var newVariation = new ItemVariation
@@ -376,7 +387,49 @@ namespace PosAPI.Controllers
             }
         }
 
+        // PUT: api/Items/Variations/{id}
+        [HttpPut("Variations/{id}")]
+        public async Task<IActionResult> UpdateVariation(int id, VariationsDTO variation)
+        {
+            if (variation == null)
+            {
+                return BadRequest("Invalid variation data.");
+            }
 
+            try
+            {
+                User? sender = await GetUserFromToken();
+
+                ItemVariation? existingVariation = await _itemRepository.GetItemVariationByIdAsync(id);
+
+                if (existingVariation == null)
+                {
+                    return NotFound($"Variation with ID {id} not found.");
+                }
+                if (sender == null || sender.Role == UserRole.Worker)
+                    return Unauthorized();
+
+                existingVariation.AdditionalPrice = variation.AdditionalPrice;
+                existingVariation.Name = variation.Name;
+                existingVariation.ItemId = variation.ItemId;
+                existingVariation.Id = variation.Id;
+
+
+                await _itemRepository.UpdateItemVariationAsync(existingVariation);
+
+                return NoContent();
+            }
+            catch (KeyNotFoundException ex)
+            {
+                _logger.LogWarning($"Variation with ID {id} not found: {ex.Message}");
+                return NotFound(ex.Message);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError($"Error updating Variation with ID {id}: {ex.Message}");
+                return StatusCode(500, "Internal server error");
+            }
+        }
 
 
         #region HelperMethods
