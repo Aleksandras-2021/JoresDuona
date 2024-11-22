@@ -33,6 +33,7 @@ public class BusinessesController : ControllerBase
     {
 
         string? token = HttpContext.Request.Headers["Authorization"].ToString();
+        _logger.LogInformation(token);
 
         if (string.IsNullOrEmpty(token))
         {

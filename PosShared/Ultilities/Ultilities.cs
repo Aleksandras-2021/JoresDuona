@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
 
 
 namespace PosShared.Ultilities;
@@ -45,6 +46,36 @@ public static class Ultilities
         }
 
         return null; // Return null if user ID cannot be extracted
+    }
+
+    public static string? ExtractUserRoleFromToken(string token)
+    {
+        if (string.IsNullOrWhiteSpace(token))
+        {
+            return null; // Token is missing or empty
+        }
+
+        try
+        {
+            // Check if the token starts with "Bearer " and remove it if present
+            if (token.StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase))
+            {
+                token = token.Substring("Bearer ".Length).Trim();
+            }
+
+            var tokenHandler = new JwtSecurityTokenHandler();
+            var jwtToken = tokenHandler.ReadJwtToken(token);
+
+            // Extract the "Role" claim (using ClaimTypes.Role)
+            var roleClaim = jwtToken.Claims.FirstOrDefault(claim => claim.Type == ClaimTypes.Role);
+            return roleClaim?.Value; // Return the role as a string (or null if not found)
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error extracting user role from token: {ex.Message}");
+        }
+
+        return null; // Return null if role cannot be extracted
     }
 
 

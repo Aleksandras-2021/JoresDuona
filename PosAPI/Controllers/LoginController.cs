@@ -48,7 +48,7 @@ namespace PosAPI.Controllers
                 return BadRequest("Invalid email or password.");
             }
 
-            var token = GenerateToken(user.Email, user.Id, user.Role); // Assuming you have a Role property in User
+            var token = GenerateToken(user.Email, user.Id, user.Role);
 
             Response.Cookies.Append("authToken", token, new CookieOptions
             {
@@ -67,7 +67,8 @@ namespace PosAPI.Controllers
             {
                 new Claim(ClaimTypes.Name, email),
                 new Claim("UserId", userId.ToString()),
-                new Claim(ClaimTypes.Role, role.ToString())
+                new Claim(ClaimTypes.Role, role.ToString()),
+
             };
 
             var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_jwtSettings.Secret));

@@ -54,18 +54,18 @@ namespace PosClient.Controllers
 
             if (response.IsSuccessStatusCode)
             {
-                // Extract token from the response JSON (assuming token is returned in JSON format)
+                // Extract token from the response JSON
                 var responseData = await response.Content.ReadAsStringAsync();
                 var jsonDocument = JsonDocument.Parse(responseData);
-                string token = jsonDocument.RootElement.GetProperty("token").GetString(); // Modify if your API structure is different
+                string token = jsonDocument.RootElement.GetProperty("token").GetString();
 
                 // Store the JWT token in a cookie (HttpOnly, Secure)
                 var cookieOptions = new CookieOptions
                 {
                     HttpOnly = true,
-                    Secure = true, // Use true in production
-                    Expires = DateTime.UtcNow.AddMinutes(10), // Adjust based on your needs
-                    SameSite = SameSiteMode.None  // Important for cross-origin requests, if applicable
+                    Secure = true,
+                    Expires = DateTime.UtcNow.AddMinutes(10),
+                    SameSite = SameSiteMode.None  // Important for cross-origin requests,
                 };
 
                 // Set the cookie with the token
@@ -80,76 +80,16 @@ namespace PosClient.Controllers
             return RedirectToAction("Login");
         }
 
-        public IActionResult Logout()
-        {
-            return View("Login");
-        }
 
-        [HttpPost]
-        public async Task<IActionResult> Logout(string email, string password)
+        public IActionResult Logout()
         {
 
             // Delete Cookie
             Response.Cookies.Delete("authToken");
-            HttpContext.Session.Clear();
+            //HttpContext.Session.Clear();
 
             // Redirect to home page after successful login
             return RedirectToAction("Login");
         }
-
-
-
-
-        [HttpPost]
-        public async Task<IActionResult> GetBusinessById(int businessId)
-        {
-            string? token = Request.Cookies["authToken"]; // Retrieve the token from cookies
-
-            int? userId = Ultilities.ExtractUserIdFromToken(token); //Extract userId from Token
-
-            _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token); // Put the token into authroization header
-
-            var apiUrl = _apiUrl + $"/api/Businesses/{businessId}";
-
-            var response = await _httpClient.GetAsync(apiUrl); //
-
-            if (response.IsSuccessStatusCode)
-            {
-                var businessJson = await response.Content.ReadAsStringAsync();
-
-                // Deserialize the JSON response
-                var options = new JsonSerializerOptions
-                {
-                    PropertyNameCaseInsensitive = true
-                };
-                var business = JsonSerializer.Deserialize<Business>(businessJson, options);
-
-                TempData["BusinessData"] = JsonSerializer.Serialize(business);
-                return RedirectToAction("Result");
-            }
-
-            TempData["BusinessData"] = "Business not found or an error occurred.";
-            return RedirectToAction("Result");
-        }
-
-
-        // GET: Home/Result
-        public IActionResult Result()
-        {
-            var jsonData = TempData["BusinessData"]?.ToString();
-            Business? business = null;
-
-            if (!string.IsNullOrEmpty(jsonData))
-            {
-                var options = new JsonSerializerOptions
-                {
-                    PropertyNameCaseInsensitive = true
-                };
-                business = JsonSerializer.Deserialize<Business>(jsonData, options);
-            }
-
-            return View(business); // Pass the object to the view
-        }
-
     }
 }
