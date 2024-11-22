@@ -41,7 +41,7 @@ public class ItemsController : Controller
         }
 
         // Handle errors or empty results
-        ViewBag.ErrorMessage = "Could not retrieve users.";
+        TempData["Error"] = "Could not retrieve users.";
         return View(new List<Item>());
     }
 
@@ -84,6 +84,7 @@ public class ItemsController : Controller
         // Handle errors
         var errorMessage = await response.Content.ReadAsStringAsync();
         ModelState.AddModelError(string.Empty, $"Error creating item: {errorMessage}");
+
         return View(item);
     }
 
@@ -105,16 +106,12 @@ public class ItemsController : Controller
             Item? item = JsonSerializer.Deserialize<Item>(itemData);
 
             ItemViewModel itemViewModel = new ItemViewModel();
-            Console.WriteLine(item.Name);
-
 
             itemViewModel.Price = item.Price;
             itemViewModel.BasePrice = item.Price;
             itemViewModel.Name = item.Name;
             itemViewModel.Description = item.Description;
             itemViewModel.Quantity = item.Quantity;
-
-
 
             if (itemViewModel != null)
             {
@@ -160,13 +157,11 @@ public class ItemsController : Controller
 
         var apiUrl = _apiUrl + $"/api/Items/{id}";
         var response = await _httpClient.GetAsync(apiUrl);
-        Console.WriteLine(response);
 
         if (response.IsSuccessStatusCode)
         {
             var itemData = await response.Content.ReadAsStringAsync();
             var item = JsonSerializer.Deserialize<Item>(itemData);
-            Console.WriteLine(item.Name);
 
             if (item != null)
             {
@@ -230,9 +225,6 @@ public class ItemsController : Controller
     [HttpGet]
     public IActionResult VariationCreate(int itemId)
     {
-        Console.WriteLine($"Received ItemId: {itemId}");
-
-
         var model = new ItemVariationCreateViewModel
         {
             ItemId = itemId

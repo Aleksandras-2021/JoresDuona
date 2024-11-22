@@ -53,7 +53,7 @@ app.UseRouting();
 
 
 
-app.UseAuthentication(); // Ensure authentication middleware is used
+app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllerRoute(
