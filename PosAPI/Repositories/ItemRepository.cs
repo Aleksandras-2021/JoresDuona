@@ -28,6 +28,9 @@ namespace PosAPI.Repositories
                 throw new Exception($"Business with ID {item.BusinessId} does not exist.");
             }
 
+            if (item.Business == null)
+                item.Business = await _context.Businesses.FindAsync(item.BusinessId);
+
             try
             {
                 await _context.Items.AddAsync(item);

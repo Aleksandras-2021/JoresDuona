@@ -114,5 +114,48 @@ public class OrderRepository : IOrderRepository
 
         return orderItems;
     }
+    public async Task AddOrderItemVariationAsync(OrderItemVariation variation)
+    {
+        if (variation == null)
+        {
+            throw new ArgumentNullException(nameof(variation));
+        }
+
+        if (variation.ItemVariation == null)
+            variation.ItemVariation = await _context.ItemVariations.FindAsync(variation.ItemVariationId);
+
+        if (variation.OrderItem == null)
+            variation.OrderItem = await _context.OrderItems.FindAsync(variation.OrderItemId);
+
+        try
+        {
+            await _context.OrderItemVariations.AddAsync(variation);
+            await _context.SaveChangesAsync();
+        }
+        catch (DbUpdateException ex)
+        {
+            throw new Exception("An error occurred while adding the new orderItemVariation to the database.", ex);
+        }
+
+    }
+
+
+    public async Task<List<OrderItemVariation>> GetOrderItemVariationsByOrderItemIdAsync(int orderItemId)
+    {
+        var orderItemsVariations = await _context.Set<OrderItemVariation>()
+            .Where(orderItem => orderItem.OrderItemId == orderItemId)
+            .OrderBy(orderItem => orderItem.Id)
+            .ToListAsync();
+
+        foreach (var orderItem in orderItemsVariations)
+        {
+            if (orderItem.OrderItem == null)
+            {
+                orderItem.OrderItem = await _context.Set<OrderItem>().FindAsync(orderItemId);
+            }
+        }
+
+        return orderItemsVariations;
+    }
 
 }

@@ -13,6 +13,7 @@ public interface IOrderRepository
     Task<List<Order>> GetAllOrdersAsync();
     Task AddOrderItemAsync(OrderItem orderItem);
     Task<List<OrderItem>> GetOrderItemsByOrderIdAsync(int orderId);
+    Task<List<OrderItemVariation>> GetOrderItemVariationsByOrderItemIdAsync(int orderItemId);
 
 
 }

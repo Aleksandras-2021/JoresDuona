@@ -50,7 +50,6 @@ else
     <table class="table">
         <thead>
             <tr>
-                <th>Order Item ID</th>
                 <th>Item Name</th>
                 <th>Quantity</th>
                 <th>Price</th>
@@ -61,11 +60,10 @@ else
             @foreach (var orderItem in Model.OrderItems)
             {
                 <tr>
-                    <td>@orderItem.Id</td>
                     <td>@orderItem.Item.Name</td>
                     <td>@orderItem.Quantity</td>
                     <td>@orderItem.Price.ToString("C")</td>
-                    <td>@(orderItem.Quantity * orderItem.Price).ToString("C")</td>
+                    <td>@((orderItem.Quantity * orderItem.Price).ToString("C"))</td>
                 </tr>
             }
         </tbody>

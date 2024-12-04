@@ -153,7 +153,7 @@ public class OrderController : ControllerBase
     {
         User? sender = await GetUserFromToken();
 
-        if (sender == null || sender.Role == UserRole.Worker)
+        if (sender == null)
             return Unauthorized();
 
         if (sender.BusinessId <= 0)
