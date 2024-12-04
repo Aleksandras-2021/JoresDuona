@@ -78,9 +78,6 @@ namespace PosClient.Controllers
                 HttpContext.Session.SetString("UserEmail", userEmail);
                 HttpContext.Session.SetString("UserRole", role.ToString());
 
-                ViewData["UserId"] = userId;
-                ViewData["UserRole"] = role;
-
                 // Store the JWT token in a cookie (HttpOnly, Secure)
                 var cookieOptions = new CookieOptions
                 {
