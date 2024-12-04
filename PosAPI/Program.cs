@@ -42,7 +42,7 @@ builder.Services.AddSwaggerGen(options =>
 });
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IItemRepository, ItemRepository>();
-
+builder.Services.AddScoped<IOrderRepository, OrderRepository>();
 
 
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");

@@ -1,0 +1,77 @@
+﻿@model PosShared.ViewModels.SelectItemsViewModel
+
+@{
+    ViewData["Title"] = "Select Items";
+}
+
+<h1>Select Items for Order @Model.OrderId</h1>
+
+@if (Model.Items != null && Model.Items.Any())
+{
+    <h2>Available Items</h2>
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Item ID</th>
+                <th>Name</th>
+                <th>Description</th>
+                <th>Price</th>
+                <th>Action</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var item in Model.Items)
+            {
+                <tr>
+                    <td>@item.Id</td>
+                    <td>@item.Name</td>
+                    <td>@item.Description</td>
+                    <td>@item.Price.ToString("C")</td>
+                    <td>
+                        <form asp-action="AddItemToOrder" method="post">
+                            <input type="hidden" name="orderId" value="@Model.OrderId" />
+                            <input type="hidden" name="itemId" value="@item.Id" />
+                            <button type="submit" class="btn btn-success">Add to Order</button>
+                        </form>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+else
+{
+    <p>No items available.</p>
+}
+
+@if (Model.OrderItems != null && Model.OrderItems.Any())
+{
+    <h2>Items Already in Order</h2>
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Order Item ID</th>
+                <th>Item Name</th>
+                <th>Quantity</th>
+                <th>Price</th>
+                <th>Total</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var orderItem in Model.OrderItems)
+            {
+                <tr>
+                    <td>@orderItem.Id</td>
+                    <td>@orderItem.Item.Name</td>
+                    <td>@orderItem.Quantity</td>
+                    <td>@orderItem.Price.ToString("C")</td>
+                    <td>@(orderItem.Quantity * orderItem.Price).ToString("C")</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+else
+{
+    <p>No items have been added to this order yet.</p>
+}

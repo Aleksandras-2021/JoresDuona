@@ -7,5 +7,46 @@
 <h1>Orders</h1>
 
 <p>
-    <a href="@Url.Action("Create", "Order")">Create New Order</a>
+    <form asp-action="Create" method="post">
+        <button type="submit" class="btn btn-primary">Create</button>
+    </form>
 </p>
+
+@if (Model != null && Model.Count > 0)
+{
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Id</th>
+                <th>Creator</th>
+                <th>Created At</th>
+                <th>Status</th>
+                <th>Charge</th>
+                <th>Discount amount</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var order in Model)
+            {
+                <tr>
+                    <td>@order.Id</td>
+                    <td>@order.UserId</td>
+                    <td>@order.CreatedAt</td>
+                    <td>@order.Status</td>
+                    <td>@order.ChargeAmount</td>
+                    <td>@order.DiscountAmount</td>
+                    <td>
+                        <!-- Add Edit and Delete actions here -->
+                        <a href="/Order/Edit/@order.Id">Edit</a> |
+                        <a href="/Order/Cancel/@order.Id">Cancel</a>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+else
+{
+    <p>No Orders available.</p>
+}

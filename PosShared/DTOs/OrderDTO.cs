@@ -1,16 +1,18 @@
+﻿using PosShared.Models;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
 using System.Text.Json.Serialization;
+using System.Threading.Tasks;
 
-namespace PosShared.Models;
-
-
-public class Order
+namespace PosShared.DTOs;
+public class OrderDTO
 {
     public int Id { get; set; }
 
     public int UserId { get; set; }
     public int BusinessId { get; set; }
-    [JsonIgnore]
-    public User User { get; set; }
 
     public DateTime CreatedAt { get; set; }
 
