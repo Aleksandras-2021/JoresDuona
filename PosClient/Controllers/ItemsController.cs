@@ -8,18 +8,23 @@ using PosShared.Ultilities;
 using System.Text;
 using PosShared.ViewModels;
 using PosShared.DTOs;
+using PosClient.Services;
+using Microsoft.Extensions.Logging.Console;
 
 namespace PosClient.Controllers;
 
 public class ItemsController : Controller
 {
     private readonly HttpClient _httpClient;
+    private readonly IUserSessionService _userSessionService;
+
 
     private readonly string _apiUrl = UrlConstants.ApiBaseUrl;
 
-    public ItemsController(HttpClient httpClient)
+    public ItemsController(HttpClient httpClient, IUserSessionService userSessionService)
     {
         _httpClient = httpClient;
+        _userSessionService = userSessionService;
     }
 
 
@@ -32,6 +37,7 @@ public class ItemsController : Controller
 
         var apiUrl = _apiUrl + "/api/Items";
         var response = await _httpClient.GetAsync(apiUrl);
+        Console.WriteLine(HttpContext.Session.GetInt32("UserId"));
 
         if (response.IsSuccessStatusCode)
         {
