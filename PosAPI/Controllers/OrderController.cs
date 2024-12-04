@@ -16,11 +16,13 @@ public class OrderController : ControllerBase
 {
     private readonly IOrderRepository _orderRepository;
     private readonly IUserRepository _userRepository;
+    private readonly IItemRepository _itemRepository;
     private readonly ILogger<OrderController> _logger;
-    public OrderController(IOrderRepository orderRepository, IUserRepository userRepository, ILogger<OrderController> logger)
+    public OrderController(IOrderRepository orderRepository, IUserRepository userRepository, IItemRepository itemRepository, ILogger<OrderController> logger)
     {
         _orderRepository = orderRepository;
         _userRepository = userRepository;
+        _itemRepository = itemRepository;
         _logger = logger;
     }
 
@@ -165,13 +167,15 @@ public class OrderController : ControllerBase
         if (order.BusinessId != sender.BusinessId)
             return Unauthorized("You are not authorized to modify this order.");
 
+        Item item = await _itemRepository.GetItemByIdAsync(addItemDTO.ItemId);
+
         // Create the OrderItem
         OrderItem orderItem = new OrderItem
         {
             OrderId = orderId,
             ItemId = addItemDTO.ItemId,
             Quantity = 1,
-            Price = addItemDTO.Price
+            Price = item.Price
         };
 
         try
@@ -179,7 +183,6 @@ public class OrderController : ControllerBase
             // Add the OrderItem to the database
             await _orderRepository.AddOrderItemAsync(orderItem);
 
-            // Optionally, update the order's charge amount
             order.ChargeAmount += orderItem.Price * orderItem.Quantity;
             await _orderRepository.UpdateOrderAsync(order);
 
