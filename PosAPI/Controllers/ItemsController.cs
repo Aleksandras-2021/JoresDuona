@@ -254,11 +254,15 @@ namespace PosAPI.Controllers
             try
             {
                 List<ItemVariation> variations = await _itemRepository.GetItemVariationsAsync(id);
-
+                Item item = await _itemRepository.GetItemByIdAsync(id);
                 if (variations == null || variations.Count == 0)
                 {
                     return NotFound("No variations found.");
                 }
+
+                if(item.BusinessId != sender.BusinessId)
+                    return Unauthorized();
+
 
                 return Ok(variations);
             }

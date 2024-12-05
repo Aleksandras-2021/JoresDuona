@@ -194,6 +194,44 @@ public class OrderController : ControllerBase
         }
     }
 
+    // POST: api/Order/{orderId}/DeleteItem/{orderItemId}
+    [HttpDelete("{orderId}/DeleteItem/{orderItemId}")]
+    public async Task<IActionResult> DeleteOrderItem(int orderId, int orderItemId)
+    {
+                User? sender = await GetUserFromToken();
+        if (sender == null)
+        {
+            return Unauthorized();
+        }
+
+        // Check if the order exists
+        var order = await _orderRepository.GetOrderByIdAsync(orderId);
+        if (order == null)
+        {
+            return NotFound($"Order with ID {orderId} not found.");
+        }
+
+        if (order.BusinessId != sender.BusinessId && sender.Role != UserRole.SuperAdmin)
+        {
+            return Unauthorized("You are not authorized to delete this order.");
+        }
+
+        try
+        {
+            // Delete the order and its associated data
+            await _orderRepository.DeleteOrderItemAsync(orderItemId);
+
+            return Ok("Order deleted successfully.");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError($"Error deleting order with ID {orderId}: {ex.Message}");
+            return StatusCode(500, "Internal server error.");
+        }
+    }
+
+
+
     [HttpDelete("{orderId}")]
     public async Task<IActionResult> DeleteOrder(int orderId)
     {
@@ -230,10 +268,22 @@ public class OrderController : ControllerBase
     }
 
 
+
+
     [HttpGet("{orderId}/OrderItems")]
     public async Task<IActionResult> GetOrderItems(int orderId)
     {
+        User? sender = await GetUserFromToken();
+
         var orderItems = await _orderRepository.GetOrderItemsByOrderIdAsync(orderId);
+
+        var order = await _orderRepository.GetOrderByIdAsync(orderId);
+
+
+        if (sender == null || sender.BusinessId != order.BusinessId)
+        {
+            return Unauthorized();
+        }
 
         if (orderItems == null || !orderItems.Any())
         {
@@ -243,10 +293,127 @@ public class OrderController : ControllerBase
         return Ok(orderItems);
     }
 
-    // DELETE: api/Order/{orderId}/DeleteItem/{orderItemId}
-    [HttpDelete("{orderId}/DeleteItem/{orderItemId}")]
-    public async Task<IActionResult> DeleteOrderItem(int orderId, int orderItemId)
+    [HttpGet("{orderId}/")]
+    public async Task<IActionResult> GetOrder(int orderId)
     {
+        User? sender = await GetUserFromToken();
+
+        var order = await _orderRepository.GetOrderByIdAsync(orderId);
+
+
+        if (sender == null || sender.BusinessId != order.BusinessId)
+        {
+            return Unauthorized();
+        }
+
+        return Ok(order);
+    }
+
+    [HttpGet("{orderId}/OrderItems/{id}/OrderItemVariations")]
+    public async Task<IActionResult> GetOrderItemVariations(int orderItemId)
+    {
+        User? sender = await GetUserFromToken();
+
+        var orderItemVariatons = await _orderRepository.GetOrderItemVariationsByOrderItemIdAsync(orderItemId);
+        var orderItem = await _orderRepository.GetOrderItemById(orderItemId);
+
+        if (sender == null || sender.BusinessId != orderItem.Item.BusinessId)
+        {
+            return Unauthorized();
+        }
+
+        if (orderItem == null)
+        {
+            return NotFound("No items found for this order.");
+        }
+
+        return Ok(orderItem);
+    }
+
+    [HttpGet("OrderItems/{id}")]
+    public async Task<IActionResult> GetOrderItem(int id)
+    {
+        User? sender = await GetUserFromToken();
+
+        var orderItem = await _orderRepository.GetOrderItemById(id);
+
+        if (sender == null || sender.BusinessId != orderItem.Item.BusinessId)
+        {
+            return Unauthorized();
+        }
+
+        if (orderItem == null)
+        {
+            return NotFound("No items found for this order.");
+        }
+
+        return Ok(orderItem);
+    }
+
+
+    [HttpPost("{orderId}/OrderItems/{itemId}/OrderItemVariation")]
+    public async Task<IActionResult> AddOrderItemVariation(int orderId, int itemId, int variationId)
+    {
+        // Retrieve the user from the token
+        User? sender = await GetUserFromToken();
+        if (sender == null)
+            return Unauthorized();
+
+        if (sender.BusinessId <= 0)
+            return BadRequest("Invalid BusinessId associated with the user.");
+
+        // Fetch the required data for the order item and variation
+        var orderItem = await _orderRepository.GetOrderItemById(itemId);
+        if (orderItem == null)
+            return NotFound($"Order item with ID {itemId} not found.");
+
+        var variation = await _itemRepository.GetItemVariationByIdAsync(variationId);
+        if (variation == null)
+            return NotFound($"Item variation with ID {variationId} not found.");
+
+        var order = await _orderRepository.GetOrderByIdAsync(orderId);
+        if (order == null)
+            return NotFound($"Order with ID {orderId} not found.");
+
+        // Create the OrderItemVariation instance
+        var orderItemVariation = new OrderItemVariation
+        {
+            Quantity = 1, // Default quantity
+            ItemVariationId = variationId,
+            OrderItemId = itemId,
+            AdditionalPrice = variation.AdditionalPrice,
+            OrderItem = orderItem,
+        };
+
+        try
+        {
+            // Add the OrderItemVariation to the database
+            await _orderRepository.AddOrderItemVariationAsync(orderItemVariation);
+
+            // Update the order's charge amount
+            order.ChargeAmount += orderItemVariation.AdditionalPrice * orderItemVariation.Quantity;
+            await _orderRepository.UpdateOrderAsync(order);
+
+            // Return the created resource
+            return CreatedAtAction(nameof(GetOrderItemVariationById), new { id = orderItemVariation.Id }, orderItemVariation);
+        }
+        catch (DbUpdateException ex)
+        {
+            // Log the exception (optional)
+            _logger.LogError(ex, "An error occurred while adding an order item variation.");
+
+            return StatusCode(500, $"Internal server error: {ex.Message}");
+        }
+    }
+
+
+
+
+    // POST: api/Order/{orderId}/OrderItems/{itemId}/AddVariation
+    [HttpPost("{orderId}/OrderItems/{itemId}/AddVariation")]
+    public async Task<IActionResult> AddOrderItemVariation(int orderId, int itemId, [FromBody] AddVariationDTO addVariationDTO)
+    {
+        // Step 1: Authenticate User
         User? sender = await GetUserFromToken();
 
         if (sender == null)
@@ -255,7 +422,7 @@ public class OrderController : ControllerBase
         if (sender.BusinessId <= 0)
             return BadRequest("Invalid BusinessId associated with the user.");
 
-        // Verify the order exists and is associated with the user's business
+        // Step 2: Validate Order and OrderItem
         var order = await _orderRepository.GetOrderByIdAsync(orderId);
         if (order == null)
             return NotFound($"Order with ID {orderId} not found.");
@@ -263,27 +430,73 @@ public class OrderController : ControllerBase
         if (order.BusinessId != sender.BusinessId)
             return Unauthorized("You are not authorized to modify this order.");
 
+        var orderItem = await _orderRepository.GetOrderItemById(itemId);
+        if (orderItem == null || orderItem.OrderId != orderId)
+            return NotFound($"Order Item with ID {itemId} not found in Order {orderId}.");
+
+        // Step 3: Validate Item Variation
+        var variation = await _itemRepository.GetItemVariationByIdAsync(addVariationDTO.VariationId);
+        if (variation == null)
+            return NotFound($"Variation with ID {addVariationDTO.VariationId} not found.");
+
+        // Step 4: Create and Add Order Item Variation
+        OrderItemVariation orderItemVariation = new OrderItemVariation
+        {
+            OrderItemId = itemId,
+            ItemVariationId = addVariationDTO.VariationId,
+            Quantity = addVariationDTO.Quantity,
+            AdditionalPrice = variation.AdditionalPrice
+        };
+
         try
         {
-            // Delete the OrderItem
-            await _orderRepository.DeleteOrderItemAsync(orderItemId);
+            await _orderRepository.AddOrderItemVariationAsync(orderItemVariation);
 
-            // Update the order's charge amount
-            var orderItems = await _orderRepository.GetOrderItemsByOrderIdAsync(orderId);
-            order.ChargeAmount = orderItems.Sum(oi => oi.Price * oi.Quantity);
-
+            // Step 5: Update Order's Charge Amount
+            order.ChargeAmount += orderItemVariation.AdditionalPrice * orderItemVariation.Quantity;
             await _orderRepository.UpdateOrderAsync(order);
 
-            return NoContent();
+            return CreatedAtAction(nameof(GetOrderItemVariationById), new { orderId = orderId, itemId = itemId }, orderItemVariation);
         }
-        catch (KeyNotFoundException ex)
+        catch (DbUpdateException ex)
         {
-            return NotFound(ex.Message);
+            _logger.LogError($"Error adding order item variation: {ex.Message}");
+            return StatusCode(500, $"Internal server error: {ex.Message}");
         }
-        catch (DbUpdateException e)
-        {
-            return StatusCode(500, $"Internal server error: {e.Message}");
-        }
+    }
+
+    // GET: api/Order/{orderId}/OrderItems/{orderItemId}/Variations/{variationId}
+    [HttpGet("{orderId}/OrderItems/{orderItemId}/Variations/{variationId}")]
+    public async Task<IActionResult> GetOrderItemVariationById(int orderId, int orderItemId, int variationId)
+    {
+        // Step 1: Authenticate User
+        User? sender = await GetUserFromToken();
+
+        if (sender == null)
+            return Unauthorized();
+
+        if (sender.BusinessId <= 0)
+            return BadRequest("Invalid BusinessId associated with the user.");
+
+        // Step 2: Validate Order and OrderItem
+        var order = await _orderRepository.GetOrderByIdAsync(orderId);
+        if (order == null)
+            return NotFound($"Order with ID {orderId} not found.");
+
+        if (order.BusinessId != sender.BusinessId)
+            return Unauthorized("You are not authorized to access this order.");
+
+        var orderItem = await _orderRepository.GetOrderItemById(orderItemId);
+        if (orderItem == null || orderItem.OrderId != orderId)
+            return NotFound($"Order Item with ID {orderItemId} not found in Order {orderId}.");
+
+        // Step 3: Retrieve OrderItemVariation
+        var orderItemVariation = await _orderRepository.GetOrderItemVariationByIdAsync(variationId);
+        if (orderItemVariation == null || orderItemVariation.OrderItemId != orderItemId)
+            return NotFound($"Variation with ID {variationId} not found in Order Item {orderItemId}.");
+
+        // Step 4: Return the Variation Details
+        return Ok(orderItemVariation);
     }
 
 
