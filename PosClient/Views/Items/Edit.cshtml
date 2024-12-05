@@ -2,8 +2,14 @@
 
 <h2>Edit Item</h2>
 
-<form asp-action="Edit" method="post">
+@if (TempData["Error"] != null)
+{
+    <div class="alert alert-danger">
+        @TempData["Error"]
+    </div>
+}
 
+<form asp-action="Edit" method="post">
     <div class="form-group">
         <label asp-for="Name"></label>
         <input asp-for="Name" class="form-control" />
