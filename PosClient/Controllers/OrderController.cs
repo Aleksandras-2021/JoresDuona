@@ -118,45 +118,22 @@ namespace PosClient.Controllers
 
             _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
-            // Check if items are available in the cookie
-            string? itemsCookie = Request.Cookies["cachedItems"];
-            List<Item>? items;
+            // Fetch available items from the API
+            var itemsApiUrl = $"{_apiUrl}/api/Items";
+            var itemsResponse = await _httpClient.GetAsync(itemsApiUrl);
 
-            if (!string.IsNullOrEmpty(itemsCookie))
+            List<Item>? items = null;
+            if (itemsResponse.IsSuccessStatusCode)
             {
-                // Deserialize items from the cookie
-                items = JsonSerializer.Deserialize<List<Item>>(itemsCookie, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+                var itemsJson = await itemsResponse.Content.ReadAsStringAsync();
+                items = JsonSerializer.Deserialize<List<Item>>(itemsJson, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
             }
             else
             {
-                // Fetch available items from the API
-                var itemsApiUrl = _apiUrl + "/api/Items";
-                var itemsResponse = await _httpClient.GetAsync(itemsApiUrl);
-
-                if (itemsResponse.IsSuccessStatusCode)
-                {
-                    var itemsJson = await itemsResponse.Content.ReadAsStringAsync();
-                    items = JsonSerializer.Deserialize<List<Item>>(itemsJson, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
-
-                    // Store items in a cookie for 2 minutes
-                    if (items != null)
-                    {
-                        var cookieOptions = new CookieOptions
-                        {
-                            Expires = DateTime.UtcNow.AddMinutes(1),
-                            HttpOnly = true,
-                            Secure = true
-                        };
-                        Response.Cookies.Append("cachedItems", JsonSerializer.Serialize(items), cookieOptions);
-                    }
-                }
-                else
-                {
-                    items = new List<Item>();
-                }
+                items = new List<Item>();
             }
 
-            // Fetch existing order items
+            // Fetch existing order items from the API
             var orderItemsApiUrl = $"{_apiUrl}/api/Order/{orderId}/OrderItems";
             var orderItemsResponse = await _httpClient.GetAsync(orderItemsApiUrl);
 
@@ -166,16 +143,22 @@ namespace PosClient.Controllers
                 var orderItemsJson = await orderItemsResponse.Content.ReadAsStringAsync();
                 orderItems = JsonSerializer.Deserialize<List<OrderItem>>(orderItemsJson, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
             }
+            else
+            {
+                orderItems = new List<OrderItem>();
+            }
 
+            // Prepare the view model
             var model = new SelectItemsViewModel
             {
                 OrderId = orderId,
-                Items = items,
+                Items = items.Where(Item => Item.Quantity > 0).ToList(),
                 OrderItems = orderItems
             };
 
             return View(model);
         }
+
 
         [HttpPost]
         public async Task<IActionResult> DeleteOrder(int orderId)
