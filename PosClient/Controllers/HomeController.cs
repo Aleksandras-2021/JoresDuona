@@ -105,6 +105,8 @@ namespace PosClient.Controllers
 
             // Delete Cookie
             Response.Cookies.Delete("authToken");
+            Response.Cookies.Delete("cachedItems");
+
             HttpContext.Session.Clear();
 
             // Redirect to home page after successful login

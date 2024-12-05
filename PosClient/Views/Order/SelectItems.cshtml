@@ -54,6 +54,7 @@ else
                 <th>Quantity</th>
                 <th>Price</th>
                 <th>Total</th>
+                <th>Action</th>
             </tr>
         </thead>
         <tbody>
@@ -64,6 +65,13 @@ else
                     <td>@orderItem.Quantity</td>
                     <td>@orderItem.Price.ToString("C")</td>
                     <td>@((orderItem.Quantity * orderItem.Price).ToString("C"))</td>
+                    <td>
+                        <form asp-action="RemoveItemFromOrder" method="post">
+                            <input type="hidden" name="orderId" value="@Model.OrderId" />
+                            <input type="hidden" name="orderItemId" value="@orderItem.Id" />
+                            <button type="submit" class="btn btn-danger">Remove</button>
+                        </form>
+                    </td>
                 </tr>
             }
         </tbody>

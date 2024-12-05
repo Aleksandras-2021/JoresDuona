@@ -194,6 +194,42 @@ public class OrderController : ControllerBase
         }
     }
 
+    [HttpDelete("{orderId}")]
+    public async Task<IActionResult> DeleteOrder(int orderId)
+    {
+        User? sender = await GetUserFromToken();
+        if (sender == null)
+        {
+            return Unauthorized();
+        }
+
+        // Check if the order exists
+        var order = await _orderRepository.GetOrderByIdAsync(orderId);
+        if (order == null)
+        {
+            return NotFound($"Order with ID {orderId} not found.");
+        }
+
+        if (order.BusinessId != sender.BusinessId && sender.Role != UserRole.SuperAdmin)
+        {
+            return Unauthorized("You are not authorized to delete this order.");
+        }
+
+        try
+        {
+            // Delete the order and its associated data
+            await _orderRepository.DeleteOrderAsync(orderId);
+
+            return Ok("Order deleted successfully.");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError($"Error deleting order with ID {orderId}: {ex.Message}");
+            return StatusCode(500, "Internal server error.");
+        }
+    }
+
+
     [HttpGet("{orderId}/OrderItems")]
     public async Task<IActionResult> GetOrderItems(int orderId)
     {
@@ -206,6 +242,50 @@ public class OrderController : ControllerBase
 
         return Ok(orderItems);
     }
+
+    // DELETE: api/Order/{orderId}/DeleteItem/{orderItemId}
+    [HttpDelete("{orderId}/DeleteItem/{orderItemId}")]
+    public async Task<IActionResult> DeleteOrderItem(int orderId, int orderItemId)
+    {
+        User? sender = await GetUserFromToken();
+
+        if (sender == null)
+            return Unauthorized();
+
+        if (sender.BusinessId <= 0)
+            return BadRequest("Invalid BusinessId associated with the user.");
+
+        // Verify the order exists and is associated with the user's business
+        var order = await _orderRepository.GetOrderByIdAsync(orderId);
+        if (order == null)
+            return NotFound($"Order with ID {orderId} not found.");
+
+        if (order.BusinessId != sender.BusinessId)
+            return Unauthorized("You are not authorized to modify this order.");
+
+        try
+        {
+            // Delete the OrderItem
+            await _orderRepository.DeleteOrderItemAsync(orderItemId);
+
+            // Update the order's charge amount
+            var orderItems = await _orderRepository.GetOrderItemsByOrderIdAsync(orderId);
+            order.ChargeAmount = orderItems.Sum(oi => oi.Price * oi.Quantity);
+
+            await _orderRepository.UpdateOrderAsync(order);
+
+            return NoContent();
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(ex.Message);
+        }
+        catch (DbUpdateException e)
+        {
+            return StatusCode(500, $"Internal server error: {e.Message}");
+        }
+    }
+
 
     #region HelperMethods
     private async Task<User?> GetUserFromToken()
