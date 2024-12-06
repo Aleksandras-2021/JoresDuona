@@ -89,6 +89,13 @@ else
                             Select Variation
                         </a>
                     </td>
+                    <td>
+                        <form asp-action="GetOrderItemVariations" method="get">
+                            <input type="hidden" name="orderId" value="@Model.OrderId" />
+                            <input type="hidden" name="orderItemId" value="@orderItem.Id" />
+                            <button type="submit" class="btn btn-danger">View Variations</button>
+                        </form>
+                    </td>
                 </tr>
             }
         </tbody>

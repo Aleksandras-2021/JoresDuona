@@ -198,7 +198,7 @@ public class OrderController : ControllerBase
     [HttpDelete("{orderId}/DeleteItem/{orderItemId}")]
     public async Task<IActionResult> DeleteOrderItem(int orderId, int orderItemId)
     {
-                User? sender = await GetUserFromToken();
+        User? sender = await GetUserFromToken();
         if (sender == null)
         {
             return Unauthorized();
@@ -310,7 +310,7 @@ public class OrderController : ControllerBase
         return Ok(order);
     }
 
-    [HttpGet("{orderId}/OrderItems/{id}/OrderItemVariations")]
+    [HttpGet("{orderId}/OrderItems/{orderItemId}/OrderItemVariations")]
     public async Task<IActionResult> GetOrderItemVariations(int orderItemId)
     {
         User? sender = await GetUserFromToken();
@@ -328,7 +328,7 @@ public class OrderController : ControllerBase
             return NotFound("No items found for this order.");
         }
 
-        return Ok(orderItem);
+        return Ok(orderItemVariatons);
     }
 
     [HttpGet("OrderItems/{id}")]
@@ -353,7 +353,7 @@ public class OrderController : ControllerBase
 
 
     [HttpPost("{orderId}/OrderItems/{itemId}/OrderItemVariation/")]
-    public async Task<IActionResult> AddOrderItemVariation(int orderId, int itemId, [FromBody]int variationId)
+    public async Task<IActionResult> AddOrderItemVariation(int orderId, int itemId, [FromBody] int variationId)
     {
 
         // Retrieve the user from the token

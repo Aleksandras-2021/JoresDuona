@@ -256,7 +256,7 @@ namespace PosClient.Controllers
             var addVariationDTO = new
             {
                 VariationId = varId,
-                Quantity = 1         
+                Quantity = 1
             };
 
             // Serialize the DTO to JSON
@@ -316,5 +316,45 @@ namespace PosClient.Controllers
 
             return View(model);
         }
+
+
+        public async Task<IActionResult> GetOrderItemVariations(int orderItemId, int orderId)
+        {
+            string? token = Request.Cookies["authToken"];
+            if (string.IsNullOrEmpty(token))
+            {
+                return RedirectToAction("Login", "Home");
+            }
+
+            _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+
+            // Fetch item variations from the API "{orderId}/OrderItems/{id}/OrderItemVariations
+            var variationsApiUrl = $"{_apiUrl}/apiOrder/{orderId}/OrderItems/{orderItemId}/OrderItemVariations";
+            var response = await _httpClient.GetAsync(variationsApiUrl);
+
+            List<ItemVariation>? variations = null;
+
+            Console.WriteLine(response.Content.ToString());
+            if (response.IsSuccessStatusCode)
+            {
+                var variationsJson = await response.Content.ReadAsStringAsync();
+                variations = JsonSerializer.Deserialize<List<ItemVariation>>(variationsJson, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+            }
+            else
+            {
+                variations = new List<ItemVariation>();
+            }
+
+            var model = new ItemVariationsViewModel
+            {
+                ItemId = variations.First().ItemId,
+                OrderItemId = orderItemId,
+                OrderId = orderId,
+                Variations = variations
+            };
+
+            return View("SelectedVariations", model);
+        }
+
     }
 }
