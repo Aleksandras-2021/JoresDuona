@@ -293,6 +293,7 @@ public class OrderController : ControllerBase
         return Ok(orderItems);
     }
 
+
     [HttpGet("{orderId}/")]
     public async Task<IActionResult> GetOrder(int orderId)
     {
@@ -351,9 +352,10 @@ public class OrderController : ControllerBase
     }
 
 
-    [HttpPost("{orderId}/OrderItems/{itemId}/OrderItemVariation")]
-    public async Task<IActionResult> AddOrderItemVariation(int orderId, int itemId, int variationId)
+    [HttpPost("{orderId}/OrderItems/{itemId}/OrderItemVariation/")]
+    public async Task<IActionResult> AddOrderItemVariation(int orderId, int itemId, [FromBody]int variationId)
     {
+
         // Retrieve the user from the token
         User? sender = await GetUserFromToken();
         if (sender == null)
@@ -409,7 +411,6 @@ public class OrderController : ControllerBase
 
 
 
-    // POST: api/Order/{orderId}/OrderItems/{itemId}/AddVariation
     [HttpPost("{orderId}/OrderItems/{itemId}/AddVariation")]
     public async Task<IActionResult> AddOrderItemVariation(int orderId, int itemId, [FromBody] AddVariationDTO addVariationDTO)
     {
@@ -456,7 +457,7 @@ public class OrderController : ControllerBase
             order.ChargeAmount += orderItemVariation.AdditionalPrice * orderItemVariation.Quantity;
             await _orderRepository.UpdateOrderAsync(order);
 
-            return CreatedAtAction(nameof(GetOrderItemVariationById), new { orderId = orderId, itemId = itemId }, orderItemVariation);
+            return CreatedAtAction(nameof(GetOrderItemVariationById), new { orderId = orderId, orderItemId = itemId, variationId = orderItemVariation.Id }, orderItemVariation);
         }
         catch (DbUpdateException ex)
         {
@@ -464,6 +465,7 @@ public class OrderController : ControllerBase
             return StatusCode(500, $"Internal server error: {ex.Message}");
         }
     }
+
 
     // GET: api/Order/{orderId}/OrderItems/{orderItemId}/Variations/{variationId}
     [HttpGet("{orderId}/OrderItems/{orderItemId}/Variations/{variationId}")]

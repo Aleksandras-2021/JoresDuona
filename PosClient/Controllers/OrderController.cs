@@ -8,6 +8,7 @@ using PosShared;
 using PosShared.ViewModels;
 using System.Text;
 using PosShared.DTOs;
+using static Microsoft.EntityFrameworkCore.DbLoggerCategory.Model;
 
 namespace PosClient.Controllers
 {
@@ -156,7 +157,6 @@ namespace PosClient.Controllers
                 OrderItems = orderItems
             };
 
-            //Fetch variations
 
             return View(model);
         }
@@ -239,7 +239,7 @@ namespace PosClient.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> AddItemVariationToOrderItem(int varId, int orderItemId)
+        public async Task<IActionResult> AddItemVariationToOrderItem(int varId, int orderItemId, int orderId)
         {
             string? token = Request.Cookies["authToken"];
             if (string.IsNullOrEmpty(token))
@@ -250,48 +250,71 @@ namespace PosClient.Controllers
             _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
             // API endpoint to add variation to order item
-            var apiUrl = $"{_apiUrl}/api/OrderItems/{orderItemId}/AddVariation";
+            var apiUrl = $"{_apiUrl}/api/Order/{orderId}/OrderItems/{orderItemId}/AddVariation";
 
-            // Request body containing the variation ID
-            var content = new StringContent(JsonSerializer.Serialize(new { VariationId = varId }), Encoding.UTF8, "application/json");
+            // Construct the DTO object
+            var addVariationDTO = new
+            {
+                VariationId = varId,
+                Quantity = 1         
+            };
+
+            // Serialize the DTO to JSON
+            var content = new StringContent(JsonSerializer.Serialize(addVariationDTO), Encoding.UTF8, "application/json");
 
             // Call the API
             var response = await _httpClient.PostAsync(apiUrl, content);
+            Console.WriteLine(response.ToString());
 
             if (response.IsSuccessStatusCode)
             {
                 // Redirect back to the SelectItems page to view updated order items
                 TempData["Message"] = "Variation added successfully.";
-                return RedirectToAction("SelectItems", new { orderId = GetOrderIdFromOrderItem(orderItemId) });
+                return RedirectToAction("SelectItems", new { orderId = orderId });
             }
 
             // Handle errors
             TempData["Error"] = "Could not add variation to order item.";
-            return RedirectToAction("SelectItems", new { orderId = GetOrderIdFromOrderItem(orderItemId) });
+            return RedirectToAction("SelectItems", new { orderId = orderId });
         }
 
 
-
-
-        // Helper method to fetch the order ID from the order item ID
-        private async Task<int> GetOrderIdFromOrderItem(int orderItemId)
+        // GET: Order/ItemVariations
+        public async Task<IActionResult> ItemVariations(int itemId, int orderItemId, int orderId)
         {
-            var apiUrl = _apiUrl + $"/api/Order/OrderItems/{orderItemId}";
-            var content = new StringContent(string.Empty, Encoding.UTF8, "application/json");
-
-            var response = await _httpClient.PostAsync(apiUrl, content);
-
-            if (response.IsSuccessStatusCode)
+            string? token = Request.Cookies["authToken"];
+            if (string.IsNullOrEmpty(token))
             {
-                // Optional: Log or parse the created order if needed
-                var jsonResponse = await response.Content.ReadAsStringAsync();
-                OrderItem orderItem = JsonSerializer.Deserialize<OrderItem>(jsonResponse, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
-
-                return orderItem.OrderId;
+                return RedirectToAction("Login", "Home");
             }
 
-            return 0;
+            _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
+            // Fetch item variations from the API
+            var variationsApiUrl = $"{_apiUrl}/api/Items/{itemId}/Variations";
+            var response = await _httpClient.GetAsync(variationsApiUrl);
+
+            List<ItemVariation>? variations = null;
+            if (response.IsSuccessStatusCode)
+            {
+                var variationsJson = await response.Content.ReadAsStringAsync();
+                variations = JsonSerializer.Deserialize<List<ItemVariation>>(variationsJson, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+            }
+            else
+            {
+                variations = new List<ItemVariation>();
+            }
+
+            // Prepare the model for the view
+            var model = new ItemVariationsViewModel
+            {
+                ItemId = itemId,
+                OrderItemId = orderItemId,
+                OrderId = orderId,
+                Variations = variations
+            };
+
+            return View(model);
         }
     }
 }
