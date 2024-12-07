@@ -116,13 +116,13 @@ public class ItemsController : Controller
 
             if (item != null)
             {
-                // Use object initializer for brevity
                 var itemViewModel = new ItemViewModel
                 {
                     Name = item.Name,
                     Description = item.Description,
                     Price = item.Price,
                     BasePrice = item.BasePrice,
+                    Category = item.Category,
                     Quantity = item.Quantity
                 };
 

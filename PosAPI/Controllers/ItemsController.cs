@@ -137,6 +137,8 @@ namespace PosAPI.Controllers
             newItem.Description = item.Description;
             newItem.Price = item.Price;
             newItem.BasePrice = item.BasePrice;
+            newItem.Category = item.Category;
+
             newItem.Quantity = item.Quantity;
 
 
@@ -179,6 +181,7 @@ namespace PosAPI.Controllers
                 existingItem.Name = item.Name;
                 existingItem.Description = item.Description;
                 existingItem.BasePrice = item.Price;
+                existingItem.Category = item.Category;
                 existingItem.Quantity = item.Quantity;
 
 
@@ -260,7 +263,7 @@ namespace PosAPI.Controllers
                     return NotFound("No variations found.");
                 }
 
-                if(item.BusinessId != sender.BusinessId)
+                if (item.BusinessId != sender.BusinessId)
                     return Unauthorized();
 
 

@@ -1,4 +1,5 @@
 ﻿using PosShared.Models;
+using PosShared.Models.Items;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -16,6 +17,7 @@ public class ItemViewModel
     public decimal BasePrice { get; set; }
 
     public decimal Price { get; set; }
+    public ItemCategory Category { get; set; }
 
     public int Quantity { get; set; }
 

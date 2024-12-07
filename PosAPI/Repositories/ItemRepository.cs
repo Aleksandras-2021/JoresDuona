@@ -87,7 +87,9 @@ namespace PosAPI.Repositories
             existingItem.Description = item.Description;
             existingItem.BasePrice = item.BasePrice;
             existingItem.Price = item.Price;
+            existingItem.Category = item.Category;
             existingItem.Quantity = item.Quantity;
+
 
             _context.Set<Item>().Update(existingItem);
             await _context.SaveChangesAsync();
