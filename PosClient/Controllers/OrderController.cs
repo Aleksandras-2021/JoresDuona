@@ -149,10 +149,25 @@ namespace PosClient.Controllers
                 orderItems = new List<OrderItem>();
             }
 
+            // Fetch existing order
+            var orderApiUrl = $"{_apiUrl}/api/Order/{orderId}";
+            var orderResponse = await _httpClient.GetAsync(orderApiUrl);
+            Order? order = null;
+            if (orderResponse.IsSuccessStatusCode)
+            {
+                var orderJson = await orderResponse.Content.ReadAsStringAsync();
+                order = JsonSerializer.Deserialize<Order>(orderJson, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+            }
+            else
+            {
+                TempData["Error"] = "Cannot fetch the order";
+            }
+
             // Prepare the view model
             var model = new SelectItemsViewModel
             {
                 OrderId = orderId,
+                Order = order,
                 Items = items.Where(Item => Item.Quantity > 0).ToList(),
                 OrderItems = orderItems
             };
