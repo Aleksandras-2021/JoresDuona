@@ -176,6 +176,8 @@ namespace PosClient.Controllers
             return View(model);
         }
 
+
+
         // GET: Order/Edit/
         [HttpGet]
         public async Task<IActionResult> Edit(int id)

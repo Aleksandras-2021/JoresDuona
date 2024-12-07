@@ -1,5 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using PosAPI.Data.DbContext;
+using PosAPI.Migrations;
 using PosShared.Models;
 
 namespace PosAPI.Repositories
@@ -59,11 +60,12 @@ namespace PosAPI.Repositories
             var tax = await _context.Set<Tax>().FindAsync(id);
             if (tax == null)
             {
-                throw new KeyNotFoundException($"Item with ID {id} not found.");
+                throw new KeyNotFoundException($"Tax with ID {id} not found.");
             }
 
             return tax;
         }
+
         public async Task UpdateTaxAsync(Tax tax)
         {
             if (tax == null)
@@ -107,6 +109,20 @@ namespace PosAPI.Repositories
 
             // Save changes to the database
             await _context.SaveChangesAsync();
+        }
+
+
+        public async Task<Tax> GetTaxByCategoryAsync(PosShared.Models.Items.ItemCategory category)
+        {
+            var tax = await _context.Taxes
+                .FirstOrDefaultAsync(t => t.Category == category);
+
+            if (tax == null)
+            {
+                throw new KeyNotFoundException($"Tax with category '{category}' not found.");
+            }
+
+            return tax;
         }
     }
 }

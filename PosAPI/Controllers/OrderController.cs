@@ -17,12 +17,14 @@ public class OrderController : ControllerBase
     private readonly IOrderRepository _orderRepository;
     private readonly IUserRepository _userRepository;
     private readonly IItemRepository _itemRepository;
+    private readonly ITaxRepository _taxRepository;
     private readonly ILogger<OrderController> _logger;
-    public OrderController(IOrderRepository orderRepository, IUserRepository userRepository, IItemRepository itemRepository, ILogger<OrderController> logger)
+    public OrderController(IOrderRepository orderRepository, IUserRepository userRepository, IItemRepository itemRepository, ITaxRepository taxRepository, ILogger<OrderController> logger)
     {
         _orderRepository = orderRepository;
         _userRepository = userRepository;
         _itemRepository = itemRepository;
+        _taxRepository = taxRepository;
         _logger = logger;
     }
 
@@ -116,7 +118,7 @@ public class OrderController : ControllerBase
 
         _logger.LogInformation($"User with id: {sender.Id} is creating an order at {DateTime.Now}");
 
-        if (sender == null || sender.Role == UserRole.Worker)
+        if (sender == null)
             return Unauthorized();
 
         if (sender.BusinessId <= 0)
@@ -146,6 +148,29 @@ public class OrderController : ControllerBase
             return StatusCode(500, $"Internal server error: {e.Message}");
         }
     }
+    //Order/{id}/UpdateStatus
+    [HttpPost("{orderId}/UpdateStatus")]
+    public async Task<IActionResult> UpdateStatus([FromQuery]int orderId, OrderStatus status)
+    {
+        try
+        {
+            var order = await _orderRepository.GetOrderByIdAsync(orderId);
+            if (order == null)
+                return NotFound($"Order with ID {orderId} not found.");
+
+            // Update the status
+            order.Status = status;
+            await _orderRepository.UpdateOrderAsync(order);
+
+            return Ok(new { message = "Order status updated successfully.", status });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError($"Error updating order status: {ex.Message}");
+            return StatusCode(500, "Internal server error.");
+        }
+    }
+
 
     // POST: api/Order/{orderId}/AddItem
     [HttpPost("{orderId}/AddItem")]
