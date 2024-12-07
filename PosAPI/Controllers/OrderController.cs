@@ -206,6 +206,7 @@ public class OrderController : ControllerBase
 
         // Check if the order exists
         var order = await _orderRepository.GetOrderByIdAsync(orderId);
+        var orderItem = await _orderRepository.GetOrderItemById(orderItemId);
         if (order == null)
         {
             return NotFound($"Order with ID {orderId} not found.");
@@ -218,6 +219,8 @@ public class OrderController : ControllerBase
 
         try
         {
+            order.ChargeAmount -= orderItem.Price;
+
             // Delete the order and its associated data
             await _orderRepository.DeleteOrderItemAsync(orderItemId);
 
@@ -229,6 +232,61 @@ public class OrderController : ControllerBase
             return StatusCode(500, "Internal server error.");
         }
     }
+
+    [HttpPut("{orderId}")]
+    public async Task<IActionResult> UpdateOrder([FromBody] Order order)
+    {
+        if (order == null)
+        {
+            return BadRequest("Invalid order data.");
+        }
+
+        try
+        {
+            User? sender = await GetUserFromToken();
+
+            Order? existingOrder = await _orderRepository.GetOrderByIdAsync(order.Id);
+
+            if (existingOrder == null)
+            {
+                return NotFound($"Order with ID {order.Id} not found.");
+            }
+            if (sender == null || order.Status == OrderStatus.Closed || order.BusinessId != sender.BusinessId)
+                return Unauthorized();
+
+            //do not update created at
+            //DO not update businessID
+            //update closed at if new status is closed
+            //Recalculate ChargeAmount
+            //Recalculate Tax Amount
+            //
+
+            existingOrder.UserId = sender.Id; //Whoever updates order, takes over the ownership of it
+            existingOrder.User = sender;
+            existingOrder.Status = order.Status;
+            if (order.Status == OrderStatus.Closed)
+                existingOrder.ClosedAt = DateTime.UtcNow;
+            existingOrder.ChargeAmount = order.ChargeAmount;
+            existingOrder.DiscountAmount = order.DiscountAmount;
+            existingOrder.TaxAmount = order.TaxAmount;
+            existingOrder.TipAmount = order.TipAmount;
+
+            await _orderRepository.UpdateOrderAsync(existingOrder);
+
+            return NoContent();
+        }
+        catch (KeyNotFoundException ex)
+        {
+            _logger.LogWarning($"Order with ID {order.Id} not found: {ex.Message}");
+            return NotFound(ex.Message);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError($"Error updating Item with ID {order.Id}: {ex.Message}");
+            return StatusCode(500, "Internal server error");
+        }
+    }
+
 
 
 
@@ -294,21 +352,7 @@ public class OrderController : ControllerBase
     }
 
 
-    [HttpGet("{orderId}/")]
-    public async Task<IActionResult> GetOrder(int orderId)
-    {
-        User? sender = await GetUserFromToken();
 
-        var order = await _orderRepository.GetOrderByIdAsync(orderId);
-
-
-        if (sender == null || sender.BusinessId != order.BusinessId)
-        {
-            return Unauthorized();
-        }
-
-        return Ok(order);
-    }
 
     [HttpGet("{orderId}/OrderItems/{orderItemId}/OrderItemVariations")]
     public async Task<IActionResult> GetOrderItemVariations(int orderItemId)

@@ -161,6 +161,63 @@ namespace PosClient.Controllers
             return View(model);
         }
 
+        // GET: Order/Edit/
+        [HttpGet]
+        public async Task<IActionResult> Edit(int id)
+        {
+            string? token = Request.Cookies["authToken"];
+            if (string.IsNullOrEmpty(token))
+            {
+                return RedirectToAction("Login", "Home");
+            }
+
+            _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+
+            var apiUrl = _apiUrl + $"/api/Order/{id}";
+            var response = await _httpClient.GetAsync(apiUrl);
+
+            if (response.IsSuccessStatusCode)
+            {
+                var orderData = await response.Content.ReadAsStringAsync();
+                var order = JsonSerializer.Deserialize<Order>(orderData, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+
+                if (order != null)
+                {
+                    return View(order);
+                }
+            }
+
+            TempData["Error"] = "Unable to fetch order details. Please try again.";
+            return RedirectToAction("Index");
+        }
+
+
+        // POST: Order/Edit/
+        [HttpPost]
+        public async Task<IActionResult> Edit(Order order)
+        {
+
+            string? token = Request.Cookies["authToken"];
+            _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+
+            if (ModelState.IsValid)
+            {
+                var apiUrl = _apiUrl + $"/api/Order/{order.Id}";
+                var content = new StringContent(JsonSerializer.Serialize(order), Encoding.UTF8, "application/json");
+
+                var response = await _httpClient.PutAsync(apiUrl, content);
+
+                if (response.IsSuccessStatusCode)
+                {
+                    return RedirectToAction("Index");
+                }
+
+                TempData["Error"] = "Failed to update item.";
+            }
+
+            return View(order); // Return to the edit view if validation fails or update fails
+        }
+
 
         [HttpPost]
         public async Task<IActionResult> DeleteOrder(int orderId)
