@@ -39,28 +39,28 @@ namespace PosAPI.Repositories
             }
 
         }
-        public async Task<List<Tax>> GetAllTaxesAsync()
+        public async Task<List<Payment>> GetAllPaymentsAsync()
         {
-            return await _context.Set<Tax>()
-               .OrderBy(tax => tax.Id)
+            return await _context.Set<Payment>()
+               .OrderBy(p => p.Id)
                .ToListAsync();
         }
-        public async Task<List<Tax>> GetAllBusinessTaxesAsync(int businessId)
+        public async Task<List<Payment>> GetAllOrderPaymentsAsync(int orderId)
         {
-            return await _context.Set<Tax>()
-                     .Where(tax => tax.BusinessId == businessId)
+            return await _context.Set<Payment>()
+                     .Where(p => p.OrderId == orderId)
                      .OrderBy(tax => tax.Id)
                      .ToListAsync();
         }
-        public async Task<Tax> GetTaxByIdAsync(int id)
+        public async Task<Payment> GetPaymentByIdAsync(int id)
         {
-            var tax = await _context.Set<Tax>().FindAsync(id);
-            if (tax == null)
+            var payment = await _context.Set<Payment>().FindAsync(id);
+            if (payment == null)
             {
-                throw new KeyNotFoundException($"Tax with ID {id} not found.");
+                throw new KeyNotFoundException($"Payment with ID {id} not found.");
             }
 
-            return tax;
+            return payment;
         }
 
         public async Task UpdateTaxAsync(Tax tax)

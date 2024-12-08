@@ -13,14 +13,14 @@ namespace PosAPI.Controllers
 
         private readonly IOrderRepository _orderRepository;
         private readonly IUserRepository _userRepository;
-        private readonly IItemRepository _itemRepository;
+        private readonly IPaymentRepository _paymentRepository;
         private readonly ITaxRepository _taxRepository;
         private readonly ILogger<OrderController> _logger;
-        public PaymentController(IOrderRepository orderRepository, IUserRepository userRepository, IItemRepository itemRepository, ITaxRepository taxRepository, ILogger<OrderController> logger)
+        public PaymentController(IOrderRepository orderRepository, IUserRepository userRepository, IPaymentRepository paymentRepository, ITaxRepository taxRepository, ILogger<OrderController> logger)
         {
             _orderRepository = orderRepository;
             _userRepository = userRepository;
-            _itemRepository = itemRepository;
+            _paymentRepository = paymentRepository;
             _taxRepository = taxRepository;
             _logger = logger;
         }

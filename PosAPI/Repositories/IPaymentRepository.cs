@@ -6,8 +6,8 @@ namespace PosAPI.Repositories
     {
         Task AddPaymentAsync(Payment payment);
         Task<List<Payment>> GetPayments();
-        Task<List<Tax>> GetAllBusinessPaymentsAsync(int businessId);
-        Task<Tax> GetPaymentByIdAsync(int id);
+        Task<List<Payment>> GetAllOrderPaymentsAsync(int businessId);
+        Task<Payment> GetPaymentByIdAsync(int id);
         Task UpdatePaymentAsync(Payment payment);
         Task DeletePaymentAsync(int id);
     }
