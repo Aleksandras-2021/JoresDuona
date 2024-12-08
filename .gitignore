@@ -396,3 +396,10 @@ FodyWeavers.xsd
 
 # JetBrains Rider
 *.sln.iml
+
+# Mac OS specific files
+.DS_Store
+.AppleDouble
+.LSOverride
+Icon
+._*
