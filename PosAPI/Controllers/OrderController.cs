@@ -101,12 +101,14 @@ public class OrderController : ControllerBase
             {
                 return NotFound($"Order with ID {id} not found.");
             }
+            await RecalculateOrderCharge(id);
+
 
             return Ok(order);
         }
         catch (Exception ex)
         {
-            _logger.LogError($"Error retrieving user with ID {id}: {ex.Message}");
+            _logger.LogError($"Error retrieving order with ID {id}: {ex.Message}");
             return StatusCode(500, "Internal server error");
         }
     }
@@ -246,9 +248,10 @@ public class OrderController : ControllerBase
 
         try
         {
+            await RecalculateOrderCharge(orderId);
+
             // Delete the order and its associated data
             await _orderRepository.DeleteOrderItemAsync(orderItemId);
-            await RecalculateOrderCharge(orderId);
 
 
             return Ok("Order Item deleted successfully.");
@@ -293,10 +296,10 @@ public class OrderController : ControllerBase
             existingOrder.Status = order.Status;
             if (order.Status == OrderStatus.Closed)
                 existingOrder.ClosedAt = DateTime.UtcNow;
-            existingOrder.ChargeAmount = order.ChargeAmount;
-            existingOrder.DiscountAmount = order.DiscountAmount;
-            existingOrder.TaxAmount = order.TaxAmount;
-            existingOrder.TipAmount = order.TipAmount;
+            //existingOrder.ChargeAmount = order.ChargeAmount;
+            // existingOrder.DiscountAmount = order.DiscountAmount;
+            //existingOrder.TaxAmount = order.TaxAmount;
+            //existingOrder.TipAmount = order.TipAmount;
 
             await _orderRepository.UpdateOrderAsync(existingOrder);
             await RecalculateOrderCharge(existingOrder.Id);
@@ -530,7 +533,9 @@ public class OrderController : ControllerBase
     private async Task RecalculateOrderCharge(int orderId)
     {
         Order order = await _orderRepository.GetOrderByIdAsync(orderId);
-        List <OrderItem>orderItems = await _orderRepository.GetOrderItemsByOrderIdAsync(orderId);
+        List<OrderItem> orderItems = await _orderRepository.GetOrderItemsByOrderIdAsync(orderId);
+        List<OrderItemVariation> orderItemVariations = await _orderRepository.GetOrderItemVariationsByOrderIdAsync(orderId);
+        Tax tax;
         order.ChargeAmount = 0;
         order.TaxAmount = 0;
 
@@ -538,39 +543,29 @@ public class OrderController : ControllerBase
         foreach (var item in orderItems)
         {
             order.ChargeAmount += item.Price * item.Quantity;
-            _logger.LogInformation("\n\n\nOrderItem:" + item.Price + " " + item.OrderId);
-            List<ItemVariation> variations = await _itemRepository.GetItemVariationsAsync(item.Id);
 
-            foreach (var variation in variations)
-            {
-                order.ChargeAmount += variation.AdditionalPrice;
-            }
-        }
 
-        //taxes
-        Tax tax;
-        foreach (var item in order.OrderItems)
-        {
-            //Item tax
             tax = await _taxRepository.GetTaxByItemIdAsync(item.ItemId);
 
             if (tax.IsPercentage)
-                order.TaxAmount += item.Price * tax.Amount / 100;
+                order.TaxAmount += item.Price * item.Quantity * tax.Amount / 100;
             else
-                order.TaxAmount += item.Price + tax.Amount;
-
-            List<ItemVariation> variations = await _itemRepository.GetItemVariationsAsync(item.Id);
-
-            //Variation(variations belong to same category)
-            foreach (var variation in variations)
-            {
-                if (tax.IsPercentage)
-                    order.TaxAmount += variation.AdditionalPrice * tax.Amount / 100;
-                else
-                    order.TaxAmount += variation.AdditionalPrice + tax.Amount;
-            }
+                order.TaxAmount += tax.Amount;
         }
 
+        foreach (var variation in orderItemVariations)
+        {
+            order.ChargeAmount += variation.AdditionalPrice;
+            OrderItem orderItemForVar = await _orderRepository.GetOrderItemById(variation.OrderItemId);
+
+            tax = await _taxRepository.GetTaxByItemIdAsync(orderItemForVar.ItemId);
+
+            if (tax.IsPercentage)
+                order.TaxAmount += variation.AdditionalPrice * variation.Quantity * tax.Amount / 100;
+            else
+                order.TaxAmount += tax.Amount;
+
+        }
     }
 
 

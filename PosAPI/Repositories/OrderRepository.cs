@@ -213,6 +213,19 @@ public class OrderRepository : IOrderRepository
         return orderItemsVariations;
     }
 
+    public async Task<List<OrderItemVariation>> GetOrderItemVariationsByOrderIdAsync(int orderId)
+    {
+
+
+        var orderItemsVariations = await _context.Set<OrderItemVariation>()
+            .Where(orderItemVar => orderItemVar.OrderItem.OrderId == orderId)
+            .OrderBy(orderItem => orderItem.Id)
+            .ToListAsync();
+
+
+        return orderItemsVariations;
+    }
+
     public async Task DeleteOrderItemAsync(int id)
     {
         var orderItem = await _context.Set<OrderItem>().FindAsync(id);
