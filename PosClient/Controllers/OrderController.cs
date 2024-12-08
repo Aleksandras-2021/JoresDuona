@@ -436,9 +436,10 @@ namespace PosClient.Controllers
 
 
 
-        public IActionResult RedirectToPayment(Order order)
+        [HttpPost]
+        public IActionResult RedirectToPayment(int orderId, decimal untaxedAmount, decimal tax)
         {
-            return RedirectToAction("Create", "Payment", new { order });
+            return RedirectToAction("Create", "Payment", new { orderId, untaxedAmount, tax });
         }
 
 

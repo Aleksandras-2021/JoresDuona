@@ -9,7 +9,10 @@ namespace PosShared.ViewModels;
 
 public class PaymentViewModel
 {
-    public Order Order { get; set; }
+    public int OrderId { get; set; }
+    public Decimal TaxAmount { get; set; }
+    public Decimal UntaxedAmount { get; set; }
+    public decimal TotalAmount { get; set; }
 
     public decimal Amount { get; set; }
 

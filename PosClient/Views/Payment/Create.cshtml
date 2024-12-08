@@ -1,31 +1,55 @@
 ﻿@using PosShared.Models
-@model PosShared.DTOs.AddPaymentDTO
+@model PosShared.ViewModels.PaymentViewModel
 
 <h1>Add Payment</h1>
 
-<form asp-action="Create" method="post">
-    <div class="form-group">
-        <label asp-for="OrderId">Order ID</label>
-        <input asp-for="OrderId" class="form-control" readonly  value="@Model.OrderId"/>
-        <span asp-validation-for="OrderId" class="text-danger"></span>
-    </div>
+@if (Model != null) {
+<div class="card" style="width: 100%; max-width: 500px; margin: 0 auto; padding: 20px; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); border-radius: 8px; background-color: #f9f9f9;">
+    <h2 class="card-title text-center" style="margin-bottom: 20px; font-size: 1.5rem;">Make a Payment</h2>
+    
+    <ul class="list-group" style="list-style: none; padding: 0;">
+        <li class="list-group-item" style="padding: 10px 0; border-bottom: 1px solid #ddd;">
+            <strong>Order ID:</strong> @Model.OrderId
+        </li>
+        <li class="list-group-item" style="padding: 10px 0; border-bottom: 1px solid #ddd;">
+            <strong>Untaxed Amount:</strong> @Model.UntaxedAmount.ToString("C")
+        </li>
+        <li class="list-group-item" style="padding: 10px 0; border-bottom: 1px solid #ddd;">
+            <strong>Tax Amount:</strong> @Model.TaxAmount.ToString("C")
+        </li>
+        <li class="list-group-item" style="padding: 10px 0; border-bottom: 1px solid #ddd;">
+            <strong>Total Amount:</strong> @Model.TotalAmount.ToString("C")
+        </li>
+    </ul>
 
-    <div class="form-group">
-        <label asp-for="Amount">Amount</label>
-        <input asp-for="Amount" class="form-control" type="number" step="0.01" />
-        <span asp-validation-for="Amount" class="text-danger"></span>
-    </div>
+    <form asp-action="Create" asp-controller="Payment" method="post" style="margin-top: 20px;">
+        <input type="hidden" name="OrderId" value="@Model.OrderId" />
+        <input type="hidden" name="UntaxedAmount" value="@Model.UntaxedAmount" />
+        <input type="hidden" name="TaxAmount" value="@Model.TaxAmount" />
+        <input type="hidden" name="TotalAmount" value="@Model.TotalAmount" />
 
-    <div class="form-group">
-        <label asp-for="PaymentMethod">Payment Method</label>
-        <select asp-for="PaymentMethod" class="form-control">
-            @foreach (var method in Enum.GetValues(typeof(PaymentMethod)))
-            {
-                <option value="@method">@method</option>
-            }
-        </select>
-        <span asp-validation-for="PaymentMethod" class="text-danger"></span>
-    </div>
+        <div class="form-group">
+            <label for="Amount"><strong>Payment Amount:</strong></label>
+            <input type="number" name="Amount" class="form-control" value="@Model.TotalAmount" required style="margin-bottom: 15px;" />
+        </div>
 
-    <button type="submit" class="btn btn-primary">Submit Payment</button>
-</form>
+            <div class="form-group">
+                <label for="PaymentMethod"><strong>Payment Method:</strong></label>
+                <select name="PaymentMethod" class="form-control" style="margin-bottom: 15px;">
+                    @foreach (var method in Enum.GetValues(typeof(PosShared.Models.PaymentMethod)))
+                    {
+                        <option value="@method">@method</option>
+                    }
+                </select>
+            </div>
+
+
+        <button type="submit" class="btn btn-primary btn-block" style="padding: 10px 20px; font-size: 1rem;">Submit Payment</button>
+    </form>
+</div>
+
+}
+else
+{
+    <p>Model is null for payment, something wrong</p>
+}

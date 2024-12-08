@@ -26,24 +26,33 @@ public class PaymentController : Controller
     }
 
     [HttpGet]
-    public IActionResult Create()
+    public IActionResult Create(int orderId, decimal untaxedAmount, decimal tax)
     {
-        return View();
+        // Initialize the PaymentViewModel using the query string parameters
+        var paymentViewModel = new PaymentViewModel
+        {
+            OrderId = orderId,
+            UntaxedAmount = untaxedAmount,
+            TaxAmount = tax,
+            TotalAmount = untaxedAmount + tax
+        };
+
+        return View(paymentViewModel);
     }
 
     [HttpPost]
     public async Task<IActionResult> Create(PaymentViewModel paymentViewModel)
     {
+        // Handle the payment creation logic here
         string token = Request.Cookies["authToken"];
         _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
         AddPaymentDTO payment = new AddPaymentDTO()
         {
             Amount = paymentViewModel.Amount,
-            OrderId = paymentViewModel.Order.Id,
+            OrderId = paymentViewModel.OrderId,
             PaymentMethod = paymentViewModel.PaymentMethod
         };
-
 
         var content = new StringContent(JsonSerializer.Serialize(payment), Encoding.UTF8, "application/json");
         var response = await _httpClient.PostAsync(_apiUrl + $"/api/Payment", content);
@@ -54,6 +63,6 @@ public class PaymentController : Controller
         }
 
         TempData["Error"] = "Failed to create Payment. Please try again.\n" + response.ToString();
-        return View(payment);
+        return View(paymentViewModel);
     }
 }

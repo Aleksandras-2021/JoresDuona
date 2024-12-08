@@ -116,13 +116,14 @@ namespace PosAPI.Controllers
         public async Task<IActionResult> CreatePayment([FromBody] AddPaymentDTO payment)
         {
             User? sender = await GetUserFromToken();
+            Order order = await _orderRepository.GetOrderByIdAsync(payment.OrderId);
 
             _logger.LogInformation($"{sender.Name} is sending a payment to an order {payment.OrderId}");
 
             if (payment == null)
                 return BadRequest("Payment data is null.");
 
-            if (sender == null || sender.Role == UserRole.Worker)
+            if (sender == null || sender.BusinessId != order.BusinessId)
                 return Unauthorized();
 
             if (sender.BusinessId <= 0)
@@ -141,30 +142,31 @@ namespace PosAPI.Controllers
             {
                 await _paymentRepository.AddPaymentAsync(newPayment);
 
-                Order order = await _orderRepository.GetOrderByIdAsync(payment.OrderId);
+                List<Payment> payments = await _paymentRepository.GetAllOrderPaymentsAsync(newPayment.OrderId);
                 Decimal sum = new decimal(0);
 
-                foreach (var orderPayment in order.Payments)
+                foreach (var orderPayment in payments)
                 {
                     sum += orderPayment.Amount;
                 }
 
-                if (sum == order.ChargeAmount)
+                if (sum == order.ChargeAmount + order.TaxAmount)
                 {
                     order.Status = OrderStatus.Closed;
                     order.ClosedAt = DateTime.UtcNow;
                 }
-                else if (sum < order.ChargeAmount)
+                else if (sum < order.ChargeAmount + order.TaxAmount)
                     order.Status = OrderStatus.PartiallyPaid;
-                else if (sum > order.ChargeAmount)
+                else if (sum > order.ChargeAmount + order.TaxAmount)
                 {
                     order.TipAmount = sum - order.ChargeAmount;
                     order.ClosedAt = DateTime.UtcNow;
                     order.Status = OrderStatus.Closed;
                 }
+                _logger.LogWarning("Total Payments made:" + sum);
 
-                _logger.LogInformation($"Payment of {payment.Amount} euros has been made to an order with id({payment.OrderId}) order status now is ({order.Status})");
-
+                _logger.LogInformation($"Payment of {payment.Amount}/{order.ChargeAmount} euros has been made to an order with id({payment.OrderId}) order status now is ({order.Status})");
+                await _orderRepository.UpdateOrderAsync(order);
 
                 return CreatedAtAction(nameof(GetPaymentById), new { id = newPayment.Id }, newPayment);
             }

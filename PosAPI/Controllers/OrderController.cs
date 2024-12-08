@@ -271,6 +271,11 @@ public class OrderController : ControllerBase
             return BadRequest("Invalid order data.");
         }
 
+        if (order.Status == OrderStatus.Closed)
+        {
+            return Unauthorized("Cannot modify closed order.");
+        }
+
         try
         {
             User? sender = await GetUserFromToken();
@@ -536,6 +541,7 @@ public class OrderController : ControllerBase
         List<OrderItem> orderItems = await _orderRepository.GetOrderItemsByOrderIdAsync(orderId);
         List<OrderItemVariation> orderItemVariations = await _orderRepository.GetOrderItemVariationsByOrderIdAsync(orderId);
         Tax tax;
+
         order.ChargeAmount = 0;
         order.TaxAmount = 0;
 

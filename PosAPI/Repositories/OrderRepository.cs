@@ -208,6 +208,7 @@ public class OrderRepository : IOrderRepository
             {
                 orderItem.OrderItem = await _context.Set<OrderItem>().FindAsync(orderItemId);
             }
+            
         }
 
         return orderItemsVariations;

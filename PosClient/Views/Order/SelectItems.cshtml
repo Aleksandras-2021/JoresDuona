@@ -9,15 +9,13 @@
 <h2>Taxes charge: @Model.Order.TaxAmount</h2>
 
 
-
-<h1>Go to Add Payment</h1>
-
-<form asp-action="RedirectToPayment" asp-controller="Order" method="get">
-    <div class="form-group">
-        <input type="hidden" name="orderId" id="orderId" value="@Model.OrderId" class="form-control" />
-    </div>
-    <button type="submit" class="btn btn-primary">Payment</button>
+<form asp-action="RedirectToPayment" asp-controller="Order" method="post">
+    <input type="hidden" name="orderId" value="@Model.OrderId" />
+    <input type="hidden" name="untaxedAmount" value="@Model.Order.ChargeAmount" />
+    <input type="hidden" name="tax" value="@Model.Order.TaxAmount" />
+    <button type="submit" class="btn btn-primary">Proceed to Payment</button>
 </form>
+
 
 @if (TempData["Error"] != null)
 {
