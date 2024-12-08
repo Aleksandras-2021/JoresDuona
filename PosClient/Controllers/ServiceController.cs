@@ -130,21 +130,50 @@ public class ServiceController : Controller
             ViewBag.ErrorMessage = "Failed to update service.";
         }
 
+        TempData["Error"] = "Unable to edit service. Please try again.";
         return View(service);
     }
 
-    // GET: Service/Delete/
-    [HttpPost]
+    // GET: Service/Delete/5
+    [HttpGet]
     public async Task<IActionResult> Delete(int id)
     {
         string? token = Request.Cookies["authToken"];
         _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
-        var response = await _httpClient.DeleteAsync(_apiUrl + $"/api/Service/{id}");
+
+        var apiUrl = _apiUrl + $"/api/Service/{id}";
+        var response = await _httpClient.GetAsync(apiUrl);
+
+        if (response.IsSuccessStatusCode)
+        {
+            var serviceData = await response.Content.ReadAsStringAsync();
+            var service = JsonSerializer.Deserialize<Service>(serviceData);
+
+            if (service != null)
+            {
+                return View(service);
+            }
+        }
+
+        return RedirectToAction("Index");
+    }
+
+    // POST: Service/Delete/
+    [HttpPost, ActionName("Delete")]
+    public async Task<IActionResult> DeleteConfirmed(int id)
+    {
+        string? token = Request.Cookies["authToken"];
+        _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+
+        var apiUrl = _apiUrl + $"/api/Service/{id}";
+        var response = await _httpClient.DeleteAsync(apiUrl);
+
         if (response.IsSuccessStatusCode)
         {
             return RedirectToAction("Index");
         }
-        TempData["Error"] = "Failed to delete service. Please try again.";
+
+        TempData["Error"] = "Unable to delete service. Please try again.";
         return RedirectToAction("Index");
     }
 }

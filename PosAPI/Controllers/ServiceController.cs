@@ -129,8 +129,6 @@ namespace PosAPI.Controllers
             newService.BasePrice = service.BasePrice;
             newService.DurationInMinutes = service.DurationInMinutes;
 
-            Console.WriteLine(newService);
-
             try
             {
                 await _serviceRepository.AddServiceAsync(newService);
