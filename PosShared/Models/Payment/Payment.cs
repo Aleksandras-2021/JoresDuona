@@ -16,7 +16,7 @@ public class Payment
 
     public PaymentGateway PaymentGateway { get; set; }
 
-    public string TransactionId { get; set; }
+    public string? TransactionId { get; set; } //Set same as ID, because no stripe for us 
 
-    public ICollection<Refund> Refunds { get; set; }
+    public ICollection<Refund>? Refunds { get; set; } //Nullable, because Refunds can also not exist
 }

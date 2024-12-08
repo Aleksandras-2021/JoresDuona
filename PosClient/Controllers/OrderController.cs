@@ -435,5 +435,14 @@ namespace PosClient.Controllers
         }
 
 
+
+        public IActionResult RedirectToPayment(Order order)
+        {
+            return RedirectToAction("Create", "Payment", new { order });
+        }
+
+
+
+
     }
 }

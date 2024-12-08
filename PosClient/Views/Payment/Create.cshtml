@@ -1,0 +1,31 @@
+﻿@using PosShared.Models
+@model PosShared.DTOs.AddPaymentDTO
+
+<h1>Add Payment</h1>
+
+<form asp-action="Create" method="post">
+    <div class="form-group">
+        <label asp-for="OrderId">Order ID</label>
+        <input asp-for="OrderId" class="form-control" readonly  value="@Model.OrderId"/>
+        <span asp-validation-for="OrderId" class="text-danger"></span>
+    </div>
+
+    <div class="form-group">
+        <label asp-for="Amount">Amount</label>
+        <input asp-for="Amount" class="form-control" type="number" step="0.01" />
+        <span asp-validation-for="Amount" class="text-danger"></span>
+    </div>
+
+    <div class="form-group">
+        <label asp-for="PaymentMethod">Payment Method</label>
+        <select asp-for="PaymentMethod" class="form-control">
+            @foreach (var method in Enum.GetValues(typeof(PaymentMethod)))
+            {
+                <option value="@method">@method</option>
+            }
+        </select>
+        <span asp-validation-for="PaymentMethod" class="text-danger"></span>
+    </div>
+
+    <button type="submit" class="btn btn-primary">Submit Payment</button>
+</form>

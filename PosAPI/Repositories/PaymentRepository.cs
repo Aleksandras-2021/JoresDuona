@@ -27,10 +27,10 @@ namespace PosAPI.Repositories
             }
             try
             {
+                payment.Order = order;
                 await _context.Payments.AddAsync(payment);
+
                 order.Payments.Add(payment);
-
-
                 await _context.SaveChangesAsync();
             }
             catch (DbUpdateException ex)
@@ -52,6 +52,13 @@ namespace PosAPI.Repositories
                      .OrderBy(tax => tax.Id)
                      .ToListAsync();
         }
+        public async Task<List<Payment>> GetAllBusinessPaymentsAsync(int businessId)
+        {
+            return await _context.Set<Payment>()
+                     .Where(p => p.Order.BusinessId == businessId)
+                     .OrderBy(tax => tax.Id)
+                     .ToListAsync();
+        }
         public async Task<Payment> GetPaymentByIdAsync(int id)
         {
             var payment = await _context.Set<Payment>().FindAsync(id);
@@ -63,34 +70,14 @@ namespace PosAPI.Repositories
             return payment;
         }
 
-        public async Task UpdateTaxAsync(Tax tax)
+        public Task UpdatePaymentAsync(Payment payment)
         {
-            if (tax == null)
-            {
-                throw new ArgumentNullException(nameof(tax));
-            }
+            throw new NotImplementedException();
+        }
 
-            var existingTax = await _context.Set<Tax>().FindAsync(tax.Id);
-            if (existingTax == null)
-            {
-                throw new KeyNotFoundException($"Tax with ID {tax.Id} not found.");
-            }
-
-            existingTax.Id = tax.Id;
-            existingTax.BusinessId = tax.BusinessId;
-            existingTax.Business = tax.Business;
-            existingTax.Name = tax.Name;
-            existingTax.Amount = tax.Amount;
-            existingTax.IsPercentage = tax.IsPercentage;
-            existingTax.Category = tax.Category;
-
-            if (existingTax.Business == null)
-                existingTax.Business = await _context.Businesses.FindAsync(tax.BusinessId);
-
-
-
-            _context.Set<Tax>().Update(existingTax);
-            await _context.SaveChangesAsync();
+        public Task DeletePaymentAsync(int id)
+        {
+            throw new NotImplementedException();
         }
     }
 }

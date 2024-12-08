@@ -7,6 +7,7 @@ using PosShared.DTOs;
 using PosShared.Models;
 using PosShared.Ultilities;
 using PosShared.ViewModels;
+using System.Runtime.InteropServices;
 
 namespace PosAPI.Controllers;
 
@@ -150,7 +151,7 @@ public class OrderController : ControllerBase
     }
     //Order/{id}/UpdateStatus
     [HttpPost("{orderId}/UpdateStatus")]
-    public async Task<IActionResult> UpdateStatus([FromQuery]int orderId, OrderStatus status)
+    public async Task<IActionResult> UpdateStatus([FromQuery] int orderId, OrderStatus status)
     {
         try
         {
@@ -208,7 +209,7 @@ public class OrderController : ControllerBase
             // Add the OrderItem to the database
             await _orderRepository.AddOrderItemAsync(orderItem);
 
-            order.ChargeAmount += orderItem.Price * orderItem.Quantity;
+            await RecalculateOrderCharge(orderItem.OrderId);
             await _orderRepository.UpdateOrderAsync(order);
 
             return CreatedAtAction(nameof(GetOrderById), new { id = order.Id }, orderItem);
@@ -232,6 +233,7 @@ public class OrderController : ControllerBase
         // Check if the order exists
         var order = await _orderRepository.GetOrderByIdAsync(orderId);
         var orderItem = await _orderRepository.GetOrderItemById(orderItemId);
+
         if (order == null)
         {
             return NotFound($"Order with ID {orderId} not found.");
@@ -244,16 +246,16 @@ public class OrderController : ControllerBase
 
         try
         {
-            order.ChargeAmount -= orderItem.Price;
-
             // Delete the order and its associated data
             await _orderRepository.DeleteOrderItemAsync(orderItemId);
+            await RecalculateOrderCharge(orderId);
 
-            return Ok("Order deleted successfully.");
+
+            return Ok("Order Item deleted successfully.");
         }
         catch (Exception ex)
         {
-            _logger.LogError($"Error deleting order with ID {orderId}: {ex.Message}");
+            _logger.LogError($"Error deleting order item with ID {orderId}: {ex.Message}");
             return StatusCode(500, "Internal server error.");
         }
     }
@@ -297,6 +299,7 @@ public class OrderController : ControllerBase
             existingOrder.TipAmount = order.TipAmount;
 
             await _orderRepository.UpdateOrderAsync(existingOrder);
+            await RecalculateOrderCharge(existingOrder.Id);
 
             return NoContent();
         }
@@ -362,7 +365,6 @@ public class OrderController : ControllerBase
 
         var order = await _orderRepository.GetOrderByIdAsync(orderId);
 
-
         if (sender == null || sender.BusinessId != order.BusinessId)
         {
             return Unauthorized();
@@ -427,66 +429,6 @@ public class OrderController : ControllerBase
         return Ok(orderItem);
     }
 
-
-    [HttpPost("{orderId}/OrderItems/{itemId}/OrderItemVariation/")]
-    public async Task<IActionResult> AddOrderItemVariation(int orderId, int itemId, [FromBody] int variationId)
-    {
-
-        // Retrieve the user from the token
-        User? sender = await GetUserFromToken();
-        if (sender == null)
-            return Unauthorized();
-
-        if (sender.BusinessId <= 0)
-            return BadRequest("Invalid BusinessId associated with the user.");
-
-        // Fetch the required data for the order item and variation
-        var orderItem = await _orderRepository.GetOrderItemById(itemId);
-        if (orderItem == null)
-            return NotFound($"Order item with ID {itemId} not found.");
-
-        var variation = await _itemRepository.GetItemVariationByIdAsync(variationId);
-        if (variation == null)
-            return NotFound($"Item variation with ID {variationId} not found.");
-
-        var order = await _orderRepository.GetOrderByIdAsync(orderId);
-        if (order == null)
-            return NotFound($"Order with ID {orderId} not found.");
-
-        // Create the OrderItemVariation instance
-        var orderItemVariation = new OrderItemVariation
-        {
-            Quantity = 1, // Default quantity
-            ItemVariationId = variationId,
-            OrderItemId = itemId,
-            AdditionalPrice = variation.AdditionalPrice,
-            OrderItem = orderItem,
-        };
-
-        try
-        {
-            // Add the OrderItemVariation to the database
-            await _orderRepository.AddOrderItemVariationAsync(orderItemVariation);
-
-            // Update the order's charge amount
-            order.ChargeAmount += orderItemVariation.AdditionalPrice * orderItemVariation.Quantity;
-            await _orderRepository.UpdateOrderAsync(order);
-
-            // Return the created resource
-            return CreatedAtAction(nameof(GetOrderItemVariationById), new { id = orderItemVariation.Id }, orderItemVariation);
-        }
-        catch (DbUpdateException ex)
-        {
-            // Log the exception (optional)
-            _logger.LogError(ex, "An error occurred while adding an order item variation.");
-
-            return StatusCode(500, $"Internal server error: {ex.Message}");
-        }
-    }
-
-
-
-
     [HttpPost("{orderId}/OrderItems/{itemId}/AddVariation")]
     public async Task<IActionResult> AddOrderItemVariation(int orderId, int itemId, [FromBody] AddVariationDTO addVariationDTO)
     {
@@ -516,22 +458,29 @@ public class OrderController : ControllerBase
         if (variation == null)
             return NotFound($"Variation with ID {addVariationDTO.VariationId} not found.");
 
+        Item item = await _itemRepository.GetItemByIdAsync(variation.ItemId);
+        Tax tax = await _taxRepository.GetTaxByItemIdAsync(item.Id);
+
         // Step 4: Create and Add Order Item Variation
         OrderItemVariation orderItemVariation = new OrderItemVariation
         {
             OrderItemId = itemId,
             ItemVariationId = addVariationDTO.VariationId,
             Quantity = addVariationDTO.Quantity,
-            AdditionalPrice = variation.AdditionalPrice
+            AdditionalPrice = variation.AdditionalPrice,
+            ItemVariation = variation,
+            OrderItem = orderItem,
+
         };
 
         try
         {
             await _orderRepository.AddOrderItemVariationAsync(orderItemVariation);
 
-            // Step 5: Update Order's Charge Amount
-            order.ChargeAmount += orderItemVariation.AdditionalPrice * orderItemVariation.Quantity;
             await _orderRepository.UpdateOrderAsync(order);
+
+            // Step 5: Update Order's Charge Amount
+            await RecalculateOrderCharge(orderId);
 
             return CreatedAtAction(nameof(GetOrderItemVariationById), new { orderId = orderId, orderItemId = itemId, variationId = orderItemVariation.Id }, orderItemVariation);
         }
@@ -578,6 +527,53 @@ public class OrderController : ControllerBase
     }
 
 
+    private async Task RecalculateOrderCharge(int orderId)
+    {
+        Order order = await _orderRepository.GetOrderByIdAsync(orderId);
+        List <OrderItem>orderItems = await _orderRepository.GetOrderItemsByOrderIdAsync(orderId);
+        order.ChargeAmount = 0;
+        order.TaxAmount = 0;
+
+        //base charge(untaxed)
+        foreach (var item in orderItems)
+        {
+            order.ChargeAmount += item.Price * item.Quantity;
+            _logger.LogInformation("\n\n\nOrderItem:" + item.Price + " " + item.OrderId);
+            List<ItemVariation> variations = await _itemRepository.GetItemVariationsAsync(item.Id);
+
+            foreach (var variation in variations)
+            {
+                order.ChargeAmount += variation.AdditionalPrice;
+            }
+        }
+
+        //taxes
+        Tax tax;
+        foreach (var item in order.OrderItems)
+        {
+            //Item tax
+            tax = await _taxRepository.GetTaxByItemIdAsync(item.ItemId);
+
+            if (tax.IsPercentage)
+                order.TaxAmount += item.Price * tax.Amount / 100;
+            else
+                order.TaxAmount += item.Price + tax.Amount;
+
+            List<ItemVariation> variations = await _itemRepository.GetItemVariationsAsync(item.Id);
+
+            //Variation(variations belong to same category)
+            foreach (var variation in variations)
+            {
+                if (tax.IsPercentage)
+                    order.TaxAmount += variation.AdditionalPrice * tax.Amount / 100;
+                else
+                    order.TaxAmount += variation.AdditionalPrice + tax.Amount;
+            }
+        }
+
+    }
+
+
     #region HelperMethods
     private async Task<User?> GetUserFromToken()
     {
@@ -601,5 +597,6 @@ public class OrderController : ControllerBase
         return user;
 
     }
+
     #endregion
 }

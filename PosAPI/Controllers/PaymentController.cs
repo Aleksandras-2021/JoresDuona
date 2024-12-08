@@ -1,8 +1,11 @@
 ﻿using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using PosAPI.Repositories;
+using PosShared.DTOs;
 using PosShared.Models;
 using PosShared.Ultilities;
+using PosShared.ViewModels;
 
 namespace PosAPI.Controllers
 {
@@ -26,7 +29,7 @@ namespace PosAPI.Controllers
         }
 
 
-        // GET: api/Items
+        // GET: api/Payment
         [HttpGet]
         public async Task<IActionResult> GetAllPayments()
         {
@@ -37,31 +40,141 @@ namespace PosAPI.Controllers
 
             try
             {
-                List<Item> items;
+                List<Payment> payments;
                 if (sender.Role == UserRole.SuperAdmin)
                 {
-                    items = await _itemRepository.GetAllItemsAsync();
+                    payments = await _paymentRepository.GetAllPaymentsAsync();
                 }
                 else
                 {
-                    items = await _itemRepository.GetAllBusinessItemsAsync(sender.BusinessId);
+                    payments = await _paymentRepository.GetAllBusinessPaymentsAsync(sender.BusinessId);
                 }
 
 
-                if (items == null || items.Count == 0)
+                if (payments == null || payments.Count == 0)
                 {
                     return NotFound("No items found.");
                 }
 
 
-                return Ok(items);
+                return Ok(payments);
             }
             catch (Exception ex)
             {
-                _logger.LogError($"Error retrieving all items: {ex.Message}");
+                _logger.LogError($"Error retrieving all payments: {ex.Message}");
                 return StatusCode(500, "Internal server error");
             }
         }
+
+        // GET: api/Payment/{id}
+        [HttpGet("{id}")]
+        public async Task<IActionResult> GetPaymentById(int id)
+        {
+            User? senderUser = await GetUserFromToken();
+
+            if (senderUser == null)
+                return Unauthorized();
+
+            try
+            {
+                Payment? payment;
+
+                if (senderUser.Role == UserRole.SuperAdmin)
+                {
+                    payment = await _paymentRepository.GetPaymentByIdAsync(id);
+                }
+                else if (senderUser.Role == UserRole.Manager || senderUser.Role == UserRole.Owner || senderUser.Role == UserRole.Worker)
+                {
+                    payment = await _paymentRepository.GetPaymentByIdAsync(id);
+
+                    if (payment.Order.BusinessId != senderUser.BusinessId)
+                    {
+                        return Unauthorized();
+                    }
+                }
+                else
+                {
+                    return Unauthorized();
+                }
+
+                if (payment == null)
+                {
+                    return NotFound($"Payment with ID {id} not found.");
+                }
+
+                return Ok(payment);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError($"Error retrieving user with ID {id}: {ex.Message}");
+                return StatusCode(500, "Internal server error");
+            }
+        }
+
+        // POST: api/Payment
+        [HttpPost]
+        public async Task<IActionResult> CreatePayment([FromBody] AddPaymentDTO payment)
+        {
+            User? sender = await GetUserFromToken();
+
+            _logger.LogInformation($"{sender.Name} is sending a payment to an order {payment.OrderId}");
+
+            if (payment == null)
+                return BadRequest("Payment data is null.");
+
+            if (sender == null || sender.Role == UserRole.Worker)
+                return Unauthorized();
+
+            if (sender.BusinessId <= 0)
+                return BadRequest("Invalid BusinessId associated with the user.");
+
+            Payment newPayment = new Payment();
+
+            newPayment.OrderId = payment.OrderId;
+            newPayment.PaymentMethod = payment.PaymentMethod;
+            newPayment.PaymentDate = DateTime.UtcNow;
+            newPayment.Amount = payment.Amount;
+            newPayment.PaymentGateway = PaymentGateway.Stripe; //Its always this , no point in changing
+            newPayment.TransactionId = null;
+
+            try
+            {
+                await _paymentRepository.AddPaymentAsync(newPayment);
+
+                Order order = await _orderRepository.GetOrderByIdAsync(payment.OrderId);
+                Decimal sum = new decimal(0);
+
+                foreach (var orderPayment in order.Payments)
+                {
+                    sum += orderPayment.Amount;
+                }
+
+                if (sum == order.ChargeAmount)
+                {
+                    order.Status = OrderStatus.Closed;
+                    order.ClosedAt = DateTime.UtcNow;
+                }
+                else if (sum < order.ChargeAmount)
+                    order.Status = OrderStatus.PartiallyPaid;
+                else if (sum > order.ChargeAmount)
+                {
+                    order.TipAmount = sum - order.ChargeAmount;
+                    order.ClosedAt = DateTime.UtcNow;
+                    order.Status = OrderStatus.Closed;
+                }
+
+                _logger.LogInformation($"Payment of {payment.Amount} euros has been made to an order with id({payment.OrderId}) order status now is ({order.Status})");
+
+
+                return CreatedAtAction(nameof(GetPaymentById), new { id = newPayment.Id }, newPayment);
+            }
+            catch (DbUpdateException e)
+            {
+                return StatusCode(500, $"Internal server error: {e.Message}");
+            }
+        }
+
+
 
         #region HelperMethods
         private async Task<User?> GetUserFromToken()

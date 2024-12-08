@@ -13,6 +13,7 @@ public interface ITaxRepository
     Task<List<Tax>> GetAllTaxesAsync();
     Task<List<Tax>> GetAllBusinessTaxesAsync(int businessId);
     Task<Tax> GetTaxByIdAsync(int id);
+    Task<Tax> GetTaxByItemIdAsync(int itemId);
     Task<Tax> GetTaxByCategoryAsync(ItemCategory category);
     Task UpdateTaxAsync(Tax tax);
     Task DeleteTaxAsync(int id);

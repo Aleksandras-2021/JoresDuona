@@ -46,6 +46,24 @@ namespace PosAPI.Repositories
             }
 
         }
+
+        public async Task<Tax> GetTaxByItemIdAsync(int itemId)
+        {
+            Item? item = await _context.Items.FindAsync(itemId);
+            if (item == null)
+                throw new KeyNotFoundException($"Tax for item with ID {itemId} not found, because Item could not be found.");
+
+            var tax = GetTaxByCategoryAsync(item.Category);
+
+            if (tax == null)
+            {
+                throw new KeyNotFoundException($"Tax with for category {item.Category} not found.");
+            }
+
+            return await tax;
+
+        }
+
         public async Task<List<Tax>> GetAllTaxesAsync()
         {
             return await _context.Set<Tax>()

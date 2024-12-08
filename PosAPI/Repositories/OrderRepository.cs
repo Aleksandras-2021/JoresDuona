@@ -110,8 +110,11 @@ public class OrderRepository : IOrderRepository
             throw new ArgumentNullException(nameof(orderItem));
         }
 
+        Order order = await _context.Orders.FindAsync(orderItem.OrderId);
+
+
         if (orderItem.Order == null)
-            orderItem.Order = await _context.Orders.FindAsync(orderItem.OrderId);
+            orderItem.Order = order;
 
         if (orderItem.Item == null)
             orderItem.Item = await _context.Items.FindAsync(orderItem.ItemId);
@@ -122,6 +125,8 @@ public class OrderRepository : IOrderRepository
         try
         {
             await _context.OrderItems.AddAsync(orderItem);
+            order.OrderItems.Add(orderItem);
+
             await _context.SaveChangesAsync();
         }
         catch (DbUpdateException ex)
@@ -166,11 +171,19 @@ public class OrderRepository : IOrderRepository
         if (variation.ItemVariation == null)
             variation.ItemVariation = await _context.ItemVariations.FindAsync(variation.ItemVariationId);
 
+        OrderItem orderItem = await _context.OrderItems.FindAsync(variation.OrderItemId);
+
         if (variation.OrderItem == null)
-            variation.OrderItem = await _context.OrderItems.FindAsync(variation.OrderItemId);
+            variation.OrderItem = orderItem;
+
+        if (orderItem == null)
+        {
+            throw new ArgumentNullException($"OrderItem with ID {variation.OrderItemId} not found.");
+        }
 
         try
         {
+
             await _context.OrderItemVariations.AddAsync(variation);
             await _context.SaveChangesAsync();
         }
