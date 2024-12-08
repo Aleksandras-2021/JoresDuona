@@ -387,6 +387,13 @@ public class OrderController : ControllerBase
         var orderItemVariatons = await _orderRepository.GetOrderItemVariationsByOrderItemIdAsync(orderItemId);
         var orderItem = await _orderRepository.GetOrderItemById(orderItemId);
 
+        //Not clean, but fixes the problem atm
+        if (orderItem.Item == null)
+            orderItem.Item = await _itemRepository.GetItemByIdAsync(orderItem.ItemId);
+
+
+        //
+
         if (sender == null || sender.BusinessId != orderItem.Item.BusinessId)
         {
             return Unauthorized();

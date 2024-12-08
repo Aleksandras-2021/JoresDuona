@@ -13,23 +13,40 @@
 
 <h3>Item Variations for Item: @Model.ItemId</h3>
 
+
 @if (Model.Variations.Any())
 {
-    <ul>
-        @foreach (var variation in Model.Variations)
-        {
-            <li>
-                OrderItemID:@Model.OrderItemId VariationID:@variation.Id - OrderId: @Model.OrderId
-                <form method="post" asp-action="AddItemVariationToOrderItem">
-                    <input type="hidden" name="orderItemId" value="@Model.OrderItemId" />
-                    <input type="hidden" name="varId" value="@variation.Id" />
-                    <input type="hidden" name="orderId" value="@Model.OrderId" />
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Id</th>
+                <th>Name</th>
+                <th>Additional price</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var variation in Model.Variations)
+            {
+                <tr>
+                    <td>@variation.Id</td>
+                    <td>@variation.Name</td>
+                    <td>@variation.AdditionalPrice</td>
+                    <td>
+                        <a asp-action="SelectItems" asp-route-orderId="@Model.OrderId" class="btn btn-secondary">
+                            Back to Order View
+                        </a>
+                        <form asp-action="DeleteVariation" method="post">
+                            <input type="hidden" name="variationId" value="@variation." />
+                            <button type="submit" class="btn btn-danger">
+                            </button>
+                        </form>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
 
-                    <button type="submit" class="btn btn-primary">Add Variation</button>
-                </form>
-            </li>
-        }
-    </ul>
 }
 else
 {

@@ -402,21 +402,25 @@ namespace PosClient.Controllers
 
             _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
-            // Fetch item variations from the API "{orderId}/OrderItems/{id}/OrderItemVariations
-            var variationsApiUrl = $"{_apiUrl}/apiOrder/{orderId}/OrderItems/{orderItemId}/OrderItemVariations";
+            // Fetch item variations from the API
+            var variationsApiUrl = $"{_apiUrl}/api/Order/{orderId}/OrderItems/{orderItemId}/OrderItemVariations";
             var response = await _httpClient.GetAsync(variationsApiUrl);
 
             List<ItemVariation>? variations = null;
 
-            Console.WriteLine(response.Content.ToString());
             if (response.IsSuccessStatusCode)
             {
                 var variationsJson = await response.Content.ReadAsStringAsync();
                 variations = JsonSerializer.Deserialize<List<ItemVariation>>(variationsJson, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
             }
-            else
+
+            // Ensure variations is initialized
+            variations ??= new List<ItemVariation>();
+
+            if (!variations.Any())
             {
-                variations = new List<ItemVariation>();
+                TempData["Error"] = "No variations found";
+                return RedirectToAction("SelectItems", new { orderId = orderId });
             }
 
             var model = new ItemVariationsViewModel
@@ -429,6 +433,7 @@ namespace PosClient.Controllers
 
             return View("SelectedVariations", model);
         }
+
 
     }
 }

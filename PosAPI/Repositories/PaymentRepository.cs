@@ -1,48 +1,41 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using PosAPI.Data.DbContext;
-using PosAPI.Migrations;
 using PosShared.Models;
 
 namespace PosAPI.Repositories
 {
-    public class TaxRepository : ITaxRepository
+    public class PaymentRepository : IPaymentRepository
     {
         private readonly ApplicationDbContext _context;
-        public TaxRepository(ApplicationDbContext context)
+        public PaymentRepository(ApplicationDbContext context)
         {
             _context = context;
         }
 
-        public async Task AddTaxAsync(Tax tax)
+        public async Task AddPaymentAsync(Payment payment)
         {
-            if (tax == null)
+            if (payment == null)
             {
-                throw new ArgumentNullException(nameof(tax));
+                throw new ArgumentNullException(nameof(payment));
             }
 
-            // Check if BusinessId exists in the table
-            var businessExists = await _context.Businesses.AnyAsync(b => b.Id == tax.BusinessId);
+            Order order = await _context.Orders.FindAsync(payment.OrderId);
 
-            if (!businessExists)
+            if (order == null)
             {
-                throw new Exception($"Tax with ID {tax.BusinessId} does not exist.");
+                throw new Exception($" Payment for Order with ID {payment.OrderId} is invalid, Order does not exist.");
             }
-
-            if (tax.Business == null)
-                tax.Business = await _context.Businesses.FindAsync(tax.BusinessId);
-
-            if (GetTaxByCategoryAsync(tax.Category) != null)
-                throw new Exception($"Tax with category {tax.Category.ToString()} already exists ");
-
-
             try
             {
-                await _context.Taxes.AddAsync(tax);
+                await _context.Payments.AddAsync(payment);
+                order.Payments.Add(payment);
+
+
                 await _context.SaveChangesAsync();
             }
             catch (DbUpdateException ex)
             {
-                throw new Exception("An error occurred while adding the new Tax to the database.", ex);
+                throw new Exception("An error occurred while adding the new payment to the database.", ex);
             }
 
         }
@@ -98,35 +91,6 @@ namespace PosAPI.Repositories
 
             _context.Set<Tax>().Update(existingTax);
             await _context.SaveChangesAsync();
-        }
-        public async Task DeleteTaxAsync(int id)
-        {
-            // Find the tax by ID
-            var tax = await _context.Set<Tax>().FindAsync(id);
-            if (tax == null)
-            {
-                throw new KeyNotFoundException($"Item with ID {id} not found.");
-            }
-
-            // Remove the tax
-            _context.Set<Tax>().Remove(tax);
-
-            // Save changes to the database
-            await _context.SaveChangesAsync();
-        }
-
-
-        public async Task<Tax> GetTaxByCategoryAsync(PosShared.Models.Items.ItemCategory category)
-        {
-            var tax = await _context.Taxes
-                .FirstOrDefaultAsync(t => t.Category == category);
-
-            if (tax == null)
-            {
-                throw new KeyNotFoundException($"Tax with category '{category}' not found.");
-            }
-
-            return tax;
         }
     }
 }
