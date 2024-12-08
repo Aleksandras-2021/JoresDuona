@@ -11,10 +11,6 @@ public class TaxEntityConfiguration : IEntityTypeConfiguration<Tax>
         builder.HasKey(x => x.Id);
         builder.Property(x => x.Id).ValueGeneratedOnAdd();
 
-        builder.HasMany(x => x.OrderItemTaxes)
-            .WithOne(x => x.Tax)
-            .HasForeignKey(x => x.TaxId);
-
         builder.HasOne(x => x.Business)
             .WithMany(x => x.Taxes)
             .HasForeignKey(x => x.BusinessId);

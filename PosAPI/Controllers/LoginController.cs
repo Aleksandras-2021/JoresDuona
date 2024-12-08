@@ -58,7 +58,14 @@ namespace PosAPI.Controllers
                 Expires = DateTime.UtcNow.AddDays(1) // Cookie expiration
             });
             _logger.LogInformation("LoginController: Token:" + token);
-            return Ok(new { message = "Login successful", token });
+            return Ok(new
+            {
+                message = "Login successful",
+                token,
+                id = user.Id,
+                email = user.Email,
+                role = user.Role
+            });
         }
 
         private string GenerateToken(string email, int userId, UserRole role)

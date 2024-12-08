@@ -1,4 +1,11 @@
-﻿<!DOCTYPE html>
+﻿@using PosClient.Services
+@using PosShared.Models
+@inject IUserSessionService UserSessionService
+
+@{
+    var userRole = UserSessionService.GetCurrentUserRole()?.ToString();
+}
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="utf-8" />
@@ -22,21 +29,36 @@
                         <li class="nav-item">
                             <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Index">Home</a>
                         </li>
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Business" asp-action="Index">Business</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="User" asp-action="Index">Users</a>
-                        </li>
+                        @if (userRole == "SuperAdmin" || userRole == "Owner")
+                        {
+                            <li class="nav-item">
+                                <a class="nav-link text-dark" asp-area="" asp-controller="Business" asp-action="Index">Business</a>
+                            </li>
+                        }
+                        @if (userRole == "SuperAdmin" || userRole == "Owner" || userRole == "Manager")
+                        {
+                            <li class="nav-item">
+                                <a class="nav-link text-dark" asp-area="" asp-controller="User" asp-action="Index">Users</a>
+                            </li>
+                        }
                         <li class="nav-item">
                             <a class="nav-link text-dark" asp-area="" asp-controller="Items" asp-action="Index">Items</a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="" asp-action="Not Implemented"></a>
+                            <a class="nav-link text-dark" asp-area="" asp-controller="Tax" asp-action="Index">Tax</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link text-dark" asp-area="" asp-controller="Order" asp-action="Index">Orders</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link text-dark" asp-area="" asp-controller="Service" asp-action="Index">Services</a>
                         </li>
                         <li class="nav-item">
                             <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Logout">Logout</a>
                         </li>
+                        <l1>
+                            <a>User role : @userRole</a>
+                        </l1>
                     </ul>
                 </div>
             </div>

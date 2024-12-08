@@ -8,18 +8,23 @@ using PosShared.Ultilities;
 using System.Text;
 using PosShared.ViewModels;
 using PosShared.DTOs;
+using PosClient.Services;
+using Microsoft.Extensions.Logging.Console;
 
 namespace PosClient.Controllers;
 
 public class ItemsController : Controller
 {
     private readonly HttpClient _httpClient;
+    private readonly IUserSessionService _userSessionService;
+
 
     private readonly string _apiUrl = UrlConstants.ApiBaseUrl;
 
-    public ItemsController(HttpClient httpClient)
+    public ItemsController(HttpClient httpClient, IUserSessionService userSessionService)
     {
         _httpClient = httpClient;
+        _userSessionService = userSessionService;
     }
 
 
@@ -32,6 +37,7 @@ public class ItemsController : Controller
 
         var apiUrl = _apiUrl + "/api/Items";
         var response = await _httpClient.GetAsync(apiUrl);
+        Console.WriteLine(HttpContext.Session.GetInt32("UserId"));
 
         if (response.IsSuccessStatusCode)
         {
@@ -93,6 +99,11 @@ public class ItemsController : Controller
     public async Task<IActionResult> Edit(int id)
     {
         string? token = Request.Cookies["authToken"];
+        if (string.IsNullOrEmpty(token))
+        {
+            return RedirectToAction("Login", "Home");
+        }
+
         _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
         var apiUrl = _apiUrl + $"/api/Items/{id}";
@@ -101,26 +112,28 @@ public class ItemsController : Controller
         if (response.IsSuccessStatusCode)
         {
             var itemData = await response.Content.ReadAsStringAsync();
-            Console.Write(itemData);
+            var item = JsonSerializer.Deserialize<Item>(itemData, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
 
-            Item? item = JsonSerializer.Deserialize<Item>(itemData);
-
-            ItemViewModel itemViewModel = new ItemViewModel();
-
-            itemViewModel.Price = item.Price;
-            itemViewModel.BasePrice = item.Price;
-            itemViewModel.Name = item.Name;
-            itemViewModel.Description = item.Description;
-            itemViewModel.Quantity = item.Quantity;
-
-            if (itemViewModel != null)
+            if (item != null)
             {
+                var itemViewModel = new ItemViewModel
+                {
+                    Name = item.Name,
+                    Description = item.Description,
+                    Price = item.Price,
+                    BasePrice = item.BasePrice,
+                    Category = item.Category,
+                    Quantity = item.Quantity
+                };
+
                 return View(itemViewModel);
             }
         }
 
-        return NotFound();
+        TempData["Error"] = "Unable to fetch item details. Please try again.";
+        return RedirectToAction("Index");
     }
+
 
     // POST: Items/Edit/
     [HttpPost]

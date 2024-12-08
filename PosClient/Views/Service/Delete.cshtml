@@ -1,0 +1,11 @@
+@model PosShared.Models.Service
+
+<h2>Delete Service @Model.Name</h2>
+
+<div>
+    <form asp-action="Delete">
+        <input type="hidden" asp-for="Id" />
+        <button type="submit" class="btn btn-danger">Delete</button>
+        <a href="/Service/Index" class="btn btn-secondary">Cancel</a>
+    </form>
+</div>

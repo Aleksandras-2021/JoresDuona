@@ -1,5 +1,6 @@
 
 namespace PosShared.Models;
+using System.Text.Json.Serialization;
 
 
 public class Service
@@ -9,20 +10,26 @@ public class Service
 
     public int BusinessId { get; set; }
 
-    public Business Business { get; init; }
+    // Employee shouldn't be here
+    [JsonIgnore]
+    public int? EmployeeId { get; set; }
 
-    public int EmployeeId { get; set; }
+    [JsonIgnore]
+    public User? Employee { get; set; }
 
-    public User Employee { get; set; }
+    [JsonIgnore]
+    public Business? Business { get; set; }
 
     public string Name { get; set; }
 
-    public string Description { get; set; }
+    public string? Description { get; set; }
 
     public int DurationInMinutes { get; set; }
 
     public decimal BasePrice { get; set; }
 
-    public ICollection<Reservation> Reservations { get; set; }
-    public ICollection<OrderService> OrderServices { get; set; }
+    [JsonIgnore]
+    public ICollection<Reservation>? Reservations { get; set; }
+    [JsonIgnore]
+    public ICollection<OrderService>? OrderServices { get; set; }
 }

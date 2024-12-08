@@ -40,9 +40,13 @@ builder.Services.AddSwaggerGen(options =>
         }
     });
 });
+
+//Add repositories here
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IItemRepository, ItemRepository>();
-
+builder.Services.AddScoped<IOrderRepository, OrderRepository>();
+builder.Services.AddScoped<ITaxRepository, TaxRepository>();
+builder.Services.AddScoped<IServiceRepository, ServiceRepository>();
 
 
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");

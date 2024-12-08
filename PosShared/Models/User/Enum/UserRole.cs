@@ -2,7 +2,7 @@ namespace PosShared.Models;
 
 public enum UserRole
 {
-    Manager,
+    Manager = 0,
     SuperAdmin,
     Owner,
     Worker

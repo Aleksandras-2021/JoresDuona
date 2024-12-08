@@ -8,18 +8,22 @@ using Microsoft.AspNetCore.Authentication.Cookies;
 using PosShared;
 using System.IdentityModel.Tokens.Jwt;
 using PosShared.Ultilities;
+using PosClient.Services;
+using System.Net;
 
 namespace PosClient.Controllers
 {
     public class HomeController : Controller
     {
         private readonly HttpClient _httpClient;
+        private readonly IUserSessionService _userSessionService;
         private readonly string _apiUrl = UrlConstants.ApiBaseUrl;
         private readonly ILogger<HomeController> _logger;
 
-        public HomeController(HttpClient httpClient, ILogger<HomeController> logger)
+        public HomeController(HttpClient httpClient, IUserSessionService userSessionService, ILogger<HomeController> logger)
         {
             _httpClient = httpClient;
+            _userSessionService = userSessionService;
             _logger = logger;
         }
 
@@ -32,6 +36,8 @@ namespace PosClient.Controllers
                 // If not authenticated, redirect to login page
                 return RedirectToAction("Login");
             }
+            var role = _userSessionService.GetCurrentUserRole();
+            ViewData["UserRole"] = role.ToString();
 
             return View();
         }
@@ -54,10 +60,23 @@ namespace PosClient.Controllers
 
             if (response.IsSuccessStatusCode)
             {
-                // Extract token from the response JSON
                 var responseData = await response.Content.ReadAsStringAsync();
                 var jsonDocument = JsonDocument.Parse(responseData);
+
                 string token = jsonDocument.RootElement.GetProperty("token").GetString();
+                int userId = jsonDocument.RootElement.GetProperty("id").GetInt32();
+                string userEmail = jsonDocument.RootElement.GetProperty("email").GetString();
+                int roleValue = jsonDocument.RootElement.GetProperty("role").GetInt32();
+
+                UserRole role = (UserRole)roleValue;
+
+                _userSessionService.SetCurrentUserId(userId);
+                _userSessionService.SetCurrentUserEmail(userEmail);
+                _userSessionService.SetCurrentUserRole(role);
+
+                HttpContext.Session.SetInt32("UserId", userId);
+                HttpContext.Session.SetString("UserEmail", userEmail);
+                HttpContext.Session.SetString("UserRole", role.ToString());
 
                 // Store the JWT token in a cookie (HttpOnly, Secure)
                 var cookieOptions = new CookieOptions
@@ -86,7 +105,9 @@ namespace PosClient.Controllers
 
             // Delete Cookie
             Response.Cookies.Delete("authToken");
-            //HttpContext.Session.Clear();
+            Response.Cookies.Delete("cachedItems");
+
+            HttpContext.Session.Clear();
 
             // Redirect to home page after successful login
             return RedirectToAction("Login");
