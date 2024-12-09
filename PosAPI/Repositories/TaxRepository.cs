@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using PosAPI.Data.DbContext;
 using PosAPI.Migrations;
 using PosShared.Models;

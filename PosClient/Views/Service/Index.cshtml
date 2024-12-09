@@ -1,0 +1,50 @@
+@model List<PosShared.Models.Service>
+
+<h1>Services</h1>
+
+<p>
+    <a href="@Url.Action("Create", "Service")">Create new service</a>
+</p>
+
+@if (Model != null && Model.Count > 0)
+{
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Id</th>
+                <th>Business Id</th>
+                <th>Name</th>
+                <th>Description</th>
+                <th>Base Price</th>
+                <th>Duration</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var service in Model)
+            {
+                <tr>
+                    <td>@service.Id</td>
+                    <td>@service.BusinessId</td>
+                    <td>@service.Name</td>
+                    <td>@service.Description</td>
+                    <td>@service.BasePrice</td>
+                    <td>@service.DurationInMinutes</td>
+                    <td>
+                        <a href="/Service/Edit/@service.Id">Edit</a> |
+                        <a href="/Service/Delete/@service.Id">Delete</a>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+else
+{
+    <p>No Services available.</p>
+}
+
+@if(TempData["Error"] != null)
+{
+    
+    <p>@TempData["Error"]</p>
+}

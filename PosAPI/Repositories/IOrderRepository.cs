@@ -20,13 +20,7 @@ public interface IOrderRepository
     Task AddOrderItemVariationAsync(OrderItemVariation variation);
     Task<ItemVariation?> GetItemVariationByIdAsync(int variationId);
     Task DeleteOrderItemVariationAsync(int varId);
-
     Task<OrderItemVariation?> GetOrderItemVariationByIdAsync(int variationId);
     Task<List<OrderItemVariation>> GetOrderItemVariationsByOrderIdAsync(int orderId);
     Task<List<ItemVariation>> GetSelectedVariationsForItemAsync(int itemId, int orderItemId);
-
-
-
-
-
 }

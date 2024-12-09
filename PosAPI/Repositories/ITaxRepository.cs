@@ -17,6 +17,4 @@ public interface ITaxRepository
     Task<Tax?> GetTaxByCategoryAsync(ItemCategory category, int businessId);
     Task UpdateTaxAsync(Tax tax);
     Task DeleteTaxAsync(int id);
-
-
 }
