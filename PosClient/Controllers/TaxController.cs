@@ -28,10 +28,6 @@ namespace PosClient.Controllers
         public async Task<IActionResult> Index()
         {
             string token = Request.Cookies["authToken"];
-            if (string.IsNullOrEmpty(token))
-            {
-                return RedirectToAction("Login", "Home");
-            }
 
             _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
 

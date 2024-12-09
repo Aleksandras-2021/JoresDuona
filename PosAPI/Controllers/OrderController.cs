@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Http;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using PosAPI.Data.DbContext;
@@ -11,6 +12,7 @@ using System.Runtime.InteropServices;
 
 namespace PosAPI.Controllers;
 
+[Authorize]
 [Route("api/[controller]")]
 [ApiController]
 public class OrderController : ControllerBase
@@ -20,6 +22,7 @@ public class OrderController : ControllerBase
     private readonly IItemRepository _itemRepository;
     private readonly ITaxRepository _taxRepository;
     private readonly ILogger<OrderController> _logger;
+
     public OrderController(IOrderRepository orderRepository, IUserRepository userRepository, IItemRepository itemRepository, ITaxRepository taxRepository, ILogger<OrderController> logger)
     {
         _orderRepository = orderRepository;
@@ -140,7 +143,6 @@ public class OrderController : ControllerBase
         newOrder.DiscountAmount = 0;
         newOrder.TaxAmount = 0;
         newOrder.TipAmount = 0;
-
 
         try
         {
@@ -430,7 +432,7 @@ public class OrderController : ControllerBase
     //The main difference between this and method above
     //is that this returns an object of ItemVariation instead of OrderItemVariation
     [HttpGet("{orderId}/OrderItems/{orderItemId}/ItemVariations")]
-    public async Task<IActionResult> GetItemVariations( int orderId, int orderItemId)
+    public async Task<IActionResult> GetItemVariations(int orderId, int orderItemId)
     {
         User? sender = await GetUserFromToken();
         var orderItem = await _orderRepository.GetOrderItemById(orderItemId);
