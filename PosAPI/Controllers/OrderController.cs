@@ -32,6 +32,8 @@ public class OrderController : ControllerBase
         _logger = logger;
     }
 
+
+    #region OrderActions
     // GET: api/Order
     [HttpGet("")]
     public async Task<IActionResult> GetAllOrders()
@@ -60,8 +62,6 @@ public class OrderController : ControllerBase
         else
             return NotFound("No Orders found.");
     }
-
-
 
     // GET: api/Order/id
     [HttpGet("{id}")]
@@ -183,6 +183,106 @@ public class OrderController : ControllerBase
         }
     }
 
+    [HttpPut("{orderId}")]
+    public async Task<IActionResult> UpdateOrder([FromBody] Order order)
+    {
+        if (order == null)
+        {
+            return BadRequest("Invalid order data.");
+        }
+
+        if (order.Status == OrderStatus.Closed)
+        {
+            return Unauthorized("Cannot modify closed order.");
+        }
+
+        try
+        {
+            User? sender = await GetUserFromToken();
+
+            Order? existingOrder = await _orderRepository.GetOrderByIdAsync(order.Id);
+
+            if (existingOrder == null)
+            {
+                return NotFound($"Order with ID {order.Id} not found.");
+            }
+            if (sender == null || order.Status == OrderStatus.Closed || order.BusinessId != sender.BusinessId)
+                return Unauthorized();
+
+            //do not update created at
+            //DO not update businessID
+            //update closed at if new status is closed
+            //Recalculate ChargeAmount
+            //Recalculate Tax Amount
+            //
+
+            existingOrder.UserId = sender.Id; //Whoever updates order, takes over the ownership of it
+            existingOrder.User = sender;
+            existingOrder.Status = order.Status;
+            if (order.Status == OrderStatus.Closed)
+                existingOrder.ClosedAt = DateTime.UtcNow.AddHours(2); ;
+            existingOrder.ChargeAmount = order.ChargeAmount;
+            existingOrder.DiscountAmount = order.DiscountAmount;
+            existingOrder.TaxAmount = order.TaxAmount;
+            existingOrder.TipAmount = order.TipAmount;
+
+            await _orderRepository.UpdateOrderAsync(existingOrder);
+            // await RecalculateOrderCharge(existingOrder.Id);
+
+            return NoContent();
+        }
+        catch (KeyNotFoundException ex)
+        {
+            _logger.LogWarning($"Order with ID {order.Id} not found: {ex.Message}");
+            return NotFound(ex.Message);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError($"Error updating Item with ID {order.Id}: {ex.Message}");
+            return StatusCode(500, "Internal server error");
+        }
+    }
+
+    [HttpDelete("{orderId}")]
+    public async Task<IActionResult> DeleteOrder(int orderId)
+    {
+        User? sender = await GetUserFromToken();
+        if (sender == null)
+        {
+            return Unauthorized();
+        }
+
+        // Check if the order exists
+        var order = await _orderRepository.GetOrderByIdAsync(orderId);
+        if (order == null)
+        {
+            return NotFound($"Order with ID {orderId} not found.");
+        }
+        if (order.Status == OrderStatus.Closed)
+            return Unauthorized("You are not authorized to modify closed order.");
+
+        if (order.BusinessId != sender.BusinessId && sender.Role != UserRole.SuperAdmin)
+        {
+            return Unauthorized("You are not authorized to delete this order.");
+        }
+
+        try
+        {
+            // Delete the order and its associated data
+            await _orderRepository.DeleteOrderAsync(orderId);
+
+            return Ok("Order deleted successfully.");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError($"Error deleting order with ID {orderId}: {ex.Message}");
+            return StatusCode(500, "Internal server error.");
+        }
+    }
+    #endregion
+
+    #region OrderItem & Variation Actions 
+
 
     // POST: api/Order/{orderId}/Items
     [HttpPost("{orderId}/Items")]
@@ -261,13 +361,10 @@ public class OrderController : ControllerBase
 
         try
         {
-
             // Delete the order and its associated data
             await _orderRepository.DeleteOrderItemAsync(orderItemId);
 
             //  await RecalculateOrderCharge(orderId);
-
-
             return Ok("Order Item deleted successfully.");
         }
         catch (Exception ex)
@@ -276,109 +373,6 @@ public class OrderController : ControllerBase
             return StatusCode(500, "Internal server error.");
         }
     }
-
-    [HttpPut("{orderId}")]
-    public async Task<IActionResult> UpdateOrder([FromBody] Order order)
-    {
-        if (order == null)
-        {
-            return BadRequest("Invalid order data.");
-        }
-
-        if (order.Status == OrderStatus.Closed)
-        {
-            return Unauthorized("Cannot modify closed order.");
-        }
-
-        try
-        {
-            User? sender = await GetUserFromToken();
-
-            Order? existingOrder = await _orderRepository.GetOrderByIdAsync(order.Id);
-
-            if (existingOrder == null)
-            {
-                return NotFound($"Order with ID {order.Id} not found.");
-            }
-            if (sender == null || order.Status == OrderStatus.Closed || order.BusinessId != sender.BusinessId)
-                return Unauthorized();
-
-            //do not update created at
-            //DO not update businessID
-            //update closed at if new status is closed
-            //Recalculate ChargeAmount
-            //Recalculate Tax Amount
-            //
-
-            existingOrder.UserId = sender.Id; //Whoever updates order, takes over the ownership of it
-            existingOrder.User = sender;
-            existingOrder.Status = order.Status;
-            if (order.Status == OrderStatus.Closed)
-                existingOrder.ClosedAt = DateTime.UtcNow.AddHours(2); ;
-            existingOrder.ChargeAmount = order.ChargeAmount;
-            existingOrder.DiscountAmount = order.DiscountAmount;
-            existingOrder.TaxAmount = order.TaxAmount;
-            existingOrder.TipAmount = order.TipAmount;
-
-            await _orderRepository.UpdateOrderAsync(existingOrder);
-            // await RecalculateOrderCharge(existingOrder.Id);
-
-            return NoContent();
-        }
-        catch (KeyNotFoundException ex)
-        {
-            _logger.LogWarning($"Order with ID {order.Id} not found: {ex.Message}");
-            return NotFound(ex.Message);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError($"Error updating Item with ID {order.Id}: {ex.Message}");
-            return StatusCode(500, "Internal server error");
-        }
-    }
-
-
-
-
-    [HttpDelete("{orderId}")]
-    public async Task<IActionResult> DeleteOrder(int orderId)
-    {
-        User? sender = await GetUserFromToken();
-        if (sender == null)
-        {
-            return Unauthorized();
-        }
-
-        // Check if the order exists
-        var order = await _orderRepository.GetOrderByIdAsync(orderId);
-        if (order == null)
-        {
-            return NotFound($"Order with ID {orderId} not found.");
-        }
-        if (order.Status == OrderStatus.Closed)
-            return Unauthorized("You are not authorized to modify closed order.");
-
-        if (order.BusinessId != sender.BusinessId && sender.Role != UserRole.SuperAdmin)
-        {
-            return Unauthorized("You are not authorized to delete this order.");
-        }
-
-        try
-        {
-            // Delete the order and its associated data
-            await _orderRepository.DeleteOrderAsync(orderId);
-
-            return Ok("Order deleted successfully.");
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError($"Error deleting order with ID {orderId}: {ex.Message}");
-            return StatusCode(500, "Internal server error.");
-        }
-    }
-
-
-
 
     [HttpGet("{orderId}/OrderItems")]
     public async Task<IActionResult> GetOrderItems(int orderId)
@@ -417,8 +411,6 @@ public class OrderController : ControllerBase
         if (orderItem.Item == null)
             orderItem.Item = await _itemRepository.GetItemByIdAsync(orderItem.ItemId);
 
-
-        //
 
         if (sender == null || sender.BusinessId != orderItem.Item.BusinessId)
         {
@@ -588,7 +580,9 @@ public class OrderController : ControllerBase
         return Ok(orderItemVariation);
     }
 
+    #endregion
 
+    #region HelperMethods
     private async Task RecalculateOrderCharge(int orderId)
     {
         Order order = await _orderRepository.GetOrderByIdAsync(orderId);
@@ -632,8 +626,6 @@ public class OrderController : ControllerBase
         await _orderRepository.UpdateOrderAsync(order);
     }
 
-
-    #region HelperMethods
     private async Task<User?> GetUserFromToken()
     {
         string token = HttpContext.Request.Headers["Authorization"].ToString();
