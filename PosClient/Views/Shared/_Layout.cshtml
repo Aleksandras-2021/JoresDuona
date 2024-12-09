@@ -59,18 +59,13 @@
                                 <a class="nav-link text-dark" asp-area="" asp-controller="Order" asp-action="Index">Orders</a>
                             </li>
                         }
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Items" asp-action="Index">Items</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Tax" asp-action="Index">Tax</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Order" asp-action="Index">Orders</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Service" asp-action="Index">Services</a>
-                        </li>
+                        @if (userRole == "SuperAdmin" || userRole == "Owner" || userRole == "Manager" || userRole == "Worker")
+                        {
+                            <li class="nav-item">
+                                <a class="nav-link text-dark" asp-area="" asp-controller="Service" asp-action="Index">Services</a>
+                            </li>
+                        }
+                       
                         <li class="nav-item">
                             <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Logout">Logout</a>
                         </li>
