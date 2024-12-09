@@ -132,13 +132,14 @@ public class PaymentController : ControllerBase
             }
             else if (senderUser.Role == UserRole.Manager || senderUser.Role == UserRole.Owner || senderUser.Role == UserRole.Worker)
             {
-                payments = await _paymentRepository.GetAllOrderPaymentsAsync(orderId);
                 Order order = await _orderRepository.GetOrderByIdAsync(orderId);
 
                 if (order.BusinessId != senderUser.BusinessId)
                 {
                     return Unauthorized();
                 }
+                payments = await _paymentRepository.GetAllOrderPaymentsAsync(orderId);
+
             }
             else
             {
@@ -182,7 +183,7 @@ public class PaymentController : ControllerBase
         newPayment.OrderId = payment.OrderId;
         newPayment.Order = order;
         newPayment.PaymentMethod = payment.PaymentMethod;
-        newPayment.PaymentDate = DateTime.UtcNow;
+        newPayment.PaymentDate = DateTime.UtcNow.AddHours(2);;
         newPayment.Amount = payment.Amount;
         newPayment.PaymentGateway = PaymentGateway.Stripe; //Its always this , no point in changing
         newPayment.TransactionId = null;
@@ -202,19 +203,19 @@ public class PaymentController : ControllerBase
             if (sum == order.ChargeAmount + order.TaxAmount)
             {
                 order.Status = OrderStatus.Closed;
-                order.ClosedAt = DateTime.UtcNow;
+                order.ClosedAt = DateTime.UtcNow.AddHours(2);;
             }
             else if (sum < order.ChargeAmount + order.TaxAmount)
                 order.Status = OrderStatus.PartiallyPaid;
             else if (sum > order.ChargeAmount + order.TaxAmount)
             {
                 order.TipAmount = sum - order.ChargeAmount - order.TaxAmount;
-                order.ClosedAt = DateTime.UtcNow;
+                order.ClosedAt = DateTime.UtcNow.AddHours(2);
                 order.Status = OrderStatus.Closed;
             }
-            _logger.LogWarning("Total Payments made:" + sum);
 
             _logger.LogInformation($"Payment of {payment.Amount}/{order.ChargeAmount} euros has been made to an order with id({payment.OrderId}) order status now is ({order.Status})");
+           
             await _orderRepository.UpdateOrderAsync(order);
 
             return CreatedAtAction(nameof(GetPaymentById), new { id = newPayment.Id }, newPayment);

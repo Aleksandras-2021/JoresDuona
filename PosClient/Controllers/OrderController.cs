@@ -40,7 +40,7 @@ public class OrderController : Controller
             return View(orders);
         }
 
-        TempData["Error"] = "Could not retrieve users.";
+        TempData["Error"] = "No orders to retrieve.";
         return View(new List<Order>());
     }
 

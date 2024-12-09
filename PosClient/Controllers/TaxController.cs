@@ -63,7 +63,7 @@ namespace PosClient.Controllers
                 return RedirectToAction("Index");
             }
 
-            TempData["Error"] = "Failed to create tax. Please try again.\n" + response.ToString();
+            TempData["Error"] = "Failed to create tax. See if tax with same category does not already exist.\n";
             return View(tax);
         }
 

@@ -38,32 +38,22 @@ public class OrderController : ControllerBase
     {
 
         string? token = HttpContext.Request.Headers["Authorization"].ToString();
-        _logger.LogInformation(token);
 
-        if (string.IsNullOrEmpty(token))
-        {
-            _logger.LogWarning("Authorization token is missing or null.");
-            return Unauthorized("Authorization token is missing.");
-        }
 
-        int? userId = Ultilities.ExtractUserIdFromToken(token);
-
-        User? user = await _userRepository.GetUserByIdAsync(userId);
-        if (user == null)
+        User? senderUser = await GetUserFromToken();
+        if (senderUser == null)
         {
             _logger.LogWarning("User not found in DB.");
             return Unauthorized("User not in DB.");
         }
         List<Order> orders;
 
-        if (user.Role == UserRole.SuperAdmin)
+        if (senderUser.Role == UserRole.SuperAdmin)
             orders = await _orderRepository.GetAllOrdersAsync();
-        else if (user.Role == UserRole.Manager || user.Role == UserRole.Owner || user.Role == UserRole.Worker)
-            orders = await _orderRepository.GetAllBusinessOrdersAsync(user.BusinessId);
+        else if (senderUser.Role == UserRole.Manager || senderUser.Role == UserRole.Owner || senderUser.Role == UserRole.Worker)
+            orders = await _orderRepository.GetAllBusinessOrdersAsync(senderUser.BusinessId);
         else
             orders = new List<Order>();
-
-
 
         if (orders.Count > 0)
             return Ok(orders);
@@ -137,7 +127,7 @@ public class OrderController : ControllerBase
         Order newOrder = new Order();
 
         newOrder.BusinessId = sender.BusinessId;
-        newOrder.CreatedAt = DateTime.UtcNow;
+        newOrder.CreatedAt = DateTime.UtcNow.AddHours(2); ;
         newOrder.ClosedAt = null;
         newOrder.UserId = sender.Id;
         newOrder.Status = OrderStatus.Open;
@@ -164,12 +154,20 @@ public class OrderController : ControllerBase
     [HttpPost("{orderId}/UpdateStatus")]
     public async Task<IActionResult> UpdateStatus([FromQuery] int orderId, OrderStatus status)
     {
+        User? sender = await GetUserFromToken();
+
+        if (sender == null)
+            return Unauthorized();
+
+        _logger.LogInformation($"User with id: {sender.Id} is updating an order at {DateTime.Now}, orderId:{orderId}");
+
         try
         {
             var order = await _orderRepository.GetOrderByIdAsync(orderId);
+
             if (order == null)
                 return NotFound($"Order with ID {orderId} not found.");
-            if (order.Status == OrderStatus.Closed)
+            if (order.Status == OrderStatus.Closed || sender.BusinessId != order.BusinessId)
                 return Unauthorized("You are not authorized to modify closed order.");
 
             // Update the status
@@ -316,7 +314,7 @@ public class OrderController : ControllerBase
             existingOrder.User = sender;
             existingOrder.Status = order.Status;
             if (order.Status == OrderStatus.Closed)
-                existingOrder.ClosedAt = DateTime.UtcNow;
+                existingOrder.ClosedAt = DateTime.UtcNow.AddHours(2); ;
             existingOrder.ChargeAmount = order.ChargeAmount;
             existingOrder.DiscountAmount = order.DiscountAmount;
             existingOrder.TaxAmount = order.TaxAmount;

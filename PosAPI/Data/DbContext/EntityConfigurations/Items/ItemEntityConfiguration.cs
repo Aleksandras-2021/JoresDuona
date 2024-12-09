@@ -21,6 +21,7 @@ public class ItemEntityConfiguration : IEntityTypeConfiguration<Item>
 
         builder.HasMany(x => x.OrderItems)
             .WithOne(x => x.Item)
-            .HasForeignKey(x => x.ItemId);
+            .HasForeignKey(x => x.ItemId)
+            .OnDelete(DeleteBehavior.Restrict); // Disable cascade delete
     }
 }
