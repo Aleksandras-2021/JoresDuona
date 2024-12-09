@@ -181,6 +181,7 @@ public class ItemsController : Controller
                 return View(item);
             }
         }
+        TempData["Error"] = "Could not delete item, if its part of an order, it cannot be deleted";
 
         return NotFound(); // Return a 404 if the user was not found or request failed
     }

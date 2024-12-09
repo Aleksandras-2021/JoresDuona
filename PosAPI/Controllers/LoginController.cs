@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
 using PosAPI.Data.DbContext;
 using PosShared.Models;
@@ -9,96 +9,96 @@ using Microsoft.AspNetCore.Identity.Data;
 using PosAPI.Data;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
+using Microsoft.AspNetCore.Authorization;
 
-namespace PosAPI.Controllers
+namespace PosAPI.Controllers;
+
+[ApiController]
+[Route("api/")]
+public class LoginController : ControllerBase
 {
-    [ApiController]
-    [Route("api/")]
-    public class LoginController : ControllerBase
+    private readonly ILogger<LoginController> _logger;
+    private readonly JwtSettings _jwtSettings;
+    private readonly ApplicationDbContext _context;
+
+    public LoginController(ILogger<LoginController> logger, IOptions<JwtSettings> jwtSettings, ApplicationDbContext context)
     {
-        private readonly ILogger<LoginController> _logger;
-        private readonly JwtSettings _jwtSettings;
-        private readonly ApplicationDbContext _context;
+        _logger = logger;
+        _jwtSettings = jwtSettings.Value;
+        _context = context;
+    }
 
-        public LoginController(ILogger<LoginController> logger, IOptions<JwtSettings> jwtSettings, ApplicationDbContext context)
+    [HttpPost("login")]
+    public async Task<IActionResult> Login([FromBody] LoginRequest request)
+    {
+        if (string.IsNullOrWhiteSpace(request.Email))
         {
-            _logger = logger;
-            _jwtSettings = jwtSettings.Value;
-            _context = context;
+            return BadRequest("Email is required.");
+        }
+        if (string.IsNullOrWhiteSpace(request.Password))
+        {
+            return BadRequest("Password is required.");
         }
 
-        [HttpPost("login")]
-        public async Task<IActionResult> Login([FromBody] LoginRequest request)
+        var user = await _context.Users
+            .Where(u => u.Email.ToLower() == request.Email.ToLower())
+            .FirstOrDefaultAsync();
+
+        if (user == null || !VerifyPassword(user.PasswordHash, request.Password))
         {
-            if (string.IsNullOrWhiteSpace(request.Email))
-            {
-                return BadRequest("Email is required.");
-            }
-            if (string.IsNullOrWhiteSpace(request.Password))
-            {
-                return BadRequest("Password is required.");
-            }
-
-            var user = await _context.Users
-                .Where(u => u.Email.ToLower() == request.Email.ToLower())
-                .FirstOrDefaultAsync();
-
-            if (user == null || !VerifyPassword(user.PasswordHash, request.Password))
-            {
-                return BadRequest("Invalid email or password.");
-            }
-
-            var token = GenerateToken(user.Email, user.Id, user.Role);
-
-            Response.Cookies.Append("authToken", token, new CookieOptions
-            {
-                HttpOnly = true, // Prevent client-side access
-                Secure = true, // Set to true if using HTTPS
-                SameSite = SameSiteMode.None, // Required for cross-origin requests
-                Expires = DateTime.UtcNow.AddDays(1) // Cookie expiration
-            });
-            _logger.LogInformation("LoginController: Token:" + token);
-            return Ok(new
-            {
-                message = "Login successful",
-                token,
-                id = user.Id,
-                email = user.Email,
-                role = user.Role
-            });
+            return BadRequest("Invalid email or password.");
         }
 
-        private string GenerateToken(string email, int userId, UserRole role)
+        var token = GenerateToken(user.Email, user.Id, user.Role);
+
+        Response.Cookies.Append("authToken", token, new CookieOptions
         {
-            var claims = new[]
-            {
-                new Claim(ClaimTypes.Name, email),
-                new Claim("UserId", userId.ToString()),
-                new Claim(ClaimTypes.Role, role.ToString()),
+            HttpOnly = true, // Prevent client-side access
+            Secure = true, // Set to true if using HTTPS
+            SameSite = SameSiteMode.None, // Required for cross-origin requests
+            Expires = DateTime.UtcNow.AddDays(1) // Cookie expiration
+        });
+        _logger.LogInformation("LoginController: Token:" + token);
+        return Ok(new
+        {
+            message = "Login successful",
+            token,
+            id = user.Id,
+            email = user.Email,
+            role = user.Role
+        });
+    }
 
-            };
+    private string GenerateToken(string email, int userId, UserRole role)
+    {
+        var claims = new[]
+        {
+            new Claim(ClaimTypes.Name, email),
+            new Claim("UserId", userId.ToString()),
+            new Claim(ClaimTypes.Role, role.ToString()),
 
-            var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_jwtSettings.Secret));
-            var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
+        };
 
-            var token = new JwtSecurityToken(
-                issuer: null,
-                audience: null,
-                claims: claims,
-                expires: DateTime.UtcNow.AddMinutes(_jwtSettings.ExpirationInMinutes),
-                signingCredentials: creds);
+        var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_jwtSettings.Secret));
+        var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
 
-            return new JwtSecurityTokenHandler().WriteToken(token);
+        var token = new JwtSecurityToken(
+            issuer: null,
+            audience: null,
+            claims: claims,
+            expires: DateTime.UtcNow.AddMinutes(_jwtSettings.ExpirationInMinutes),
+            signingCredentials: creds);
+
+        return new JwtSecurityTokenHandler().WriteToken(token);
+    }
+
+    private bool VerifyPassword(string? passwordHash, string? password)
+    {
+        if (passwordHash == null || password == null)
+        {
+            return false;
         }
 
-        private bool VerifyPassword(string? passwordHash, string? password)
-        {
-            if (passwordHash == null || password == null)
-            {
-                return false;
-            }
-
-            return BCrypt.Net.BCrypt.Verify(password, passwordHash);
-        }
+        return BCrypt.Net.BCrypt.Verify(password, passwordHash);
     }
 }

@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using PosAPI.Data.DbContext;
@@ -11,9 +12,11 @@ using PosAPI.Data.DbContext;
 namespace PosAPI.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20241209181156_DisableCascadeOnItemDeleteAndOrderItem")]
+    partial class DisableCascadeOnItemDeleteAndOrderItem
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -272,7 +275,6 @@ namespace PosAPI.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("timestamp with time zone")
                         .HasDefaultValue(new DateTime(2024, 12, 9, 18, 11, 56, 204, DateTimeKind.Utc).AddTicks(1092));
-
 
                     b.Property<decimal>("DiscountAmount")
                         .HasColumnType("numeric");
@@ -542,7 +544,6 @@ namespace PosAPI.Migrations
                         .HasColumnType("timestamp with time zone")
                         .HasDefaultValue(new DateTime(2024, 12, 9, 18, 11, 56, 205, DateTimeKind.Utc).AddTicks(8425));
 
-
                     b.Property<string>("CustomerEmail")
                         .IsRequired()
                         .HasColumnType("text");
@@ -640,12 +641,13 @@ namespace PosAPI.Migrations
                         .HasColumnType("integer");
 
                     b.Property<string>("Description")
+                        .IsRequired()
                         .HasColumnType("text");
 
                     b.Property<int>("DurationInMinutes")
                         .HasColumnType("integer");
 
-                    b.Property<int?>("EmployeeId")
+                    b.Property<int>("EmployeeId")
                         .HasColumnType("integer");
 
                     b.Property<string>("Name")
@@ -1054,7 +1056,9 @@ namespace PosAPI.Migrations
 
                     b.HasOne("PosShared.Models.User", "Employee")
                         .WithMany("Services")
-                        .HasForeignKey("EmployeeId");
+                        .HasForeignKey("EmployeeId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
 
                     b.Navigation("Business");
 

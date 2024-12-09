@@ -83,7 +83,7 @@ namespace PosClient.Controllers
                 {
                     HttpOnly = true,
                     Secure = true,
-                    Expires = DateTime.UtcNow.AddMinutes(10),
+                    Expires = DateTime.UtcNow.AddMinutes(15),
                     SameSite = SameSiteMode.None  // Important for cross-origin requests,
                 };
 

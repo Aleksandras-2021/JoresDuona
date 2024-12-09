@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc;
 using PosClient.Services;
 using PosShared;
 using PosShared.DTOs;
@@ -28,10 +28,6 @@ namespace PosClient.Controllers
         public async Task<IActionResult> Index()
         {
             string token = Request.Cookies["authToken"];
-            if (string.IsNullOrEmpty(token))
-            {
-                return RedirectToAction("Login", "Home");
-            }
 
             _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
@@ -67,7 +63,7 @@ namespace PosClient.Controllers
                 return RedirectToAction("Index");
             }
 
-            TempData["Error"] = "Failed to create tax. Please try again.\n" + response.ToString();
+            TempData["Error"] = "Failed to create tax. See if tax with same category does not already exist.\n";
             return View(tax);
         }
 

@@ -28,8 +28,8 @@ public class Order
 
     public Reservation? Reservation { get; set; }
     public ICollection<OrderItem> OrderItems { get; set; }
-    public ICollection<Payment> Payments { get; set; }
-    public ICollection<OrderDiscount> OrderDiscounts { get; set; }
-    public ICollection<OrderService> OrderServices { get; set; }
+    public ICollection<Payment>? Payments { get; set; }
+    public ICollection<OrderDiscount>? OrderDiscounts { get; set; }
+    public ICollection<OrderService>? OrderServices { get; set; }
 
 }

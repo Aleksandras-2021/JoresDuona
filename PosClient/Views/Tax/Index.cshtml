@@ -4,6 +4,13 @@
 
 <a asp-action="Create" class="btn btn-primary">Create New Tax</a>
 
+@if (TempData["Error"] != null)
+{
+    <div class="alert alert-danger">
+        @TempData["Error"]
+    </div>
+}
+
 <table class="table">
     <thead>
         <tr>

@@ -2,7 +2,7 @@ namespace PosShared.Models;
 
 public enum OrderStatus
 {
-    Open,
+    Open = 0,
     Closed,
     Paid,
     Cancelled,

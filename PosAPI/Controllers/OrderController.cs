@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using PosAPI.Data.DbContext;
@@ -7,9 +8,11 @@ using PosShared.DTOs;
 using PosShared.Models;
 using PosShared.Ultilities;
 using PosShared.ViewModels;
+using System.Runtime.InteropServices;
 
 namespace PosAPI.Controllers;
 
+[Authorize]
 [Route("api/[controller]")]
 [ApiController]
 public class OrderController : ControllerBase
@@ -19,6 +22,7 @@ public class OrderController : ControllerBase
     private readonly IItemRepository _itemRepository;
     private readonly ITaxRepository _taxRepository;
     private readonly ILogger<OrderController> _logger;
+
     public OrderController(IOrderRepository orderRepository, IUserRepository userRepository, IItemRepository itemRepository, ITaxRepository taxRepository, ILogger<OrderController> logger)
     {
         _orderRepository = orderRepository;
@@ -28,34 +32,28 @@ public class OrderController : ControllerBase
         _logger = logger;
     }
 
+
+    #region OrderActions
     // GET: api/Order
     [HttpGet("")]
     public async Task<IActionResult> GetAllOrders()
     {
 
         string? token = HttpContext.Request.Headers["Authorization"].ToString();
-        _logger.LogInformation(token);
 
-        if (string.IsNullOrEmpty(token))
-        {
-            _logger.LogWarning("Authorization token is missing or null.");
-            return Unauthorized("Authorization token is missing.");
-        }
 
-        int? userId = Ultilities.ExtractUserIdFromToken(token);
-
-        User? user = await _userRepository.GetUserByIdAsync(userId);
-        if (user == null)
+        User? senderUser = await GetUserFromToken();
+        if (senderUser == null)
         {
             _logger.LogWarning("User not found in DB.");
             return Unauthorized("User not in DB.");
         }
         List<Order> orders;
 
-        if (user.Role == UserRole.SuperAdmin)
+        if (senderUser.Role == UserRole.SuperAdmin)
             orders = await _orderRepository.GetAllOrdersAsync();
-        else if (user.Role == UserRole.Manager || user.Role == UserRole.Owner || user.Role == UserRole.Worker)
-            orders = await _orderRepository.GetAllBusinessOrdersAsync(user.BusinessId);
+        else if (senderUser.Role == UserRole.Manager || senderUser.Role == UserRole.Owner || senderUser.Role == UserRole.Worker)
+            orders = await _orderRepository.GetAllBusinessOrdersAsync(senderUser.BusinessId);
         else
             orders = new List<Order>();
 
@@ -100,12 +98,14 @@ public class OrderController : ControllerBase
             {
                 return NotFound($"Order with ID {id} not found.");
             }
+            await RecalculateOrderCharge(id);
+
 
             return Ok(order);
         }
         catch (Exception ex)
         {
-            _logger.LogError($"Error retrieving user with ID {id}: {ex.Message}");
+            _logger.LogError($"Error retrieving order with ID {id}: {ex.Message}");
             return StatusCode(500, "Internal server error");
         }
     }
@@ -127,7 +127,7 @@ public class OrderController : ControllerBase
         Order newOrder = new Order();
 
         newOrder.BusinessId = sender.BusinessId;
-        newOrder.CreatedAt = DateTime.UtcNow;
+        newOrder.CreatedAt = DateTime.UtcNow.AddHours(2); ;
         newOrder.ClosedAt = null;
         newOrder.UserId = sender.Id;
         newOrder.Status = OrderStatus.Open;
@@ -135,6 +135,8 @@ public class OrderController : ControllerBase
         newOrder.DiscountAmount = 0;
         newOrder.TaxAmount = 0;
         newOrder.TipAmount = 0;
+        newOrder.Payments = new List<Payment>();
+        newOrder.OrderDiscounts = new List<OrderDiscount>();
 
 
         try
@@ -149,17 +151,31 @@ public class OrderController : ControllerBase
         }
     }
     //Order/{id}/UpdateStatus
-    [HttpPost("{orderId}/UpdateStatus")]
-    public async Task<IActionResult> UpdateStatus([FromQuery]int orderId, OrderStatus status)
+    [HttpPost("{orderId}/UpdateStatus/{status}")]
+    public async Task<IActionResult> UpdateStatus([FromRoute] int orderId,OrderStatus status)
     {
+        User? sender = await GetUserFromToken();
+
+        if (sender == null)
+            return Unauthorized();
+
+        _logger.LogInformation($"User with id: {sender.Id} is updating an order at {DateTime.Now}, orderId:{orderId}");
+
         try
         {
             var order = await _orderRepository.GetOrderByIdAsync(orderId);
+
             if (order == null)
                 return NotFound($"Order with ID {orderId} not found.");
+            if (order.Status == OrderStatus.Closed || sender.BusinessId != order.BusinessId)
+                return Unauthorized("You are not authorized to modify closed order.");
 
             // Update the status
             order.Status = status;
+
+            if (order.Status == OrderStatus.Closed)
+                order.ClosedAt = DateTime.UtcNow.AddHours(2);
+
             await _orderRepository.UpdateOrderAsync(order);
 
             return Ok(new { message = "Order status updated successfully.", status });
@@ -172,98 +188,17 @@ public class OrderController : ControllerBase
     }
 
 
-    // POST: api/Order/{orderId}/AddItem
-    [HttpPost("{orderId}/AddItem")]
-    public async Task<IActionResult> AddItemToOrder(int orderId, [FromBody] AddItemDTO addItemDTO)
-    {
-        User? sender = await GetUserFromToken();
-
-        if (sender == null)
-            return Unauthorized();
-
-        if (sender.BusinessId <= 0)
-            return BadRequest("Invalid BusinessId associated with the user.");
-
-        // Check if the order exists
-        var order = await _orderRepository.GetOrderByIdAsync(orderId);
-        if (order == null)
-            return NotFound($"Order with ID {orderId} not found.");
-
-        if (order.BusinessId != sender.BusinessId)
-            return Unauthorized("You are not authorized to modify this order.");
-
-        Item item = await _itemRepository.GetItemByIdAsync(addItemDTO.ItemId);
-
-        // Create the OrderItem
-        OrderItem orderItem = new OrderItem
-        {
-            OrderId = orderId,
-            ItemId = addItemDTO.ItemId,
-            Quantity = 1,
-            Price = item.Price
-        };
-
-        try
-        {
-            // Add the OrderItem to the database
-            await _orderRepository.AddOrderItemAsync(orderItem);
-
-            order.ChargeAmount += orderItem.Price * orderItem.Quantity;
-            await _orderRepository.UpdateOrderAsync(order);
-
-            return CreatedAtAction(nameof(GetOrderById), new { id = order.Id }, orderItem);
-        }
-        catch (DbUpdateException e)
-        {
-            return StatusCode(500, $"Internal server error: {e.Message}");
-        }
-    }
-
-    // POST: api/Order/{orderId}/DeleteItem/{orderItemId}
-    [HttpDelete("{orderId}/DeleteItem/{orderItemId}")]
-    public async Task<IActionResult> DeleteOrderItem(int orderId, int orderItemId)
-    {
-        User? sender = await GetUserFromToken();
-        if (sender == null)
-        {
-            return Unauthorized();
-        }
-
-        // Check if the order exists
-        var order = await _orderRepository.GetOrderByIdAsync(orderId);
-        var orderItem = await _orderRepository.GetOrderItemById(orderItemId);
-        if (order == null)
-        {
-            return NotFound($"Order with ID {orderId} not found.");
-        }
-
-        if (order.BusinessId != sender.BusinessId && sender.Role != UserRole.SuperAdmin)
-        {
-            return Unauthorized("You are not authorized to delete this order.");
-        }
-
-        try
-        {
-            order.ChargeAmount -= orderItem.Price;
-
-            // Delete the order and its associated data
-            await _orderRepository.DeleteOrderItemAsync(orderItemId);
-
-            return Ok("Order deleted successfully.");
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError($"Error deleting order with ID {orderId}: {ex.Message}");
-            return StatusCode(500, "Internal server error.");
-        }
-    }
-
     [HttpPut("{orderId}")]
     public async Task<IActionResult> UpdateOrder([FromBody] Order order)
     {
         if (order == null)
         {
             return BadRequest("Invalid order data.");
+        }
+
+        if (order.Status == OrderStatus.Closed)
+        {
+            return Unauthorized("Cannot modify closed order.");
         }
 
         try
@@ -289,14 +224,13 @@ public class OrderController : ControllerBase
             existingOrder.UserId = sender.Id; //Whoever updates order, takes over the ownership of it
             existingOrder.User = sender;
             existingOrder.Status = order.Status;
-            if (order.Status == OrderStatus.Closed)
-                existingOrder.ClosedAt = DateTime.UtcNow;
             existingOrder.ChargeAmount = order.ChargeAmount;
             existingOrder.DiscountAmount = order.DiscountAmount;
             existingOrder.TaxAmount = order.TaxAmount;
             existingOrder.TipAmount = order.TipAmount;
 
             await _orderRepository.UpdateOrderAsync(existingOrder);
+            // await RecalculateOrderCharge(existingOrder.Id);
 
             return NoContent();
         }
@@ -311,9 +245,6 @@ public class OrderController : ControllerBase
             return StatusCode(500, "Internal server error");
         }
     }
-
-
-
 
     [HttpDelete("{orderId}")]
     public async Task<IActionResult> DeleteOrder(int orderId)
@@ -330,6 +261,8 @@ public class OrderController : ControllerBase
         {
             return NotFound($"Order with ID {orderId} not found.");
         }
+        if (order.Status == OrderStatus.Closed)
+            return Unauthorized("You are not authorized to modify closed order.");
 
         if (order.BusinessId != sender.BusinessId && sender.Role != UserRole.SuperAdmin)
         {
@@ -349,9 +282,100 @@ public class OrderController : ControllerBase
             return StatusCode(500, "Internal server error.");
         }
     }
+    #endregion
+
+    #region OrderItem & Variation Actions 
 
 
+    // POST: api/Order/{orderId}/Items
+    [HttpPost("{orderId}/Items")]
+    public async Task<IActionResult> AddItemToOrder(int orderId, [FromBody] AddItemDTO addItemDTO)
+    {
+        User? sender = await GetUserFromToken();
 
+        if (sender == null)
+            return Unauthorized();
+
+        if (sender.BusinessId <= 0)
+            return BadRequest("Invalid BusinessId associated with the user.");
+
+        // Check if the order exists
+        var order = await _orderRepository.GetOrderByIdAsync(orderId);
+        if (order == null)
+            return NotFound($"Order with ID {orderId} not found.");
+        if (order.Status == OrderStatus.Closed)
+            return Unauthorized("You are not authorized to modify closed order.");
+
+        if (order.BusinessId != sender.BusinessId)
+            return Unauthorized("You are not authorized to modify this order.");
+
+        Item item = await _itemRepository.GetItemByIdAsync(addItemDTO.ItemId);
+
+        // Create the OrderItem
+        OrderItem orderItem = new OrderItem
+        {
+            OrderId = orderId,
+            ItemId = addItemDTO.ItemId,
+            Quantity = 1,
+            Price = item.Price
+        };
+
+        try
+        {
+            // Add the OrderItem to the database
+            await _orderRepository.AddOrderItemAsync(orderItem);
+
+            await RecalculateOrderCharge(orderItem.OrderId);
+            await _orderRepository.UpdateOrderAsync(order);
+
+            return CreatedAtAction(nameof(GetOrderById), new { id = order.Id }, orderItem);
+        }
+        catch (DbUpdateException e)
+        {
+            return StatusCode(500, $"Internal server error: {e.Message}");
+        }
+    }
+
+    // POST: api/Order/{orderId}/Items/{orderItemId}
+    [HttpDelete("{orderId}/Items/{orderItemId}")]
+    public async Task<IActionResult> DeleteOrderItem(int orderId, int orderItemId)
+    {
+        User? sender = await GetUserFromToken();
+        if (sender == null)
+        {
+            return Unauthorized();
+        }
+
+        // Check if the order exists
+        var order = await _orderRepository.GetOrderByIdAsync(orderId);
+        var orderItem = await _orderRepository.GetOrderItemById(orderItemId);
+
+        if (order == null)
+        {
+            return NotFound($"Order with ID {orderId} not found.");
+        }
+        if (order.Status == OrderStatus.Closed)
+            return Unauthorized("You are not authorized to modify closed order.");
+
+        if (order.BusinessId != sender.BusinessId && sender.Role != UserRole.SuperAdmin)
+        {
+            return Unauthorized("You are not authorized to delete this order.");
+        }
+
+        try
+        {
+            // Delete the order and its associated data
+            await _orderRepository.DeleteOrderItemAsync(orderItemId);
+
+            //  await RecalculateOrderCharge(orderId);
+            return Ok("Order Item deleted successfully.");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError($"Error deleting order item with ID {orderId}: {ex.Message}");
+            return StatusCode(500, "Internal server error.");
+        }
+    }
 
     [HttpGet("{orderId}/OrderItems")]
     public async Task<IActionResult> GetOrderItems(int orderId)
@@ -361,7 +385,6 @@ public class OrderController : ControllerBase
         var orderItems = await _orderRepository.GetOrderItemsByOrderIdAsync(orderId);
 
         var order = await _orderRepository.GetOrderByIdAsync(orderId);
-
 
         if (sender == null || sender.BusinessId != order.BusinessId)
         {
@@ -379,13 +402,18 @@ public class OrderController : ControllerBase
 
 
 
-    [HttpGet("{orderId}/OrderItems/{orderItemId}/OrderItemVariations")]
+    [HttpGet("{orderId}/OrderItems/{orderItemId}/Variations")]
     public async Task<IActionResult> GetOrderItemVariations(int orderItemId)
     {
         User? sender = await GetUserFromToken();
 
         var orderItemVariatons = await _orderRepository.GetOrderItemVariationsByOrderItemIdAsync(orderItemId);
         var orderItem = await _orderRepository.GetOrderItemById(orderItemId);
+
+        //Not clean, but fixes the problem atm
+        if (orderItem.Item == null)
+            orderItem.Item = await _itemRepository.GetItemByIdAsync(orderItem.ItemId);
+
 
         if (sender == null || sender.BusinessId != orderItem.Item.BusinessId)
         {
@@ -420,67 +448,7 @@ public class OrderController : ControllerBase
         return Ok(orderItem);
     }
 
-
-    [HttpPost("{orderId}/OrderItems/{itemId}/OrderItemVariation/")]
-    public async Task<IActionResult> AddOrderItemVariation(int orderId, int itemId, [FromBody] int variationId)
-    {
-
-        // Retrieve the user from the token
-        User? sender = await GetUserFromToken();
-        if (sender == null)
-            return Unauthorized();
-
-        if (sender.BusinessId <= 0)
-            return BadRequest("Invalid BusinessId associated with the user.");
-
-        // Fetch the required data for the order item and variation
-        var orderItem = await _orderRepository.GetOrderItemById(itemId);
-        if (orderItem == null)
-            return NotFound($"Order item with ID {itemId} not found.");
-
-        var variation = await _itemRepository.GetItemVariationByIdAsync(variationId);
-        if (variation == null)
-            return NotFound($"Item variation with ID {variationId} not found.");
-
-        var order = await _orderRepository.GetOrderByIdAsync(orderId);
-        if (order == null)
-            return NotFound($"Order with ID {orderId} not found.");
-
-        // Create the OrderItemVariation instance
-        var orderItemVariation = new OrderItemVariation
-        {
-            Quantity = 1, // Default quantity
-            ItemVariationId = variationId,
-            OrderItemId = itemId,
-            AdditionalPrice = variation.AdditionalPrice,
-            OrderItem = orderItem,
-        };
-
-        try
-        {
-            // Add the OrderItemVariation to the database
-            await _orderRepository.AddOrderItemVariationAsync(orderItemVariation);
-
-            // Update the order's charge amount
-            order.ChargeAmount += orderItemVariation.AdditionalPrice * orderItemVariation.Quantity;
-            await _orderRepository.UpdateOrderAsync(order);
-
-            // Return the created resource
-            return CreatedAtAction(nameof(GetOrderItemVariationById), new { id = orderItemVariation.Id }, orderItemVariation);
-        }
-        catch (DbUpdateException ex)
-        {
-            // Log the exception (optional)
-            _logger.LogError(ex, "An error occurred while adding an order item variation.");
-
-            return StatusCode(500, $"Internal server error: {ex.Message}");
-        }
-    }
-
-
-
-
-    [HttpPost("{orderId}/OrderItems/{itemId}/AddVariation")]
+    [HttpPost("{orderId}/OrderItems/{itemId}/Variations")]
     public async Task<IActionResult> AddOrderItemVariation(int orderId, int itemId, [FromBody] AddVariationDTO addVariationDTO)
     {
         // Step 1: Authenticate User
@@ -496,6 +464,8 @@ public class OrderController : ControllerBase
         var order = await _orderRepository.GetOrderByIdAsync(orderId);
         if (order == null)
             return NotFound($"Order with ID {orderId} not found.");
+        if (order.Status == OrderStatus.Closed)
+            return Unauthorized("You are not authorized to modify closed order.");
 
         if (order.BusinessId != sender.BusinessId)
             return Unauthorized("You are not authorized to modify this order.");
@@ -515,16 +485,19 @@ public class OrderController : ControllerBase
             OrderItemId = itemId,
             ItemVariationId = addVariationDTO.VariationId,
             Quantity = addVariationDTO.Quantity,
-            AdditionalPrice = variation.AdditionalPrice
+            AdditionalPrice = variation.AdditionalPrice,
+            ItemVariation = variation,
+            OrderItem = orderItem,
+
         };
 
         try
         {
             await _orderRepository.AddOrderItemVariationAsync(orderItemVariation);
 
-            // Step 5: Update Order's Charge Amount
-            order.ChargeAmount += orderItemVariation.AdditionalPrice * orderItemVariation.Quantity;
             await _orderRepository.UpdateOrderAsync(order);
+
+            //await RecalculateOrderCharge(orderId);
 
             return CreatedAtAction(nameof(GetOrderItemVariationById), new { orderId = orderId, orderItemId = itemId, variationId = orderItemVariation.Id }, orderItemVariation);
         }
@@ -532,6 +505,46 @@ public class OrderController : ControllerBase
         {
             _logger.LogError($"Error adding order item variation: {ex.Message}");
             return StatusCode(500, $"Internal server error: {ex.Message}");
+        }
+    }
+
+    // POST: api/Order/{orderId}/Items/Variations/{varId}
+    [HttpDelete("{orderId}/Items/Variations/{orderItemVariatonId}")]
+    public async Task<IActionResult> DeleteOrderItemVariation(int orderId, int orderItemVariatonId)
+    {
+        User? sender = await GetUserFromToken();
+        if (sender == null)
+        {
+            return Unauthorized();
+        }
+
+        // Check if the order exists
+        Order? order = await _orderRepository.GetOrderByIdAsync(orderId);
+        OrderItemVariation? variation = await _orderRepository.GetOrderItemVariationByIdAsync(orderItemVariatonId);
+
+        if (order == null)
+        {
+            return NotFound($"Order with ID {orderId} not found.");
+        }
+        if (order.Status == OrderStatus.Closed)
+            return Unauthorized("You are not authorized to modify closed order.");
+
+        if (order.BusinessId != sender.BusinessId && sender.Role != UserRole.SuperAdmin)
+        {
+            return Unauthorized("You are not authorized to delete this variation.");
+        }
+
+        try
+        {
+            await _orderRepository.DeleteOrderItemVariationAsync(orderItemVariatonId);
+            //await RecalculateOrderCharge(orderId);
+
+            return Ok("Order Item Variation deleted successfully.");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError($"Error deleting order variation with ID {orderItemVariatonId}: {ex.Message}");
+            return StatusCode(500, "Internal server error.");
         }
     }
 
@@ -570,8 +583,52 @@ public class OrderController : ControllerBase
         return Ok(orderItemVariation);
     }
 
+    #endregion
 
     #region HelperMethods
+    private async Task RecalculateOrderCharge(int orderId)
+    {
+        Order order = await _orderRepository.GetOrderByIdAsync(orderId);
+
+        if (order.Status == OrderStatus.Closed)
+            return;
+
+        List<OrderItem> orderItems = await _orderRepository.GetOrderItemsByOrderIdAsync(orderId);
+        List<OrderItemVariation> orderItemVariations = await _orderRepository.GetOrderItemVariationsByOrderIdAsync(orderId);
+        Tax tax;
+
+        order.ChargeAmount = 0;
+        order.TaxAmount = 0;
+
+        //base charge(untaxed)
+        foreach (var item in orderItems)
+        {
+            order.ChargeAmount += item.Price * item.Quantity;
+
+
+            tax = await _taxRepository.GetTaxByItemIdAsync(item.ItemId);
+
+            if (tax.IsPercentage)
+                order.TaxAmount += item.Price * item.Quantity * tax.Amount / 100;
+            else
+                order.TaxAmount += tax.Amount;
+        }
+
+        foreach (var variation in orderItemVariations)
+        {
+            order.ChargeAmount += variation.AdditionalPrice * variation.Quantity;
+            OrderItem orderItemForVar = await _orderRepository.GetOrderItemById(variation.OrderItemId);
+
+            tax = await _taxRepository.GetTaxByItemIdAsync(orderItemForVar.ItemId);
+
+            if (tax.IsPercentage)
+                order.TaxAmount += variation.AdditionalPrice * variation.Quantity * tax.Amount / 100;
+            else
+                order.TaxAmount += tax.Amount;
+        }
+        await _orderRepository.UpdateOrderAsync(order);
+    }
+
     private async Task<User?> GetUserFromToken()
     {
         string token = HttpContext.Request.Headers["Authorization"].ToString();
@@ -594,5 +651,6 @@ public class OrderController : ControllerBase
         return user;
 
     }
+
     #endregion
 }
