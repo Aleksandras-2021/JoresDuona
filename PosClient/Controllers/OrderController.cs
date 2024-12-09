@@ -39,9 +39,9 @@ public class OrderController : Controller
         {
             var jsonData = await response.Content.ReadAsStringAsync();
             var orders = JsonSerializer.Deserialize<List<Order>>(jsonData, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
-
             return View(orders);
         }
+
 
 
         // Handle errors or empty results

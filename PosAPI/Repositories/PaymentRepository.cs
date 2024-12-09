@@ -54,12 +54,14 @@ namespace PosAPI.Repositories
                .OrderBy(p => p.Id)
                .ToListAsync();
         }
-        public async Task<List<Payment>> GetAllOrderPaymentsAsync(int orderId)
+        public async Task<List<Payment?>> GetAllOrderPaymentsAsync(int orderId)
         {
-            return await _context.Set<Payment>()
+            var payments = await _context.Set<Payment>()
                      .Where(p => p.OrderId == orderId)
                      .OrderBy(tax => tax.Id)
                      .ToListAsync();
+
+            return payments;
         }
         public async Task<List<Payment>> GetAllBusinessPaymentsAsync(int businessId)
         {

@@ -108,7 +108,53 @@ public class PaymentController : ControllerBase
         }
         catch (Exception ex)
         {
-            _logger.LogError($"Error retrieving user with ID {id}: {ex.Message}");
+            _logger.LogError($"Error retrieving Payment with ID {id}: {ex.Message}");
+            return StatusCode(500, "Internal server error");
+        }
+    }
+
+    // GET: api/Payment/Order{orderId}
+    [HttpGet("Order/{orderId}")]
+    public async Task<IActionResult> GetAllOrderPayments(int orderId)
+    {
+        User? senderUser = await GetUserFromToken();
+
+        if (senderUser == null)
+            return Unauthorized();
+
+        try
+        {
+            List<Payment?> payments;
+
+            if (senderUser.Role == UserRole.SuperAdmin)
+            {
+                payments = await _paymentRepository.GetAllOrderPaymentsAsync(orderId);
+            }
+            else if (senderUser.Role == UserRole.Manager || senderUser.Role == UserRole.Owner || senderUser.Role == UserRole.Worker)
+            {
+                payments = await _paymentRepository.GetAllOrderPaymentsAsync(orderId);
+                Order order = await _orderRepository.GetOrderByIdAsync(orderId);
+
+                if (order.BusinessId != senderUser.BusinessId)
+                {
+                    return Unauthorized();
+                }
+            }
+            else
+            {
+                return Unauthorized();
+            }
+
+            if (payments == null)
+            {
+                return NotFound($"Payment with for order with ID {orderId} not found.");
+            }
+
+            return Ok(payments);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError($"Error retrieving order with ID {orderId}: {ex.Message}");
             return StatusCode(500, "Internal server error");
         }
     }
@@ -145,7 +191,7 @@ public class PaymentController : ControllerBase
             await _paymentRepository.AddPaymentAsync(newPayment);
 
             List<Payment> payments = await _paymentRepository.GetAllOrderPaymentsAsync(newPayment.OrderId);
-            Decimal sum = new decimal(0);
+            decimal sum = 0;
 
             foreach (var orderPayment in payments)
             {
@@ -161,7 +207,7 @@ public class PaymentController : ControllerBase
                 order.Status = OrderStatus.PartiallyPaid;
             else if (sum > order.ChargeAmount + order.TaxAmount)
             {
-                order.TipAmount = sum - order.ChargeAmount;
+                order.TipAmount = sum - order.ChargeAmount - order.TaxAmount;
                 order.ClosedAt = DateTime.UtcNow;
                 order.Status = OrderStatus.Closed;
             }

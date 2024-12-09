@@ -63,6 +63,8 @@ public class OrderController : ControllerBase
         else
             orders = new List<Order>();
 
+
+
         if (orders.Count > 0)
             return Ok(orders);
         else
@@ -615,7 +617,7 @@ public class OrderController : ControllerBase
 
         foreach (var variation in orderItemVariations)
         {
-            order.ChargeAmount += variation.AdditionalPrice;
+            order.ChargeAmount += variation.AdditionalPrice * variation.Quantity;
             OrderItem orderItemForVar = await _orderRepository.GetOrderItemById(variation.OrderItemId);
 
             tax = await _taxRepository.GetTaxByItemIdAsync(orderItemForVar.ItemId);

@@ -31,7 +31,6 @@
                         <th scope="col">Tax Amount</th>
                         <th scope="col">Charge</th>
                         <th scope="col">Tip</th>
-                        <th scope="col">Paid Amount</th>
                         <th scope="col">Actions</th>
                     </tr>
                 </thead>
@@ -50,18 +49,7 @@
                             <td>@order.ClosedAt?.ToString("g")</td>
                             <td>@order.TaxAmount.ToString("C")</td>
                             <td>@order.ChargeAmount.ToString("C")</td>
-                            <td>@order.TipAmount.ToString("C")</td>
-                           @if (order.Payments != null)
-                                {
-                                sum = 0;
-                                foreach (var payment in order.Payments)
-                                        sum += payment.Amount;
-                                        
-                                }
-                            <td>@sum</td>
-                            
-                            
-                            
+                            <td>@order.TipAmount.ToString("C")</td>                                     
                             <td class="d-flex gap-2">
                                 <a asp-action="SelectItems" asp-route-orderId="@order.Id" class="btn btn-secondary btn-sm">
                                     <i class="bi bi-eye"></i> View
