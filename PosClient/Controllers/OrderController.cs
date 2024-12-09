@@ -392,7 +392,7 @@ namespace PosClient.Controllers
         }
 
 
-        public async Task<IActionResult> GetOrderItemVariations(int orderItemId, int orderId)
+        public async Task<IActionResult> GetOrderItemVariations(int itemId, int orderItemId, int orderId)
         {
             string? token = Request.Cookies["authToken"];
             if (string.IsNullOrEmpty(token))
@@ -402,9 +402,9 @@ namespace PosClient.Controllers
 
             _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
-            // Fetch item variations from the API
-            var variationsApiUrl = $"{_apiUrl}/api/Order/{orderId}/OrderItems/{orderItemId}/OrderItemVariations";
-            var response = await _httpClient.GetAsync(variationsApiUrl);
+            // Fetch variationsThemselves from the API
+            var itemVariationsApiUrl = $"{_apiUrl}/api/Order/{orderId}/OrderItems/{orderItemId}/ItemVariations";
+            var response = await _httpClient.GetAsync(itemVariationsApiUrl);
 
             List<ItemVariation>? variations = null;
 
@@ -414,18 +414,15 @@ namespace PosClient.Controllers
                 variations = JsonSerializer.Deserialize<List<ItemVariation>>(variationsJson, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
             }
 
-            // Ensure variations is initialized
-            variations ??= new List<ItemVariation>();
-
-            if (!variations.Any())
+            if (variations == null || !variations.Any())
             {
-                TempData["Error"] = "No variations found";
-                return RedirectToAction("SelectItems", new { orderId = orderId });
+                TempData["Error"] = "No variations selected";
+                return RedirectToAction("SelectItems", new { orderId });
             }
 
             var model = new ItemVariationsViewModel
             {
-                ItemId = variations.First().ItemId,
+                ItemId = itemId,
                 OrderItemId = orderItemId,
                 OrderId = orderId,
                 Variations = variations

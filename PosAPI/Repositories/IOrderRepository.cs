@@ -21,6 +21,7 @@ public interface IOrderRepository
     Task<ItemVariation?> GetItemVariationByIdAsync(int variationId);
     Task<OrderItemVariation?> GetOrderItemVariationByIdAsync(int variationId);
     Task<List<OrderItemVariation>> GetOrderItemVariationsByOrderIdAsync(int orderId);
+    Task<List<ItemVariation>> GetSelectedVariationsForItemAsync(int itemId, int orderItemId);
 
 
 

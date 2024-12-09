@@ -66,6 +66,8 @@ public class OrderController : ControllerBase
             return NotFound("No Orders found.");
     }
 
+
+
     // GET: api/Order/id
     [HttpGet("{id}")]
     public async Task<IActionResult> GetOrderById(int id)
@@ -425,6 +427,34 @@ public class OrderController : ControllerBase
         return Ok(orderItemVariatons);
     }
 
+    //The main difference between this and method above
+    //is that this returns an object of ItemVariation instead of OrderItemVariation
+    [HttpGet("{orderId}/OrderItems/{orderItemId}/ItemVariations")]
+    public async Task<IActionResult> GetItemVariations( int orderId, int orderItemId)
+    {
+        User? sender = await GetUserFromToken();
+        var orderItem = await _orderRepository.GetOrderItemById(orderItemId);
+        var order = await _orderRepository.GetOrderByIdAsync(orderId);
+
+        if (sender == null || sender.BusinessId != order.BusinessId)
+        {
+            return Unauthorized();
+        }
+
+        if (orderItem == null)
+        {
+            return NotFound("No items found for this order.");
+        }
+
+        List<ItemVariation> itemVariatons = await _orderRepository.GetSelectedVariationsForItemAsync(orderItem.ItemId, orderItemId);
+
+        if (orderItem.Item == null)
+            orderItem.Item = await _itemRepository.GetItemByIdAsync(orderItem.ItemId);
+
+
+        return Ok(itemVariatons);
+    }
+
     [HttpGet("OrderItems/{id}")]
     public async Task<IActionResult> GetOrderItem(int id)
     {
@@ -461,7 +491,7 @@ public class OrderController : ControllerBase
         var order = await _orderRepository.GetOrderByIdAsync(orderId);
         if (order == null)
             return NotFound($"Order with ID {orderId} not found.");
-        if(order.Status == OrderStatus.Closed)
+        if (order.Status == OrderStatus.Closed)
             return Unauthorized("You are not authorized to modify closed order.");
 
         if (order.BusinessId != sender.BusinessId)
