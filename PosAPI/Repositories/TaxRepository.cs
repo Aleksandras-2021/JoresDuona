@@ -31,8 +31,9 @@ namespace PosAPI.Repositories
             if (tax.Business == null)
                 tax.Business = await _context.Businesses.FindAsync(tax.BusinessId);
 
-            Tax? taxForCategory = await GetTaxByCategoryAsync(tax.Category);
-            if (taxForCategory != null && taxForCategory.BusinessId == tax.BusinessId)
+            Tax? taxForCategory = await GetTaxByCategoryAsync(tax.Category,tax.BusinessId);
+
+            if (taxForCategory != null)
                 throw new Exception($"Tax with category {tax.Category.ToString()} already exists ");
 
 
@@ -54,7 +55,7 @@ namespace PosAPI.Repositories
             if (item == null)
                 throw new KeyNotFoundException($"Tax for item with ID {itemId} not found, because Item could not be found.");
 
-            var tax = GetTaxByCategoryAsync(item.Category);
+            var tax = GetTaxByCategoryAsync(item.Category, item.BusinessId);
 
             if (tax == null)
             {
@@ -135,10 +136,10 @@ namespace PosAPI.Repositories
         }
 
 
-        public async Task<Tax?> GetTaxByCategoryAsync(PosShared.Models.Items.ItemCategory category)
+        public async Task<Tax?> GetTaxByCategoryAsync(PosShared.Models.Items.ItemCategory category, int businessId)
         {
             var tax = await _context.Taxes
-                .FirstOrDefaultAsync(t => t.Category == category);
+                .FirstOrDefaultAsync(t => t.Category == category && t.BusinessId == businessId);
 
             if (tax == null)
             {

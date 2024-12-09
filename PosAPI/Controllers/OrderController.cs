@@ -263,10 +263,11 @@ public class OrderController : ControllerBase
 
         try
         {
-            await RecalculateOrderCharge(orderId);
 
             // Delete the order and its associated data
             await _orderRepository.DeleteOrderItemAsync(orderItemId);
+
+            //  await RecalculateOrderCharge(orderId);
 
 
             return Ok("Order Item deleted successfully.");
@@ -316,13 +317,13 @@ public class OrderController : ControllerBase
             existingOrder.Status = order.Status;
             if (order.Status == OrderStatus.Closed)
                 existingOrder.ClosedAt = DateTime.UtcNow;
-            //existingOrder.ChargeAmount = order.ChargeAmount;
-            // existingOrder.DiscountAmount = order.DiscountAmount;
-            //existingOrder.TaxAmount = order.TaxAmount;
-            //existingOrder.TipAmount = order.TipAmount;
+            existingOrder.ChargeAmount = order.ChargeAmount;
+            existingOrder.DiscountAmount = order.DiscountAmount;
+            existingOrder.TaxAmount = order.TaxAmount;
+            existingOrder.TipAmount = order.TipAmount;
 
             await _orderRepository.UpdateOrderAsync(existingOrder);
-            await RecalculateOrderCharge(existingOrder.Id);
+            // await RecalculateOrderCharge(existingOrder.Id);
 
             return NoContent();
         }
@@ -503,8 +504,7 @@ public class OrderController : ControllerBase
 
             await _orderRepository.UpdateOrderAsync(order);
 
-            // Step 5: Update Order's Charge Amount
-            await RecalculateOrderCharge(orderId);
+            //await RecalculateOrderCharge(orderId);
 
             return CreatedAtAction(nameof(GetOrderItemVariationById), new { orderId = orderId, orderItemId = itemId, variationId = orderItemVariation.Id }, orderItemVariation);
         }
@@ -544,7 +544,7 @@ public class OrderController : ControllerBase
         try
         {
             await _orderRepository.DeleteOrderItemVariationAsync(orderItemVariatonId);
-            await RecalculateOrderCharge(orderId);
+            //await RecalculateOrderCharge(orderId);
 
             return Ok("Order Item Variation deleted successfully.");
         }
@@ -594,6 +594,10 @@ public class OrderController : ControllerBase
     private async Task RecalculateOrderCharge(int orderId)
     {
         Order order = await _orderRepository.GetOrderByIdAsync(orderId);
+
+        if (order.Status == OrderStatus.Closed)
+            return;
+
         List<OrderItem> orderItems = await _orderRepository.GetOrderItemsByOrderIdAsync(orderId);
         List<OrderItemVariation> orderItemVariations = await _orderRepository.GetOrderItemVariationsByOrderIdAsync(orderId);
         Tax tax;
@@ -626,8 +630,8 @@ public class OrderController : ControllerBase
                 order.TaxAmount += variation.AdditionalPrice * variation.Quantity * tax.Amount / 100;
             else
                 order.TaxAmount += tax.Amount;
-
         }
+        await _orderRepository.UpdateOrderAsync(order);
     }
 
 

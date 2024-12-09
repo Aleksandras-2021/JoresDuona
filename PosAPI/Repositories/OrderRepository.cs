@@ -185,18 +185,15 @@ public class OrderRepository : IOrderRepository
 
         try
         {
-            // Check if the variation already exists for this order item
             var existingVariation = await _context.OrderItemVariations
                 .FirstOrDefaultAsync(oiv => oiv.OrderItemId == variation.OrderItemId && oiv.ItemVariationId == variation.ItemVariationId);
 
             if (existingVariation != null)
             {
-                // If variation exists, increase the quantity
                 existingVariation.Quantity += variation.Quantity;
             }
             else
             {
-                // If no existing variation, add the new one
                 await _context.OrderItemVariations.AddAsync(variation);
             }
 

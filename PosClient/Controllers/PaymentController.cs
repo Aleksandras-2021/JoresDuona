@@ -43,8 +43,7 @@ public class PaymentController : Controller
     [HttpPost]
     public async Task<IActionResult> Create(PaymentViewModel paymentViewModel)
     {
-        // Handle the payment creation logic here
-        string token = Request.Cookies["authToken"];
+        string? token = Request.Cookies["authToken"];
         _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
         AddPaymentDTO payment = new AddPaymentDTO()
@@ -65,4 +64,37 @@ public class PaymentController : Controller
         TempData["Error"] = "Failed to create Payment. Please try again.\n" + response.ToString();
         return View(paymentViewModel);
     }
+
+    [HttpGet]
+    public async Task<IActionResult> GetOrderPayments(int orderId)
+    {
+        string? token = Request.Cookies["authToken"];
+
+        _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+
+        var apiUrl = _apiUrl + $"/api/Payment/Order/{orderId}";
+        var response = await _httpClient.GetAsync(apiUrl);
+
+        if (response.IsSuccessStatusCode)
+        {
+            var paymentData = await response.Content.ReadAsStringAsync();
+            var payments = JsonSerializer.Deserialize<List<Payment>>(paymentData, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+
+            if (payments != null && payments.Any())
+            {
+                var model = new OrderPaymentViewModel()
+                {
+                    OrderId = orderId,
+                    Payments = payments
+                };
+
+                return View("OrderPayments", model);
+            }
+        }
+
+        TempData["Error"] = "Unable to fetch order payments. Most likely they do not exist.";
+        return RedirectToAction("Index", "Order"); 
+    }
+
+
 }

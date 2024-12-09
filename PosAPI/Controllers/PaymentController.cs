@@ -113,7 +113,7 @@ public class PaymentController : ControllerBase
         }
     }
 
-    // GET: api/Payment/Order{orderId}
+    // GET: api/Payment/Order/{orderId}
     [HttpGet("Order/{orderId}")]
     public async Task<IActionResult> GetAllOrderPayments(int orderId)
     {
@@ -180,6 +180,7 @@ public class PaymentController : ControllerBase
         Payment newPayment = new Payment();
 
         newPayment.OrderId = payment.OrderId;
+        newPayment.Order = order;
         newPayment.PaymentMethod = payment.PaymentMethod;
         newPayment.PaymentDate = DateTime.UtcNow;
         newPayment.Amount = payment.Amount;

@@ -17,7 +17,6 @@ public class OrderController : Controller
     private readonly HttpClient _httpClient;
     private readonly IUserSessionService _userSessionService;
 
-
     private readonly string _apiUrl = UrlConstants.ApiBaseUrl;
 
     public OrderController(HttpClient httpClient, IUserSessionService userSessionService)
@@ -28,7 +27,6 @@ public class OrderController : Controller
     //Get api/Order
     public async Task<IActionResult> Index()
     {
-
         string? token = Request.Cookies["authToken"];
         _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
@@ -42,9 +40,6 @@ public class OrderController : Controller
             return View(orders);
         }
 
-
-
-        // Handle errors or empty results
         TempData["Error"] = "Could not retrieve users.";
         return View(new List<Order>());
     }
@@ -385,8 +380,6 @@ public class OrderController : Controller
 
         return View(model);
     }
-
-
     public async Task<IActionResult> GetOrderItemVariations(int itemId, int orderItemId, int orderId)
     {
         string? token = Request.Cookies["authToken"];
@@ -446,14 +439,16 @@ public class OrderController : Controller
         return RedirectToAction("ItemVariations", new { itemId, orderItemId, orderId });
     }
 
-
-
-
-
     [HttpPost]
     public IActionResult RedirectToPayment(int orderId, decimal untaxedAmount, decimal tax)
     {
         return RedirectToAction("Create", "Payment", new { orderId, untaxedAmount, tax });
+    }
+
+    [HttpGet]
+    public IActionResult RedirectToGetPayment(int orderId)
+    {
+        return RedirectToAction("GetAllOrderPayments", "Payment", new { orderId });
     }
 
 }
