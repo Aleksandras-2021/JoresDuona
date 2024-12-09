@@ -13,7 +13,9 @@
 
 <h3>Item Variations for Item: @Model.ItemId</h3>
 
-
+<a asp-action="SelectItems" asp-route-orderId="@Model.OrderId" class="btn btn-secondary">
+    Back to Order View
+</a>
 @if (Model.Variations.Any())
 {
     <table class="table">
@@ -30,15 +32,15 @@
             {
                 <tr>
                     <td>@variation.Id</td>
-                    <td>NAME (@variation.Name)</td>
+                    <td>@variation.Name)</td>
                     <td>@variation.AdditionalPrice</td>
                     <td>
-                        <a asp-action="SelectItems" asp-route-orderId="@Model.OrderId" class="btn btn-secondary">
-                            Back to Order View
-                        </a>
-                        <form asp-action="DeleteVariation" method="post">
-                            <input type="hidden" name="variationId" value="@variation." />
-                            <button type="submit" class="btn btn-danger">
+                        <form asp-action="DeleteVariation" method="post" class="m-0">
+                            <input type="hidden" name="varId" value="@variation.Id" />
+                            <input type="hidden" name="orderId" value="@Model.OrderId" />
+                            <input type="hidden" name="itemId" value="@variation.ItemId" />
+                            <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('Are you sure you want to delete this Variation?');">
+                                <i class="bi bi-trash"></i> Delete
                             </button>
                         </form>
                     </td>

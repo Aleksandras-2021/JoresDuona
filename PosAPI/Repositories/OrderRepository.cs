@@ -265,6 +265,20 @@ public class OrderRepository : IOrderRepository
         await _context.SaveChangesAsync();
     }
 
+    public async Task DeleteOrderItemVariationAsync(int varId)
+    {
+        var orderItemVariation = await _context.Set<OrderItemVariation>().FindAsync(varId);
+        if (orderItemVariation == null)
+        {
+            throw new KeyNotFoundException($"Variation with ID {varId} not found.");
+        };
+
+        _context.Set<OrderItemVariation>().Remove(orderItemVariation);
+
+        // Save changes to the database
+        await _context.SaveChangesAsync();
+    }
+
     public async Task<ItemVariation?> GetItemVariationByIdAsync(int variationId)
     {
         return await _context.ItemVariations.FirstOrDefaultAsync(v => v.Id == variationId);

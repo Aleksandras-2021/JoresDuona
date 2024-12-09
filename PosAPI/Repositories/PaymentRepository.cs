@@ -19,26 +19,35 @@ namespace PosAPI.Repositories
                 throw new ArgumentNullException(nameof(payment));
             }
 
-            Order order = await _context.Orders.FindAsync(payment.OrderId);
+            var order = await _context.Orders
+                                       .Include(o => o.Payments)
+                                       .FirstOrDefaultAsync(o => o.Id == payment.OrderId);
 
             if (order == null)
             {
-                throw new Exception($" Payment for Order with ID {payment.OrderId} is invalid, Order does not exist.");
+                throw new Exception($"Payment for Order with ID {payment.OrderId} is invalid. Order does not exist.");
             }
+
             try
             {
+                // Associate the payment with the order
                 payment.Order = order;
+
+                // Add the payment to the database
                 await _context.Payments.AddAsync(payment);
 
+                // Add the payment to the order's collection
                 order.Payments.Add(payment);
+
+                // Save changes to the database
                 await _context.SaveChangesAsync();
             }
             catch (DbUpdateException ex)
             {
                 throw new Exception("An error occurred while adding the new payment to the database.", ex);
             }
-
         }
+
         public async Task<List<Payment>> GetAllPaymentsAsync()
         {
             return await _context.Set<Payment>()

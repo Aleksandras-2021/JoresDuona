@@ -39,8 +39,10 @@ public class OrderController : Controller
         {
             var jsonData = await response.Content.ReadAsStringAsync();
             var orders = JsonSerializer.Deserialize<List<Order>>(jsonData, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+
             return View(orders);
         }
+
 
         // Handle errors or empty results
         TempData["Error"] = "Could not retrieve users.";
@@ -257,7 +259,7 @@ public class OrderController : Controller
 
         _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
-        var apiUrl = $"{_apiUrl}/api/Order/{orderId}/AddItem";
+        var apiUrl = $"{_apiUrl}/api/Order/{orderId}/Items";
         var content = new StringContent(JsonSerializer.Serialize(new { ItemId = itemId }), Encoding.UTF8, "application/json");
 
         var response = await _httpClient.PostAsync(apiUrl, content);
@@ -282,7 +284,7 @@ public class OrderController : Controller
 
         _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
-        var apiUrl = $"{_apiUrl}/api/Order/{orderId}/DeleteItem/{orderItemId}";
+        var apiUrl = $"{_apiUrl}/api/Order/{orderId}/Items/{orderItemId}";
         var response = await _httpClient.DeleteAsync(apiUrl);
 
         if (response.IsSuccessStatusCode)
@@ -295,13 +297,13 @@ public class OrderController : Controller
     }
 
     [HttpPost]
-    public async Task<IActionResult> AddItemVariationToOrderItem(int varId, int orderItemId, int orderId)
+    public async Task<IActionResult> AddItemVariationToOrderItem(int varId, int orderItemId, int orderId, int itemId)
     {
         string? token = Request.Cookies["authToken"];
         _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
         // API endpoint to add variation to order item
-        var apiUrl = $"{_apiUrl}/api/Order/{orderId}/OrderItems/{orderItemId}/AddVariation";
+        var apiUrl = $"{_apiUrl}/api/Order/{orderId}/OrderItems/{orderItemId}/Variations";
 
         // Construct the DTO object
         var addVariationDTO = new
@@ -315,19 +317,19 @@ public class OrderController : Controller
 
         // Call the API
         var response = await _httpClient.PostAsync(apiUrl, content);
-        Console.WriteLine(response.ToString());
 
         if (response.IsSuccessStatusCode)
         {
-            // Redirect back to the SelectItems page to view updated order items
+            // Redirect back to the ItemVariations page to view updated order items
             TempData["Message"] = "Variation added successfully.";
-            return RedirectToAction("SelectItems", new { orderId = orderId });
+            return RedirectToAction("ItemVariations", new { itemId, orderItemId, orderId });
         }
 
         // Handle errors
         TempData["Error"] = "Could not add variation to order item.";
-        return RedirectToAction("SelectItems", new { orderId = orderId });
+        return RedirectToAction("ItemVariations", new { itemId, orderItemId, orderId });
     }
+
 
 
     // GET: Order/ItemVariations
@@ -356,13 +358,29 @@ public class OrderController : Controller
             variations = new List<ItemVariation>();
         }
 
+        // Fetch item variations from the API
+        var orderItemVariatonsApiUrl = $"{_apiUrl}/api/Order/{orderId}/OrderItems/{orderItemId}/Variations";
+        response = await _httpClient.GetAsync(orderItemVariatonsApiUrl);
+
+        List<OrderItemVariation>? orderItemVariations = null;
+        if (response.IsSuccessStatusCode)
+        {
+            var variationsJson = await response.Content.ReadAsStringAsync();
+            orderItemVariations = JsonSerializer.Deserialize<List<OrderItemVariation>>(variationsJson, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+        }
+        else
+        {
+            orderItemVariations = new List<OrderItemVariation>();
+        }
+
         // Prepare the model for the view
         var model = new ItemVariationsViewModel
         {
             ItemId = itemId,
             OrderItemId = orderItemId,
             OrderId = orderId,
-            Variations = variations
+            Variations = variations,
+            OrderItemVariations = orderItemVariations
         };
 
         return View(model);
@@ -407,6 +425,30 @@ public class OrderController : Controller
 
         return View("SelectedVariations", model);
     }
+
+    [HttpPost]
+    public async Task<IActionResult> DeleteVariation(int orderId, int orderItemVariationId, int orderItemId, int itemId)
+    {
+        string? token = Request.Cookies["authToken"];
+        _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+
+        var apiUrl = $"{_apiUrl}/api/Order/{orderId}/Items/Variations/{orderItemVariationId}";
+        var response = await _httpClient.DeleteAsync(apiUrl);
+
+        if (response.IsSuccessStatusCode)
+        {
+            // Redirect back to ItemVariations with required parameters
+            TempData["Message"] = "Variation deleted successfully.";
+            return RedirectToAction("ItemVariations", new { itemId, orderItemId, orderId });
+        }
+
+        TempData["Error"] = "Could not delete the Variation.";
+        return RedirectToAction("ItemVariations", new { itemId, orderItemId, orderId });
+    }
+
+
+
+
 
     [HttpPost]
     public IActionResult RedirectToPayment(int orderId, decimal untaxedAmount, decimal tax)
