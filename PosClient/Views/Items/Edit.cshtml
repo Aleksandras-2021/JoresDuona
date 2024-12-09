@@ -2,8 +2,14 @@
 
 <h2>Edit Item</h2>
 
-<form asp-action="Edit" method="post">
+@if (TempData["Error"] != null)
+{
+    <div class="alert alert-danger">
+        @TempData["Error"]
+    </div>
+}
 
+<form asp-action="Edit" method="post">
     <div class="form-group">
         <label asp-for="Name"></label>
         <input asp-for="Name" class="form-control" />
@@ -23,6 +29,15 @@
         <label asp-for="Price"></label>
         <input asp-for="Price" class="form-control" />
         <span asp-validation-for="Price" class="text-danger"></span>
+    </div>
+    <div class="form-group">
+        <label asp-for="Category">Category</label>
+        <select asp-for="Category" class="form-control">
+            @foreach (var type in Enum.GetValues(typeof(PosShared.Models.Items.ItemCategory)))
+            {
+                <option value="@type">@type</option>
+            }
+        </select>
     </div>
     <div class="form-group">
         <label asp-for="Quantity"></label>

@@ -14,9 +14,5 @@ public class OrderItemTaxEntityConfiguration : IEntityTypeConfiguration<OrderIte
         builder.HasOne(x => x.OrderItem)
             .WithMany(x => x.OrderItemTaxes)
             .HasForeignKey(x => x.OrderItemId);
-
-        builder.HasOne(x => x.Tax)
-            .WithMany(x => x.OrderItemTaxes)
-            .HasForeignKey(x => x.TaxId);
     }
 }

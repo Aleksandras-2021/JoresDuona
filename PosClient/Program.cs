@@ -1,5 +1,7 @@
 using Microsoft.AspNetCore.Authentication.Cookies;
+using PosClient.Services;
 using PosShared.Models;
+using System.Security.Claims;
 using System.Text.Json.Serialization;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -33,7 +35,19 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
         options.SlidingExpiration = true; // Optional: extend session on activity
     });
 
+builder.Services.AddDistributedMemoryCache(); // Use an in-memory cache
+builder.Services.AddSession(options =>
+{
+    options.Cookie.HttpOnly = true;
+    options.Cookie.IsEssential = true; // Ensure session cookies are retained even without consent
+    options.IdleTimeout = TimeSpan.FromMinutes(20); // Session timeout
+});
+builder.Services.AddHttpContextAccessor();
+builder.Services.AddScoped<IUserSessionService, UserSessionService>();
+
+
 var app = builder.Build();
+
 
 
 
@@ -50,8 +64,25 @@ app.UseHttpsRedirection();
 app.UseStaticFiles();
 
 app.UseRouting();
+app.UseSession();
 
-
+app.Use(async (context, next) =>
+{
+    var path = context.Request.Path;
+    if (!path.StartsWithSegments("/Home/Login") &&
+        !path.StartsWithSegments("/css") &&
+        !path.StartsWithSegments("/js") &&
+        !path.StartsWithSegments("/lib"))
+    {
+        var userId = context.Session.GetInt32("UserId");
+        if (userId == null)
+        {
+            context.Response.Redirect("/Home/Login");
+            return;
+        }
+    }
+    await next();
+});
 
 app.UseAuthentication();
 app.UseAuthorization();

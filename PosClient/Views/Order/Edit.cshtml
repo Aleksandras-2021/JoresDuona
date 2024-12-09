@@ -1,0 +1,11 @@
+﻿@model PosShared.Models.Order
+
+
+<h2>Edit Item</h2>
+
+@if (TempData["Error"] != null)
+{
+    <div class="alert alert-danger">
+        @TempData["Error"]
+    </div>
+}
