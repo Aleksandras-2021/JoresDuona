@@ -53,12 +53,15 @@
                                 <a asp-action="SelectItems" asp-route-orderId="@order.Id" class="btn btn-secondary btn-sm">
                                     <i class="bi bi-eye"></i> View
                                 </a>
-                                <form asp-action="DeleteOrder" method="post" class="m-0">
-                                    <input type="hidden" name="orderId" value="@order.Id" />
-                                    <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('Are you sure you want to delete this order?');">
-                                        <i class="bi bi-trash"></i> Delete
-                                    </button>
-                                </form>
+                                @if (order.Status != PosShared.Models.OrderStatus.Closed)
+                                {
+                                    <form asp-action="DeleteOrder" method="post" class="m-0">
+                                        <input type="hidden" name="orderId" value="@order.Id" />
+                                        <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('Are you sure you want to delete this order?');">
+                                            <i class="bi bi-trash"></i> Delete
+                                        </button>
+                                    </form>
+                                }
                             </td>
                         </tr>
                     }

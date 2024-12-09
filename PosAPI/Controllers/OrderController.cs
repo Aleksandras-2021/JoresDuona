@@ -160,6 +160,8 @@ public class OrderController : ControllerBase
             var order = await _orderRepository.GetOrderByIdAsync(orderId);
             if (order == null)
                 return NotFound($"Order with ID {orderId} not found.");
+            if (order.Status == OrderStatus.Closed)
+                return Unauthorized("You are not authorized to modify closed order.");
 
             // Update the status
             order.Status = status;
@@ -191,6 +193,8 @@ public class OrderController : ControllerBase
         var order = await _orderRepository.GetOrderByIdAsync(orderId);
         if (order == null)
             return NotFound($"Order with ID {orderId} not found.");
+        if (order.Status == OrderStatus.Closed)
+            return Unauthorized("You are not authorized to modify closed order.");
 
         if (order.BusinessId != sender.BusinessId)
             return Unauthorized("You are not authorized to modify this order.");
@@ -240,6 +244,8 @@ public class OrderController : ControllerBase
         {
             return NotFound($"Order with ID {orderId} not found.");
         }
+        if (order.Status == OrderStatus.Closed)
+            return Unauthorized("You are not authorized to modify closed order.");
 
         if (order.BusinessId != sender.BusinessId && sender.Role != UserRole.SuperAdmin)
         {
@@ -341,6 +347,8 @@ public class OrderController : ControllerBase
         {
             return NotFound($"Order with ID {orderId} not found.");
         }
+        if (order.Status == OrderStatus.Closed)
+            return Unauthorized("You are not authorized to modify closed order.");
 
         if (order.BusinessId != sender.BusinessId && sender.Role != UserRole.SuperAdmin)
         {
@@ -453,6 +461,8 @@ public class OrderController : ControllerBase
         var order = await _orderRepository.GetOrderByIdAsync(orderId);
         if (order == null)
             return NotFound($"Order with ID {orderId} not found.");
+        if(order.Status == OrderStatus.Closed)
+            return Unauthorized("You are not authorized to modify closed order.");
 
         if (order.BusinessId != sender.BusinessId)
             return Unauthorized("You are not authorized to modify this order.");

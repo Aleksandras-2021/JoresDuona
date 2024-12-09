@@ -8,14 +8,15 @@
 <h2>Untaxed charge: @Model.Order.ChargeAmount</h2>
 <h2>Taxes charge: @Model.Order.TaxAmount</h2>
 
-
-<form asp-action="RedirectToPayment" asp-controller="Order" method="post">
-    <input type="hidden" name="orderId" value="@Model.OrderId" />
-    <input type="hidden" name="untaxedAmount" value="@Model.Order.ChargeAmount" />
-    <input type="hidden" name="tax" value="@Model.Order.TaxAmount" />
-    <button type="submit" class="btn btn-primary">Proceed to Payment</button>
-</form>
-
+@if (Model.Order.Status != PosShared.Models.OrderStatus.Closed)
+{
+    <form asp-action="RedirectToPayment" asp-controller="Order" method="post">
+        <input type="hidden" name="orderId" value="@Model.OrderId" />
+        <input type="hidden" name="untaxedAmount" value="@Model.Order.ChargeAmount" />
+        <input type="hidden" name="tax" value="@Model.Order.TaxAmount" />
+        <button type="submit" class="btn btn-primary">Proceed to Payment</button>
+    </form>
+}
 
 @if (TempData["Error"] != null)
 {
@@ -25,7 +26,7 @@
 }
 
 
-@if (Model.Items != null && Model.Items.Any())
+@if (Model.Items != null && Model.Items.Any() && Model.Order.Status != PosShared.Models.OrderStatus.Closed)
 {
     <h2>Available Items</h2>
     <table class="table">
@@ -88,13 +89,16 @@ else
                     <td>@orderItem.Quantity</td>
                     <td>@orderItem.Price.ToString("C")</td>
                     <td>@((orderItem.Quantity * orderItem.Price).ToString("C"))</td>
-                    <td>
-                        <form asp-action="RemoveItemFromOrder" method="post">
+                    @if (Model.Order.Status != PosShared.Models.OrderStatus.Closed)
+                    {
+                        <td>
+                            <form asp-action="RemoveItemFromOrder" method="post">
                             <input type="hidden" name="orderId" value="@Model.OrderId" />
                             <input type="hidden" name="orderItemId" value="@orderItem.Id" />
                             <button type="submit" class="btn btn-danger">Remove</button>
                         </form>
                     </td>
+                    }
                     <td>
                         <a href="@Url.Action("ItemVariations", new { itemId = orderItem.ItemId, orderItemId = orderItem.Id, orderId = Model.OrderId})">
                             Select Variation
