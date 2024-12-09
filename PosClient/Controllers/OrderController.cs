@@ -430,7 +430,6 @@ public class OrderController : Controller
 
         if (response.IsSuccessStatusCode)
         {
-            // Redirect back to ItemVariations with required parameters
             TempData["Message"] = "Variation deleted successfully.";
             return RedirectToAction("ItemVariations", new { itemId, orderItemId, orderId });
         }
