@@ -151,8 +151,8 @@ public class OrderController : ControllerBase
         }
     }
     //Order/{id}/UpdateStatus
-    [HttpPost("{orderId}/UpdateStatus")]
-    public async Task<IActionResult> UpdateStatus([FromQuery] int orderId, OrderStatus status)
+    [HttpPost("{orderId}/UpdateStatus/{status}")]
+    public async Task<IActionResult> UpdateStatus([FromRoute] int orderId,OrderStatus status)
     {
         User? sender = await GetUserFromToken();
 
@@ -172,6 +172,10 @@ public class OrderController : ControllerBase
 
             // Update the status
             order.Status = status;
+
+            if (order.Status == OrderStatus.Closed)
+                order.ClosedAt = DateTime.UtcNow.AddHours(2);
+
             await _orderRepository.UpdateOrderAsync(order);
 
             return Ok(new { message = "Order status updated successfully.", status });
@@ -182,6 +186,7 @@ public class OrderController : ControllerBase
             return StatusCode(500, "Internal server error.");
         }
     }
+
 
     [HttpPut("{orderId}")]
     public async Task<IActionResult> UpdateOrder([FromBody] Order order)
@@ -219,8 +224,6 @@ public class OrderController : ControllerBase
             existingOrder.UserId = sender.Id; //Whoever updates order, takes over the ownership of it
             existingOrder.User = sender;
             existingOrder.Status = order.Status;
-            if (order.Status == OrderStatus.Closed)
-                existingOrder.ClosedAt = DateTime.UtcNow.AddHours(2); ;
             existingOrder.ChargeAmount = order.ChargeAmount;
             existingOrder.DiscountAmount = order.DiscountAmount;
             existingOrder.TaxAmount = order.TaxAmount;

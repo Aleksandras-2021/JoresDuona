@@ -202,7 +202,7 @@ public class PaymentController : ControllerBase
 
             if (sum == order.ChargeAmount + order.TaxAmount)
             {
-                order.Status = OrderStatus.Closed;
+                order.Status = OrderStatus.Paid;
                 order.ClosedAt = DateTime.UtcNow.AddHours(2);;
             }
             else if (sum < order.ChargeAmount + order.TaxAmount)
@@ -210,8 +210,7 @@ public class PaymentController : ControllerBase
             else if (sum > order.ChargeAmount + order.TaxAmount)
             {
                 order.TipAmount = sum - order.ChargeAmount - order.TaxAmount;
-                order.ClosedAt = DateTime.UtcNow.AddHours(2);
-                order.Status = OrderStatus.Closed;
+                order.Status = OrderStatus.Paid;
             }
 
             _logger.LogInformation($"Payment of {payment.Amount}/{order.ChargeAmount} euros has been made to an order with id({payment.OrderId}) order status now is ({order.Status})");

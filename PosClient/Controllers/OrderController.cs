@@ -440,6 +440,27 @@ public class OrderController : Controller
     }
 
     [HttpPost]
+    public async Task<IActionResult> UpdateStatus(int orderId, OrderStatus status)
+    {
+        string? token = Request.Cookies["authToken"];
+        _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+
+        var apiUrl = $"{_apiUrl}/api/Order/{orderId}/UpdateStatus/{status}";
+        var response = await _httpClient.PostAsync(apiUrl, null);
+
+        if (response.IsSuccessStatusCode)
+        {
+            TempData["Message"] = "Order closed successfully.";
+        }
+        else
+        {
+            TempData["Error"] = "Failed to close the order.";
+        }
+        return RedirectToAction("Index");
+    }
+
+
+    [HttpPost]
     public IActionResult RedirectToPayment(int orderId, decimal untaxedAmount, decimal tax)
     {
         return RedirectToAction("Create", "Payment", new { orderId, untaxedAmount, tax });
