@@ -92,16 +92,15 @@
                         <td>@orderItemVariation.AdditionalPrice.ToString("C")</td>
                         <td>
                             <form method="post" asp-action="DeleteVariation" class="d-inline">
-                                <input type="hidden" name="orderItemVariationId" value="@orderItemVariation.Id" />
                                 <input type="hidden" name="orderId" value="@Model.OrderId" />
+                                 <input type="hidden" name="orderItemVariationId" value="@orderItemVariation.Id" />
                                 <input type="hidden" name="orderItemId" value="@Model.OrderItemId" />
                                 <input type="hidden" name="itemId" value="@Model.ItemId" />
-
+                                
                                 <button type="submit" class="btn btn-danger btn-sm">
                                     Delete variation
                                 </button>
                             </form>
-
                         </td>
                     </tr>
                 }

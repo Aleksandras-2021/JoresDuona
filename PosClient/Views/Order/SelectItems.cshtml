@@ -4,6 +4,7 @@
     ViewData["Title"] = "Select Items";
 }
 
+@if (Model != null) {
 <div class="container my-4">
     <h1 class="text-center mb-4">@ViewData["Title"] for Order <span class="text-primary">#@Model.OrderId</span></h1>
 
@@ -131,3 +132,4 @@
         </div>
     }
 </div>
+}
