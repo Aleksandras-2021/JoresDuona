@@ -105,7 +105,7 @@ public class ServiceController : Controller
         if (response.IsSuccessStatusCode)
         {
             var serviceData = await response.Content.ReadAsStringAsync();
-            var service = JsonSerializer.Deserialize<Service>(serviceData);
+            var service = JsonSerializer.Deserialize<Service>(serviceData, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
             if (service != null)
             {
                 var serviceDTO = new ServiceDTO
