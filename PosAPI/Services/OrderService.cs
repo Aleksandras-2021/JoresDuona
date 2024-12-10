@@ -25,6 +25,20 @@ public class OrderService : IOrderService
     {
         return await _orderRepository.GetOrderByIdAsync(orderId);
     }
+    public async Task<List<Order>> GetAuthorizedOrders(User sender)
+    {
+        List<Order>? orders = null;
+
+        if (sender.Role == UserRole.SuperAdmin)
+            orders = await _orderRepository.GetAllOrdersAsync();
+        else if (sender.Role == UserRole.Manager || sender.Role == UserRole.Owner || sender.Role == UserRole.Worker)
+            orders = await _orderRepository.GetAllBusinessOrdersAsync(sender.BusinessId);
+        else
+            orders = new List<Order>();
+
+
+        return orders;
+    }
     public async Task<Order?> GetAuthorizedOrder(int orderId, User sender)
     {
         var order = await _orderRepository.GetOrderByIdAsync(orderId);
@@ -35,11 +49,26 @@ public class OrderService : IOrderService
         if (order == null)
             throw new KeyNotFoundException($"Order with ID {orderId} not found.");
 
-        if (order.Status == OrderStatus.Closed && sender.Role != UserRole.SuperAdmin)
+        return order;
+    }
+
+    public async Task<Order?> GetAuthorizedOrderForModification(int orderId, User sender)
+    {
+        var order = await _orderRepository.GetOrderByIdAsync(orderId);
+
+        if (sender.Role != UserRole.SuperAdmin && order.BusinessId != sender.BusinessId)
+            throw new UnauthorizedAccessException();
+
+        if (order == null)
+            throw new KeyNotFoundException($"Order with ID {orderId} not found.");
+
+        //Owner can modify orders & manager
+        if (order.Status == OrderStatus.Closed && sender.Role == UserRole.Worker)
             throw new UnauthorizedAccessException("You are not authorized to modify closed orders.");
 
         return order;
     }
+
 
     public async Task<OrderItem?> GetAuthorizedOrderItem(int orderItemId, User sender)
     {
@@ -137,33 +166,6 @@ public class OrderService : IOrderService
             throw new UnauthorizedAccessException("You are not authorized to access variations for this order item.");
 
         return orderItemVariations;
-    }
-
-    public async Task<List<ItemVariation>?> GetAuthorizedItemVariations(int orderItemId, User sender)
-    {
-        // Fetch the variations associated with the order item
-
-        // Fetch the order item to check if it exists
-        var orderItem = await _orderRepository.GetOrderItemById(orderItemId);
-        if (orderItem == null)
-            throw new KeyNotFoundException($"Order item with ID {orderItemId} not found.");
-
-        var itemVariations = await _itemRepository.GetItemVariationsAsync(orderItem.ItemId);
-
-        if (itemVariations == null || !itemVariations.Any())
-            throw new KeyNotFoundException($"No variations found for order item with ID {orderItemId}.");
-
-        // Fetch the associated order for the order item
-        var order = await _orderRepository.GetOrderByIdAsync(orderItem.OrderId);
-        if (order == null)
-            throw new KeyNotFoundException($"Order with ID {orderItem.OrderId} not found.");
-
-        // Check if the user is authorized to access this order item based on business ID and role
-        if (order.BusinessId != sender.BusinessId && sender.Role != UserRole.SuperAdmin)
-            throw new UnauthorizedAccessException("You are not authorized to access variations for this order item.");
-
-        // Return the item variations if all checks pass
-        return itemVariations;
     }
 
 

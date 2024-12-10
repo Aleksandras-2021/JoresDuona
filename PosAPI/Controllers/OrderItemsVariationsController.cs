@@ -29,40 +29,6 @@ public class OrderItemsVariationsController : ControllerBase
         _logger = logger;
     }
 
-
-    [HttpGet("{orderId}/Items/{orderItemId}/ItemVariations")]
-    public async Task<IActionResult> GetItemVariations(int orderId, int orderItemId)
-    {
-        User? sender = await GetUserFromToken();
-
-        if (sender == null)
-            return Unauthorized();
-
-        try
-        {
-            var orderItem = await _orderService.GetAuthorizedOrderItem(orderItemId, sender);
-
-            var itemVariations = await _orderService.GetAuthorizedItemVariations(orderItemId, sender);
-
-            return Ok(itemVariations);
-        }
-        catch (UnauthorizedAccessException ex)
-        {
-            return Unauthorized(ex.Message);
-        }
-        catch (KeyNotFoundException ex)
-        {
-            return NotFound(ex.Message);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError($"Error retrieving item variations: {ex.Message}");
-            return StatusCode(500, "Internal server error.");
-        }
-    }
-
-
-
     [HttpGet("{orderId}/Items/{orderItemId}/Variations")]
     public async Task<IActionResult> GetOrderItemVariations(int orderItemId)
     {
@@ -73,11 +39,9 @@ public class OrderItemsVariationsController : ControllerBase
 
         try
         {
-            // Step 1: Validate Order Item and Get Variations
             var orderItem = await _orderService.GetAuthorizedOrderItem(orderItemId, sender);
             var orderItemVariations = await _orderService.GetAuthorizedOrderItemVariations(orderItemId, sender);
 
-            // Step 2: Return Order Item Variations
             return Ok(orderItemVariations);
         }
         catch (UnauthorizedAccessException ex)
@@ -94,10 +58,6 @@ public class OrderItemsVariationsController : ControllerBase
             return StatusCode(500, "Internal server error.");
         }
     }
-
-
-
-
 
     // GET: api/Order/{orderId}/Items/{orderItemId}/Variations/{variationId}
     [HttpGet("{orderId}/Items/{orderItemId}/Variations/{variationId}")]
@@ -139,12 +99,10 @@ public class OrderItemsVariationsController : ControllerBase
 
         try
         {
-            // Step 1: Validate Order, OrderItem, and Variation
-            var order = await _orderService.GetAuthorizedOrder(orderId, sender);
+            var order = await _orderService.GetAuthorizedOrderForModification(orderId, sender);
             var orderItem = await _orderService.GetAuthorizedOrderItem(itemId, sender);
             var variation = await _orderService.GetAuthorizedItemVariation(addVariationDTO.VariationId, sender);
 
-            // Step 2: Create and Add Order Item Variation
             var orderItemVariation = new OrderItemVariation
             {
                 OrderItemId = itemId,
@@ -158,7 +116,6 @@ public class OrderItemsVariationsController : ControllerBase
             await _orderRepository.AddOrderItemVariationAsync(orderItemVariation);
             await _orderRepository.UpdateOrderAsync(order);
 
-            // Step 3: Return the Created Resource
             return CreatedAtAction(nameof(GetOrderItemVariationById),
                 new { orderId = orderId, orderItemId = itemId, variationId = orderItemVariation.Id },
                 orderItemVariation);
@@ -192,13 +149,11 @@ public class OrderItemsVariationsController : ControllerBase
 
         try
         {
-            var order = await _orderService.GetAuthorizedOrder(orderId, sender);
+            var order = await _orderService.GetAuthorizedOrderForModification(orderId, sender);
             var variation = await _orderService.GetAuthorizedOrderItemVariation(orderItemVariationId, orderItemId, sender);
 
-            // Step 2: Delete the OrderItemVariation
             await _orderRepository.DeleteOrderItemVariationAsync(orderItemVariationId);
 
-            // Step 3: Return Success
             return Ok("Order Item Variation deleted successfully.");
         }
         catch (UnauthorizedAccessException ex)
@@ -215,8 +170,6 @@ public class OrderItemsVariationsController : ControllerBase
             return StatusCode(500, "Internal server error.");
         }
     }
-
-
 
     #region HelperMethods
 

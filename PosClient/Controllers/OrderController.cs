@@ -89,7 +89,6 @@ public class OrderController : Controller
             var jsonResponse = await response.Content.ReadAsStringAsync();
             var createdOrder = JsonSerializer.Deserialize<Order>(jsonResponse, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
 
-            // Redirect to Index after successful creation
             return RedirectToAction(nameof(Index));
         }
 
@@ -107,7 +106,6 @@ public class OrderController : Controller
 
         _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
-        // Fetch available items from the API
         var itemsApiUrl = $"{_apiUrl}/api/Items";
         var itemsResponse = await _httpClient.GetAsync(itemsApiUrl);
 
@@ -122,7 +120,6 @@ public class OrderController : Controller
             items = new List<Item>();
         }
 
-        // Fetch existing order items from the API
         var orderItemsApiUrl = $"{_apiUrl}/api/Order/{orderId}/Items";
         var orderItemsResponse = await _httpClient.GetAsync(orderItemsApiUrl);
 
@@ -137,7 +134,6 @@ public class OrderController : Controller
             orderItems = new List<OrderItem>();
         }
 
-        // Fetch existing order
         var orderApiUrl = $"{_apiUrl}/api/Order/{orderId}";
         var orderResponse = await _httpClient.GetAsync(orderApiUrl);
         Order? order = null;
@@ -233,7 +229,6 @@ public class OrderController : Controller
 
         if (response.IsSuccessStatusCode)
         {
-            // Redirect to the index after successfully deleting the order
             TempData["Message"] = "Order deleted successfully.";
             return RedirectToAction("Index");
         }
@@ -297,25 +292,20 @@ public class OrderController : Controller
         string? token = Request.Cookies["authToken"];
         _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
-        // API endpoint to add variation to order item
         var apiUrl = $"{_apiUrl}/api/Order/{orderId}/Items/{orderItemId}/Variations";
 
-        // Construct the DTO object
         var addVariationDTO = new
         {
             VariationId = varId,
             Quantity = 1
         };
 
-        // Serialize the DTO to JSON
         var content = new StringContent(JsonSerializer.Serialize(addVariationDTO), Encoding.UTF8, "application/json");
 
-        // Call the API
         var response = await _httpClient.PostAsync(apiUrl, content);
 
         if (response.IsSuccessStatusCode)
         {
-            // Redirect back to the ItemVariations page to view updated order items
             TempData["Message"] = "Variation added successfully.";
             return RedirectToAction("ItemVariations", new { itemId, orderItemId, orderId });
         }
@@ -325,9 +315,8 @@ public class OrderController : Controller
         return RedirectToAction("ItemVariations", new { itemId, orderItemId, orderId });
     }
 
-
-
-    // GET: Order/ItemVariations
+    // GET: Items/{id}/Variations
+    // GET: Order/{orderId}/Items/{orderItemId}/Variations
     public async Task<IActionResult> ItemVariations(int itemId, int orderItemId, int orderId)
     {
         string? token = Request.Cookies["authToken"];
@@ -338,7 +327,6 @@ public class OrderController : Controller
 
         _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
-        // Fetch item variations from the API
         var variationsApiUrl = $"{_apiUrl}/api/Items/{itemId}/Variations";
         var response = await _httpClient.GetAsync(variationsApiUrl);
 
@@ -353,7 +341,6 @@ public class OrderController : Controller
             variations = new List<ItemVariation>();
         }
 
-        // Fetch item variations from the API
         var orderItemVariatonsApiUrl = $"{_apiUrl}/api/Order/{orderId}/Items/{orderItemId}/Variations";
         response = await _httpClient.GetAsync(orderItemVariatonsApiUrl);
 
@@ -400,7 +387,6 @@ public class OrderController : Controller
         return RedirectToAction("ItemVariations", new { itemId, orderItemId, orderId });
     }
 
-
     [HttpPost]
     public async Task<IActionResult> UpdateStatus(int orderId, OrderStatus status)
     {
@@ -420,7 +406,6 @@ public class OrderController : Controller
         }
         return RedirectToAction("Index");
     }
-
 
     [HttpPost]
     public IActionResult RedirectToPayment(int orderId, decimal untaxedAmount, decimal tax)

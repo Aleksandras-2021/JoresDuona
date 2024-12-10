@@ -19,20 +19,17 @@ public class OrderItemsController : ControllerBase
     private readonly IOrderRepository _orderRepository;
     private readonly IUserRepository _userRepository;
     private readonly IItemRepository _itemRepository;
-    private readonly ITaxRepository _taxRepository;
-
     private readonly IOrderService _orderService;
 
     private readonly ILogger<OrderItemsController> _logger;
 
-    public OrderItemsController(IOrderRepository orderRepository, IUserRepository userRepository, IItemRepository itemRepository, ITaxRepository taxRepository,
-        IOrderService orderService, ILogger<OrderItemsController> logger)
+    public OrderItemsController(IOrderRepository orderRepository, IUserRepository userRepository, IOrderService orderService, ILogger<OrderItemsController> logger, IItemRepository itemRepository)
     {
         _orderRepository = orderRepository;
         _userRepository = userRepository;
-        _itemRepository = itemRepository;
-        _taxRepository = taxRepository;
         _orderService = orderService;
+        _itemRepository = itemRepository;
+
         _logger = logger;
     }
 
@@ -68,8 +65,6 @@ public class OrderItemsController : ControllerBase
         }
     }
 
-
-
     // GET: api/Order/{OrderId}/Items/{id}
     [HttpGet("Items/{id}")]
     public async Task<IActionResult> GetOrderItem(int id)
@@ -100,8 +95,6 @@ public class OrderItemsController : ControllerBase
         }
     }
 
-
-
     // POST: api/Order/{orderId}/Items
     [HttpPost("{orderId}/Items")]
     public async Task<IActionResult> AddItemToOrder(int orderId, [FromBody] AddItemDTO addItemDTO)
@@ -113,7 +106,7 @@ public class OrderItemsController : ControllerBase
 
         try
         {
-            var order = await _orderService.GetAuthorizedOrder(orderId, sender);
+            var order = await _orderService.GetAuthorizedOrderForModification(orderId, sender);
 
             var item = await _itemRepository.GetItemByIdAsync(addItemDTO.ItemId);
 
@@ -156,6 +149,8 @@ public class OrderItemsController : ControllerBase
 
         try
         {
+            // Get Order for validation on its status
+            var order = await _orderService.GetAuthorizedOrderForModification(orderId, sender);
             // Validate order item
             var orderItem = await _orderService.GetAuthorizedOrderItem(orderItemId, sender);
 
@@ -181,7 +176,6 @@ public class OrderItemsController : ControllerBase
             return StatusCode(500, "Internal server error.");
         }
     }
-
 
     #region HelperMethods
 
