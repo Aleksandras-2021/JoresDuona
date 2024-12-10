@@ -93,7 +93,64 @@ public class PaymentController : Controller
         }
 
         TempData["Error"] = "Unable to fetch order payments. Most likely they do not exist.";
-        return RedirectToAction("Index", "Order"); 
+        return RedirectToAction("Index", "Order");
+    }
+
+    [HttpGet]
+    public async Task<IActionResult> GetOrderReceipt(int orderId)
+    {
+        string? token = Request.Cookies["authToken"];
+
+        _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+
+        //Get Order Items
+        var orderItemsApiUrl = _apiUrl + $"/api/Order/{orderId}/Items";
+        var response = await _httpClient.GetAsync(orderItemsApiUrl);
+
+        if (!response.IsSuccessStatusCode)
+        {
+            TempData["Error"] = "Unable to fetch order Items.";
+        }
+
+        var orderItemsData = await response.Content.ReadAsStringAsync();
+        List<OrderItem>? orderItems = JsonSerializer.Deserialize<List<OrderItem>>(orderItemsData, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+
+
+        //Get Order Variations
+        var orderItemVariationsApiUrl = _apiUrl + $"/api/Order/{orderId}/Variations";
+        response = await _httpClient.GetAsync(orderItemVariationsApiUrl);
+
+        if (!response.IsSuccessStatusCode)
+        {
+            TempData["Error"] = "Unable to fetch order item variations.";
+        }
+
+        var orderItemsVariationsData = await response.Content.ReadAsStringAsync();
+        List<OrderItemVariation>? orderItemsVariations = JsonSerializer.Deserialize<List<OrderItemVariation>>(orderItemsVariationsData, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+
+        //Get all Taxes
+
+        var taxsApiUrl = _apiUrl + $"/api/Tax";
+        response = await _httpClient.GetAsync(taxsApiUrl);
+
+        if (!response.IsSuccessStatusCode)
+        {
+            TempData["Error"] = "Unable to fetch taxes for order.";
+        }
+
+        var taxData = await response.Content.ReadAsStringAsync();
+        List<Tax>? taxes = JsonSerializer.Deserialize<List<Tax>>(taxData, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+
+        ReceiptViewModel model = new ReceiptViewModel()
+        {
+            OrderId = orderId,
+            OrderItems = orderItems,
+            OrderItemVariatons = orderItemsVariations,
+            Taxes = taxes
+        };
+
+
+        return View("Receipt", model);
     }
 
 

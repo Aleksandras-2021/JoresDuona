@@ -256,6 +256,35 @@ public class OrderController : ControllerBase
         }
     }
 
+    [HttpGet("{orderId}/Variations")]
+    public async Task<IActionResult> GetAllOrderVariations(int orderId)
+    {
+        User? sender = await GetUserFromToken();
+
+        if (sender == null)
+            return Unauthorized();
+
+        try
+        {
+            var OrderVariations = await _orderService.GetAuthorizedOrderVariations(orderId, sender);
+
+            return Ok(OrderVariations);
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            return Unauthorized(ex.Message);
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(ex.Message);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError($"Error retrieving order item variations: {ex.Message}");
+            return StatusCode(500, "Internal server error.");
+        }
+    }
+
 
     #region HelperMethods
 

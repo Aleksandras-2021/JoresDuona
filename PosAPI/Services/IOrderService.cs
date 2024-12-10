@@ -13,5 +13,7 @@ public interface IOrderService
     Task<OrderItemVariation?> GetAuthorizedOrderItemVariation(int variationId, int orderItemId, User sender);
     Task<ItemVariation?> GetAuthorizedItemVariation(int variationId, User sender);
     Task<List<OrderItemVariation>?> GetAuthorizedOrderItemVariations(int orderItemId, User sender);
+    Task<List<OrderItemVariation>?> GetAuthorizedOrderVariations(int orderId, User sender);
+
     Task RecalculateOrderCharge(int orderId);
 }

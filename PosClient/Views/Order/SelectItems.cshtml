@@ -12,6 +12,7 @@
         <h4>Order Summary</h4>
         <p><strong>Untaxed Charge:</strong> @Model.Order.ChargeAmount.ToString("C")</p>
         <p><strong>Taxes:</strong> @Model.Order.TaxAmount.ToString("C")</p>
+        <p><strong>Total:</strong> @((Model.Order.TaxAmount + Model.Order.ChargeAmount).ToString("C"))</p>
     </div>
 
     @if (Model.Order.Status != PosShared.Models.OrderStatus.Closed)
@@ -24,6 +25,16 @@
                 <i class="bi bi-credit-card"></i> Proceed to Payment
             </button>
         </form>
+    }
+    else{
+            <form asp-action="RedirectToReceipt" asp-controller="Order" method="get" class="mb-4">
+                <input type="hidden" name="orderId" value="@Model.OrderId" />
+                <input type="hidden" name="untaxedAmount" value="@Model.Order.ChargeAmount" />
+                <input type="hidden" name="tax" value="@Model.Order.TaxAmount" />
+                <button type="submit" class="btn btn-primary w-100">
+                    <i class="bi bi-credit-card"></i> Receipt
+                </button>
+            </form>
     }
 
     @if (TempData["Error"] != null)
@@ -101,7 +112,7 @@
                             <td>@orderItem.Quantity</td>
                             <td>@orderItem.Price.ToString("C")</td>
                             <td>@((orderItem.Quantity * orderItem.Price).ToString("C"))</td>
-                            @if (Model.Order.Status != PosShared.Models.OrderStatus.Closed)
+                                @if (Model.Order.Status != PosShared.Models.OrderStatus.Closed && Model.Order.Status != PosShared.Models.OrderStatus.Paid)
                             {
                                 <td>
                                     <form asp-action="RemoveItemFromOrder" method="post" class="m-0">

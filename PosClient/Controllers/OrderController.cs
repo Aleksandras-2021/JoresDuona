@@ -419,4 +419,10 @@ public class OrderController : Controller
         return RedirectToAction("GetAllOrderPayments", "Payment", new { orderId });
     }
 
+    [HttpGet]
+    public IActionResult RedirectToReceipt(int orderId)
+    {
+        return RedirectToAction("GetOrderReceipt", "Payment", new { orderId });
+    }
+
 }

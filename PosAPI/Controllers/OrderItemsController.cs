@@ -8,7 +8,7 @@ using PosShared.DTOs;
 using PosShared.Models;
 using PosShared.Ultilities;
 
-namespace PosAPI.Controllersq;
+namespace PosAPI.Controllers;
 
 
 [Authorize]
@@ -115,7 +115,9 @@ public class OrderItemsController : ControllerBase
                 OrderId = orderId,
                 ItemId = addItemDTO.ItemId,
                 Quantity = 1, //or addItemDto.Quantity if that ever gets implemented
-                Price = item.Price
+                Price = item.Price,
+                Category = item.Category
+                
             };
 
             await _orderRepository.AddOrderItemAsync(orderItem);

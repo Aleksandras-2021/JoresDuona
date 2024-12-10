@@ -2,7 +2,7 @@
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using PosAPI.Controllersq;
+using PosAPI.Controllers;
 using PosAPI.Repositories;
 using PosAPI.Services;
 using PosShared.DTOs;
@@ -28,6 +28,7 @@ public class OrderItemsVariationsController : ControllerBase
         _orderRepository = orderRepository;
         _logger = logger;
     }
+
 
     [HttpGet("{orderId}/Items/{orderItemId}/Variations")]
     public async Task<IActionResult> GetOrderItemVariations(int orderItemId)
@@ -109,8 +110,7 @@ public class OrderItemsVariationsController : ControllerBase
                 ItemVariationId = addVariationDTO.VariationId,
                 Quantity = addVariationDTO.Quantity,
                 AdditionalPrice = variation.AdditionalPrice,
-                ItemVariation = variation,
-                OrderItem = orderItem
+                Category = orderItem.Category
             };
 
             await _orderRepository.AddOrderItemVariationAsync(orderItemVariation);

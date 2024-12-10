@@ -1,6 +1,6 @@
 ﻿using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using PosAPI.Controllersq;
+using PosAPI.Controllers;
 using PosAPI.Repositories;
 using PosShared.Models;
 
@@ -63,7 +63,7 @@ public class OrderService : IOrderService
             throw new KeyNotFoundException($"Order with ID {orderId} not found.");
 
         //Owner can modify orders & manager
-        if (order.Status == OrderStatus.Closed && sender.Role == UserRole.Worker)
+        if ((order.Status == OrderStatus.Closed || order.Status == OrderStatus.Paid) && sender.Role == UserRole.Worker)
             throw new UnauthorizedAccessException("You are not authorized to modify closed orders.");
 
         return order;
@@ -166,6 +166,23 @@ public class OrderService : IOrderService
             throw new UnauthorizedAccessException("You are not authorized to access variations for this order item.");
 
         return orderItemVariations;
+    }
+
+    public async Task<List<OrderItemVariation>?> GetAuthorizedOrderVariations(int orderId, User sender)
+    {
+        List<OrderItemVariation> orderVariations = await _orderRepository.GetAllOrderItemVariationsAsync(orderId);
+        Order order = await _orderRepository.GetOrderByIdAsync(orderId);
+
+        if (orderVariations == null || !orderVariations.Any())
+            throw new KeyNotFoundException($"No variations found for order with ID {order}.");
+
+        if (order == null)
+            throw new KeyNotFoundException($"Order with ID {orderId} not found.");
+
+        if (order.BusinessId != sender.BusinessId && sender.Role != UserRole.SuperAdmin)
+            throw new UnauthorizedAccessException("You are not authorized to access variations for this order.");
+
+        return orderVariations;
     }
 
 

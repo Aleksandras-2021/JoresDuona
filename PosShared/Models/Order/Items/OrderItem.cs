@@ -1,3 +1,4 @@
+using PosShared.Models.Items;
 using System.Text.Json.Serialization;
 
 namespace PosShared.Models;
@@ -18,6 +19,7 @@ public class OrderItem
     public int Quantity { get; set; }
 
     public decimal Price { get; set; }
+    public ItemCategory Category{ get; set; }
 
     public ICollection<OrderItemVariation> OrderItemVariations { get; set; }
 

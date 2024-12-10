@@ -40,7 +40,6 @@ public class UserController : Controller
             return View(users);
         }
 
-        // Handle errors or empty results
         ViewBag.ErrorMessage = "Could not retrieve users.";
         return View(new List<User>());
     }
@@ -60,7 +59,6 @@ public class UserController : Controller
 
         if (ModelState.IsValid)
         {
-            // Now send the mapped User model to the API
             var apiUrl = _apiUrl + "/api/Users";
             var content = new StringContent(JsonSerializer.Serialize(newUser), Encoding.UTF8, "application/json");
 
@@ -68,10 +66,9 @@ public class UserController : Controller
 
             if (response.IsSuccessStatusCode)
             {
-                return RedirectToAction("Index"); // Redirect on success
+                return RedirectToAction("Index");
             }
 
-            // Handle API failure (e.g., validation errors, internal errors)
             ViewBag.ErrorMessage = "Failed to create user.";
         }
 
@@ -127,10 +124,10 @@ public class UserController : Controller
             ViewBag.ErrorMessage = "Failed to update user.";
         }
 
-        return View(user); // Return to the edit view if validation fails or update fails
+        return View(user);
     }
 
-    // GET: User/Delete/5
+    // GET: User/Delete/
     [HttpGet]
     public async Task<IActionResult> Delete(int id)
     {
@@ -152,7 +149,7 @@ public class UserController : Controller
             }
         }
 
-        return NotFound(); // Return a 404 if the user was not found or request failed
+        return NotFound();
     }
 
     // POST: User/Delete/
