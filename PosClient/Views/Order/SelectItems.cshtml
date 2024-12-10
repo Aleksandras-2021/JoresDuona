@@ -112,13 +112,23 @@
                                         </button>
                                     </form>
                                 </td>
+                            
                                 <td>
                                     <a href="@Url.Action("ItemVariations", new { itemId = orderItem.ItemId, orderItemId = orderItem.Id, orderId = Model.OrderId })"
                                        class="btn btn-secondary btn-sm">
                                         <i class="bi bi-list"></i> Select Variation
                                     </a>
-                                </td>
-                            }
+                                    </td>
+                                }else
+                                {
+                                    <td>
+                                    <a href="@Url.Action("ItemVariations", new { itemId = orderItem.ItemId, orderItemId = orderItem.Id, orderId = Model.OrderId })"
+                                       class="btn btn-secondary btn-sm">
+                                        <i class="bi bi-list"></i> View variations
+                                    </a>
+                                    </td>
+                                }
+
                         </tr>
                     }
                 </tbody>
