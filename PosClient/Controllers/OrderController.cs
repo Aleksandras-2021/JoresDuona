@@ -123,7 +123,7 @@ public class OrderController : Controller
         }
 
         // Fetch existing order items from the API
-        var orderItemsApiUrl = $"{_apiUrl}/api/Order/{orderId}/OrderItems";
+        var orderItemsApiUrl = $"{_apiUrl}/api/Order/{orderId}/Items";
         var orderItemsResponse = await _httpClient.GetAsync(orderItemsApiUrl);
 
         List<OrderItem>? orderItems = null;
@@ -298,7 +298,7 @@ public class OrderController : Controller
         _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
         // API endpoint to add variation to order item
-        var apiUrl = $"{_apiUrl}/api/Order/{orderId}/OrderItems/{orderItemId}/Variations";
+        var apiUrl = $"{_apiUrl}/api/Order/{orderId}/Items/{orderItemId}/Variations";
 
         // Construct the DTO object
         var addVariationDTO = new
@@ -354,7 +354,7 @@ public class OrderController : Controller
         }
 
         // Fetch item variations from the API
-        var orderItemVariatonsApiUrl = $"{_apiUrl}/api/Order/{orderId}/OrderItems/{orderItemId}/Variations";
+        var orderItemVariatonsApiUrl = $"{_apiUrl}/api/Order/{orderId}/Items/{orderItemId}/Variations";
         response = await _httpClient.GetAsync(orderItemVariatonsApiUrl);
 
         List<OrderItemVariation>? orderItemVariations = null;
@@ -380,44 +380,6 @@ public class OrderController : Controller
 
         return View(model);
     }
-    public async Task<IActionResult> GetOrderItemVariations(int itemId, int orderItemId, int orderId)
-    {
-        string? token = Request.Cookies["authToken"];
-        if (string.IsNullOrEmpty(token))
-        {
-            return RedirectToAction("Login", "Home");
-        }
-
-        _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
-
-        // Fetch variationsThemselves from the API
-        var itemVariationsApiUrl = $"{_apiUrl}/api/Order/{orderId}/OrderItems/{orderItemId}/ItemVariations";
-        var response = await _httpClient.GetAsync(itemVariationsApiUrl);
-
-        List<ItemVariation>? variations = null;
-
-        if (response.IsSuccessStatusCode)
-        {
-            var variationsJson = await response.Content.ReadAsStringAsync();
-            variations = JsonSerializer.Deserialize<List<ItemVariation>>(variationsJson, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
-        }
-
-        if (variations == null || !variations.Any())
-        {
-            TempData["Error"] = "No variations selected";
-            return RedirectToAction("SelectItems", new { orderId });
-        }
-
-        var model = new ItemVariationsViewModel
-        {
-            ItemId = itemId,
-            OrderItemId = orderItemId,
-            OrderId = orderId,
-            Variations = variations
-        };
-
-        return View("SelectedVariations", model);
-    }
 
     [HttpPost]
     public async Task<IActionResult> DeleteVariation(int orderId, int orderItemVariationId, int orderItemId, int itemId)
@@ -425,7 +387,8 @@ public class OrderController : Controller
         string? token = Request.Cookies["authToken"];
         _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
-        var apiUrl = $"{_apiUrl}/api/Order/{orderId}/Items/Variations/{orderItemVariationId}";
+        var apiUrl = $"{_apiUrl}/api/Order/{orderId}/Items/{orderItemId}/Variations/{orderItemVariationId}";
+
         var response = await _httpClient.DeleteAsync(apiUrl);
 
         if (response.IsSuccessStatusCode)
@@ -437,6 +400,7 @@ public class OrderController : Controller
         TempData["Error"] = "Could not delete the Variation.";
         return RedirectToAction("ItemVariations", new { itemId, orderItemId, orderId });
     }
+
 
     [HttpPost]
     public async Task<IActionResult> UpdateStatus(int orderId, OrderStatus status)
