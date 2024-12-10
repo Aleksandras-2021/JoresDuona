@@ -1,4 +1,4 @@
-@model PosShared.Models.Service;
+@model PosShared.DTOs.ServiceDTO;
 
 <h2>Edit Service @Model.Name</h2>
 
@@ -35,4 +35,6 @@
     </div>
 
     <button type="submit" class="btn btn-primary">Save</button>
+
+    <a asp-action="Index" class="btn btn-secondary">Back to List</a>
 </form>
