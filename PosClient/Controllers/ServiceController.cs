@@ -5,6 +5,7 @@ using PosShared;
 using PosShared.Models;
 using System.Text.Json;
 using System.Text;
+using PosShared.DTOs;
 
 namespace PosClient.Controllers;
 
@@ -61,18 +62,23 @@ public class ServiceController : Controller
     // GET: Service/Create
     public IActionResult Create()
     {
-        return View();
+        return View(new ServiceDTO());
     }
 
     // POST: Service/Create
     [HttpPost]
-    public async Task<IActionResult> Create(Service service)
+    public async Task<IActionResult> Create(ServiceDTO serviceDTO)
     {
+        if (!ModelState.IsValid)
+        {
+            return View(serviceDTO);
+        }
+
         string? token = Request.Cookies["authToken"];
         _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
         var apiUrl = _apiUrl + "/api/Service";
-        var content = new StringContent(JsonSerializer.Serialize(service), Encoding.UTF8, "application/json");
+        var content = new StringContent(JsonSerializer.Serialize(serviceDTO), Encoding.UTF8, "application/json");
 
         var response = await _httpClient.PostAsync(apiUrl, content);
 
@@ -86,7 +92,7 @@ public class ServiceController : Controller
 
         Console.WriteLine(errorMessage);
         TempData["Error"] = errorMessage;
-        return View(service);
+        return View(serviceDTO);
     }
 
     // GET: Service/Edit/
@@ -102,7 +108,14 @@ public class ServiceController : Controller
             var service = JsonSerializer.Deserialize<Service>(serviceData);
             if (service != null)
             {
-                return View(service);
+                var serviceDTO = new ServiceDTO
+                {
+                    Name = service.Name,
+                    Description = service.Description,
+                    BasePrice = service.BasePrice,
+                    DurationInMinutes = service.DurationInMinutes
+                };
+                return View(serviceDTO);
             }
         }
 
@@ -112,15 +125,15 @@ public class ServiceController : Controller
 
     // POST: Service/Edit/
     [HttpPost]
-    public async Task<IActionResult> Edit(Service service)
+    public async Task<IActionResult> Edit(int id, ServiceDTO serviceDTO)
     {
         string? token = Request.Cookies["authToken"];
         _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
         if (ModelState.IsValid)
         {
-            var apiUrl = _apiUrl + $"/api/Service/{service.Id}";
-            var content = new StringContent(JsonSerializer.Serialize(service), Encoding.UTF8, "application/json");
+            var apiUrl = _apiUrl + $"/api/Service/{id}";
+            var content = new StringContent(JsonSerializer.Serialize(serviceDTO), Encoding.UTF8, "application/json");
             var response = await _httpClient.PutAsync(apiUrl, content);
             if (response.IsSuccessStatusCode)
             {
@@ -131,7 +144,7 @@ public class ServiceController : Controller
         }
 
         TempData["Error"] = "Unable to edit service. Please try again.";
-        return View(service);
+        return View(serviceDTO);
     }
 
     // GET: Service/Delete/5
