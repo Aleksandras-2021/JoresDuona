@@ -388,7 +388,6 @@ public class OrderController : Controller
         _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
         var apiUrl = $"{_apiUrl}/api/Order/{orderId}/Items/{orderItemId}/Variations/{orderItemVariationId}";
-
         var response = await _httpClient.DeleteAsync(apiUrl);
 
         if (response.IsSuccessStatusCode)

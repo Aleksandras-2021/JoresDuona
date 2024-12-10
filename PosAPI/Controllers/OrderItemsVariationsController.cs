@@ -179,15 +179,16 @@ public class OrderItemsVariationsController : ControllerBase
     }
 
     // POST: api/Order/{orderId}/Items/{orderItemId}/Variations/{orderItemVariationId}
-    [HttpDelete("{orderId}/Items/{itemId}/Variations/{orderItemVariationId}")]
-    public async Task<IActionResult> DeleteOrderItemVariation(int orderId, int orderItemId, int orderItemVariationId, int? itemId = null)
+    [HttpDelete("{orderId}/Items/{orderItemId}/Variations/{orderItemVariationId}")]
+    public async Task<IActionResult> DeleteOrderItemVariation(int orderId, int orderItemId, int orderItemVariationId)
     {
         User? sender = await GetUserFromToken();
 
         if (sender == null)
             return Unauthorized();
 
-        _logger.LogWarning($"OrderID: {orderId}, OrderItemId:{orderItemId}, OrderItemVariationId:{orderItemVariationId}");
+        _logger.LogWarning($"{sender.Id} tries to delete Order item variation :" +
+            $"\nOrderID: {orderId}, OrderItemId:{orderItemId}, OrderItemVariationId:{orderItemVariationId}");
 
         try
         {
