@@ -65,13 +65,18 @@
                                 <a class="nav-link text-dark" asp-area="" asp-controller="Service" asp-action="Index">Services</a>
                             </li>
                         }
-                       
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Logout">Logout</a>
-                        </li>
-                        <l1>
-                            <a>User role : @userRole</a>
-                        </l1>
+                        @if (userRole != null)
+                        {
+                            <li class="nav-item">
+                                <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Logout">Logout</a>
+                            </li>
+                        }
+                        @if (userRole != null)
+                        {
+                            <li class="nav-item">
+                                <a>User role : @userRole</a>
+                            </li>
+                        }
                     </ul>
                 </div>
             </div>
