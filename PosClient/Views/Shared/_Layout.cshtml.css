@@ -58,10 +58,6 @@ button.accept-policy {
   padding-right: 1rem;
 }
 
-.bg-purple {
-  background-color: #6f42c1 !important;
-}
-
 td div.text-truncate:hover {
   white-space: normal;
   overflow: visible;
