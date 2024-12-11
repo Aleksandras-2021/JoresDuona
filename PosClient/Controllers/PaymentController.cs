@@ -101,57 +101,89 @@ public class PaymentController : Controller
     {
         string? token = Request.Cookies["authToken"];
 
+        if (string.IsNullOrEmpty(token))
+        {
+            TempData["Error"] = "Authentication token is missing.";
+            return Unauthorized();
+        }
+
         _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
-        //Get Order Items
-        var orderItemsApiUrl = _apiUrl + $"/api/Order/{orderId}/Items";
-        var response = await _httpClient.GetAsync(orderItemsApiUrl);
-
-        if (!response.IsSuccessStatusCode)
+        try
         {
-            TempData["Error"] = "Unable to fetch order Items.";
+            // Get Order Items
+            var orderItemsApiUrl = _apiUrl + $"/api/Order/{orderId}/Items";
+            var orderItemsResponse = await _httpClient.GetAsync(orderItemsApiUrl);
+
+            if (!orderItemsResponse.IsSuccessStatusCode)
+            {
+                TempData["Error"] = "Unable to fetch order items.";
+                return View("Receipt", new ReceiptViewModel() { OrderId = orderId });
+            }
+
+            var orderItemsData = await orderItemsResponse.Content.ReadAsStringAsync();
+            List<OrderItem>? orderItems = JsonSerializer.Deserialize<List<OrderItem>>(orderItemsData, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+
+            if (orderItems == null || !orderItems.Any())
+            {
+                TempData["Error"] = "No order items found.";
+                orderItems = new List<OrderItem>();
+            }
+
+            // Get Order Item Variations
+            var orderItemVariationsApiUrl = _apiUrl + $"/api/Order/{orderId}/Variations";
+            var orderItemVariationsResponse = await _httpClient.GetAsync(orderItemVariationsApiUrl);
+
+            if (!orderItemVariationsResponse.IsSuccessStatusCode)
+            {
+                TempData["Error"] = "Unable to fetch order item variations.";
+                return View("Receipt", new ReceiptViewModel() { OrderId = orderId, OrderItems = orderItems }); // Return with items but no variations
+            }
+
+            var orderItemVariationsData = await orderItemVariationsResponse.Content.ReadAsStringAsync();
+            List<OrderItemVariation>? orderItemVariations = JsonSerializer.Deserialize<List<OrderItemVariation>>(orderItemVariationsData, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+
+            if (orderItemVariations == null || !orderItemVariations.Any())
+            {
+                TempData["Error"] = "No variations found for order items.";
+                orderItemVariations = new List<OrderItemVariation>();
+            }
+
+            decimal totalTax = 0;
+            decimal totalCharge = 0;
+            decimal total = 0;
+
+
+            foreach (var item in orderItems) 
+            {
+                totalCharge += item.Price * item.Quantity;
+                totalTax += item.TaxedAmount * item.Quantity;
+            }
+
+            foreach (var variation in orderItemVariations)
+            {
+                totalCharge += variation.AdditionalPrice * variation.Quantity;
+                totalTax += variation.TaxedAmount * variation.Quantity;
+            }
+            total = totalTax + totalCharge;
+
+
+            var model = new ReceiptViewModel()
+            {
+                OrderId = orderId,
+                OrderItems = orderItems,
+                OrderItemVariatons = orderItemVariations,
+                Total = total,
+                TotalCharge = totalCharge,
+                TotalTax = totalTax,
+            };
+
+            return View("Receipt", model);
         }
-
-        var orderItemsData = await response.Content.ReadAsStringAsync();
-        List<OrderItem>? orderItems = JsonSerializer.Deserialize<List<OrderItem>>(orderItemsData, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
-
-
-        //Get Order Variations
-        var orderItemVariationsApiUrl = _apiUrl + $"/api/Order/{orderId}/Variations";
-        response = await _httpClient.GetAsync(orderItemVariationsApiUrl);
-
-        if (!response.IsSuccessStatusCode)
+        catch (Exception ex)
         {
-            TempData["Error"] = "Unable to fetch order item variations.";
+            TempData["Error"] = $"An unexpected error occurred: {ex.Message}";
+            return View("Receipt", new ReceiptViewModel() { OrderId = orderId });
         }
-
-        var orderItemsVariationsData = await response.Content.ReadAsStringAsync();
-        List<OrderItemVariation>? orderItemsVariations = JsonSerializer.Deserialize<List<OrderItemVariation>>(orderItemsVariationsData, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
-
-        //Get all Taxes
-
-        var taxsApiUrl = _apiUrl + $"/api/Tax";
-        response = await _httpClient.GetAsync(taxsApiUrl);
-
-        if (!response.IsSuccessStatusCode)
-        {
-            TempData["Error"] = "Unable to fetch taxes for order.";
-        }
-
-        var taxData = await response.Content.ReadAsStringAsync();
-        List<Tax>? taxes = JsonSerializer.Deserialize<List<Tax>>(taxData, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
-
-        ReceiptViewModel model = new ReceiptViewModel()
-        {
-            OrderId = orderId,
-            OrderItems = orderItems,
-            OrderItemVariatons = orderItemsVariations,
-            Taxes = taxes
-        };
-
-
-        return View("Receipt", model);
     }
-
-
 }

@@ -15,7 +15,7 @@
         <p><strong>Total:</strong> @((Model.Order.TaxAmount + Model.Order.ChargeAmount).ToString("C"))</p>
     </div>
 
-    @if (Model.Order.Status != PosShared.Models.OrderStatus.Closed)
+        @if (Model.Order.Status != PosShared.Models.OrderStatus.Closed && Model.Order.Status != PosShared.Models.OrderStatus.Paid)
     {
         <form asp-action="RedirectToPayment" asp-controller="Order" method="post" class="mb-4">
             <input type="hidden" name="orderId" value="@Model.OrderId" />
@@ -26,7 +26,8 @@
             </button>
         </form>
     }
-    else{
+    else
+    {
             <form asp-action="RedirectToReceipt" asp-controller="Order" method="get" class="mb-4">
                 <input type="hidden" name="orderId" value="@Model.OrderId" />
                 <input type="hidden" name="untaxedAmount" value="@Model.Order.ChargeAmount" />
@@ -44,7 +45,7 @@
         </div>
     }
 
-    @if (Model.Items != null && Model.Items.Any() && Model.Order.Status != PosShared.Models.OrderStatus.Closed)
+        @if (Model.Items != null && Model.Items.Any() && Model.Order.Status != PosShared.Models.OrderStatus.Closed && Model.Order.Status != PosShared.Models.OrderStatus.Paid)
     {
         <h3 class="mb-3">Available Items</h3>
         <div class="table-responsive">

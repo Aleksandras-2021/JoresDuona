@@ -190,7 +190,7 @@ public class OrderService : IOrderService
     {
         Order order = await _orderRepository.GetOrderByIdAsync(orderId);
 
-        if (order.Status == OrderStatus.Closed)
+        if (order.Status == OrderStatus.Closed || order.Status == OrderStatus.Paid)
             return;
 
         List<OrderItem> orderItems = await _orderRepository.GetOrderItemsByOrderIdAsync(orderId);

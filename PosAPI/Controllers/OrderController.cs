@@ -137,7 +137,7 @@ public class OrderController : ControllerBase
 
         try
         {
-            Order? order = await _orderService.GetAuthorizedOrderForModification(orderId, sender);
+            Order? order = await _orderService.GetAuthorizedOrder(orderId, sender);
 
             // Update the status
             order.Status = status;
@@ -182,21 +182,10 @@ public class OrderController : ControllerBase
         {
             User? sender = await GetUserFromToken();
 
-            Order? existingOrder = await _orderRepository.GetOrderByIdAsync(order.Id);
-
-            if (existingOrder == null)
-            {
-                return NotFound($"Order with ID {order.Id} not found.");
-            }
-            if (sender == null || order.Status == OrderStatus.Closed || order.BusinessId != sender.BusinessId)
+            if (sender == null)
                 return Unauthorized();
 
-            //do not update created at
-            //DO not update businessID
-            //update closed at if new status is closed
-            //Recalculate ChargeAmount
-            //Recalculate Tax Amount
-            //
+            Order? existingOrder = await _orderService.GetAuthorizedOrderForModification(order.Id, sender);
 
             existingOrder.UserId = sender.Id; //Whoever updates order, takes over the ownership of it
             existingOrder.User = sender;
@@ -207,14 +196,16 @@ public class OrderController : ControllerBase
             existingOrder.TipAmount = order.TipAmount;
 
             await _orderRepository.UpdateOrderAsync(existingOrder);
-            // await RecalculateOrderCharge(existingOrder.Id);
 
             return NoContent();
         }
         catch (KeyNotFoundException ex)
         {
-            _logger.LogWarning($"Order with ID {order.Id} not found: {ex.Message}");
             return NotFound(ex.Message);
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            return Unauthorized(ex.Message);
         }
         catch (Exception ex)
         {
