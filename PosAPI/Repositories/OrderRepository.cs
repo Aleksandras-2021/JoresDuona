@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using PosAPI.Data.DbContext;
+using PosShared;
 using PosShared.Models;
 using System.Security.Cryptography.X509Certificates;
 
@@ -22,41 +23,68 @@ public class OrderRepository : IOrderRepository
             throw new ArgumentNullException(nameof(order));
         }
 
-        // Check if BusinessId exists in the table
         var businessExists = await _context.Businesses.AnyAsync(b => b.Id == order.BusinessId);
 
         if (!businessExists)
         {
             throw new Exception($"Business with ID {order.BusinessId} does not exist.");
         }
-        if (order.User == null)
-            order.User = await _context.Users.FindAsync(order.UserId);
+
+        var user = await _context.Users.FindAsync(order.UserId);
+        if (user == null)
+        {
+            throw new Exception($"User with ID {order.UserId} does not exist.");
+        }
+
+        order.User = user;
 
         try
         {
+            _context.Attach(user);
+
+            // Add the order to the database
             await _context.Orders.AddAsync(order);
+
+            // Save changes
             await _context.SaveChangesAsync();
         }
         catch (DbUpdateException ex)
         {
             throw new Exception("An error occurred while adding the new order to the database.", ex);
         }
-
     }
-    public async Task<List<Order>> GetAllBusinessOrdersAsync(int businessId)
+
+
+
+    public async Task<PaginatedResult<Order>> GetAllOrdersAsync(int pageNumber, int pageSize)
     {
-        return await _context.Set<Order>()
+        var totalCount = await _context.Set<Order>().CountAsync();
+
+        var orders = await _context.Set<Order>()
+            .OrderByDescending(order => order.CreatedAt)
+            .Skip((pageNumber - 1) * pageSize)
+            .Take(pageSize)
+            .ToListAsync();
+
+        return PaginatedResult<Order>.Create(orders, totalCount, pageNumber, pageSize);
+    }
+
+    public async Task<PaginatedResult<Order>> GetAllBusinessOrdersAsync(int businessId, int pageNumber, int pageSize)
+    {
+        var totalCount = await _context.Set<Order>()
             .Where(order => order.BusinessId == businessId)
-            .OrderBy(order => order.CreatedAt)
+            .CountAsync();
+
+        var orders = await _context.Set<Order>()
+            .Where(order => order.BusinessId == businessId)
+            .OrderByDescending(order => order.CreatedAt)
+            .Skip((pageNumber - 1) * pageSize)
+            .Take(pageSize)
             .ToListAsync();
+
+        return PaginatedResult<Order>.Create(orders, totalCount, pageNumber, pageSize);
     }
 
-    public async Task<List<Order>> GetAllOrdersAsync()
-    {
-        return await _context.Set<Order>()
-            .OrderBy(order => order.CreatedAt)
-            .ToListAsync();
-    }
 
     public async Task<Order> GetOrderByIdAsync(int id)
     {
@@ -74,7 +102,7 @@ public class OrderRepository : IOrderRepository
         // Find the order
         var order = await _context.Orders
             .Include(o => o.OrderItems)
-                .ThenInclude(oi => oi.OrderItemVariations) // Include variations
+            .ThenInclude(oi => oi.OrderItemVariations) // Include variations
             .FirstOrDefaultAsync(o => o.Id == orderId);
 
         if (order == null)
@@ -110,30 +138,42 @@ public class OrderRepository : IOrderRepository
             throw new ArgumentNullException(nameof(orderItem));
         }
 
-        Order order = await _context.Orders.FindAsync(orderItem.OrderId);
+        var order = await _context.Orders.FindAsync(orderItem.OrderId);
+        if (order == null)
+        {
+            throw new Exception($"Order with ID {orderItem.OrderId} not found.");
+        }
 
+        var item = await _context.Items.FindAsync(orderItem.ItemId);
+        if (item == null)
+        {
+            throw new Exception($"Item with ID {orderItem.ItemId} not found.");
+        }
 
-        if (orderItem.Order == null)
-            orderItem.Order = order;
+        orderItem.Order = order;
+        orderItem.Item = item;
 
-        if (orderItem.Item == null)
-            orderItem.Item = await _context.Items.FindAsync(orderItem.ItemId);
-
-        //decrease quantity by 1
-        _context.Items.Find(orderItem.ItemId).Quantity -= orderItem.Quantity;
+        if (item.Quantity < orderItem.Quantity)
+        {
+            throw new Exception("Not enough stock available to fulfill the order.");
+        }
+        item.Quantity -= orderItem.Quantity;
 
         try
         {
+            _context.Attach(order);
+            _context.Attach(item);
             await _context.OrderItems.AddAsync(orderItem);
-            order.OrderItems.Add(orderItem);
 
+            // Save changes
             await _context.SaveChangesAsync();
         }
         catch (DbUpdateException ex)
         {
-            throw new Exception("An error occurred while adding the new orderItem to the database.", ex);
+            throw new Exception("An error occurred while adding the new order item to the database.", ex);
         }
     }
+
 
 
 
@@ -168,15 +208,17 @@ public class OrderRepository : IOrderRepository
             throw new ArgumentNullException(nameof(variation));
         }
 
-        // Fetch the ItemVariation if it's not already populated
-        if (variation.ItemVariation == null)
-            variation.ItemVariation = await _context.ItemVariations.FindAsync(variation.ItemVariationId);
+        if (variation.ItemVariation != null)
+        {
+            _context.Attach(variation.ItemVariation);
+        }
 
-        // Find the associated OrderItem
         OrderItem orderItem = await _context.OrderItems.FindAsync(variation.OrderItemId);
 
-        if (variation.OrderItem == null)
-            variation.OrderItem = orderItem;
+        if (variation.OrderItem != null)
+        {
+            _context.Attach(variation.OrderItem);
+        }
 
         if (orderItem == null)
         {
@@ -197,7 +239,6 @@ public class OrderRepository : IOrderRepository
                 await _context.OrderItemVariations.AddAsync(variation);
             }
 
-            // Save changes to the database
             await _context.SaveChangesAsync();
         }
         catch (DbUpdateException ex)
@@ -206,8 +247,6 @@ public class OrderRepository : IOrderRepository
         }
     }
 
-
-
     public async Task<List<OrderItemVariation>> GetOrderItemVariationsByOrderItemIdAsync(int orderItemId)
     {
         var orderItemsVariations = await _context.Set<OrderItemVariation>()
@@ -215,6 +254,7 @@ public class OrderRepository : IOrderRepository
             .OrderBy(orderItem => orderItem.Id)
             .ToListAsync();
 
+        //very not clean, but fixes an issue for now
         foreach (var orderItem in orderItemsVariations)
         {
             if (orderItem.OrderItem == null)
@@ -229,13 +269,10 @@ public class OrderRepository : IOrderRepository
 
     public async Task<List<OrderItemVariation>> GetOrderItemVariationsByOrderIdAsync(int orderId)
     {
-
-
         var orderItemsVariations = await _context.Set<OrderItemVariation>()
             .Where(orderItemVar => orderItemVar.OrderItem.OrderId == orderId)
             .OrderBy(orderItem => orderItem.Id)
             .ToListAsync();
-
 
         return orderItemsVariations;
     }
@@ -286,6 +323,15 @@ public class OrderRepository : IOrderRepository
             .Include(v => v.ItemVariation)
             .FirstOrDefaultAsync(v => v.Id == variationId);
     }
+
+    public async Task<List<OrderItemVariation>> GetAllOrderItemVariationsAsync(int orderId)
+    {
+        return await _context.OrderItemVariations
+            .Where(oiv => _context.OrderItems
+                .Any(oi => oi.Id == oiv.OrderItemId && oi.OrderId == orderId))
+            .ToListAsync();
+    }
+
 
     public async Task<List<ItemVariation>> GetSelectedVariationsForItemAsync(int itemId, int orderItemId)
     {

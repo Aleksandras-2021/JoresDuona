@@ -135,8 +135,13 @@ public class UsersController : ControllerBase
         newUser.Phone = user.Phone;
         newUser.PasswordHash = BCrypt.Net.BCrypt.HashPassword(user.PasswordHash);
         newUser.EmploymentStatus = user.EmploymentStatus;
-        newUser.Role = user.Role;
         newUser.Username = user.Username;
+
+        if (sender.Role != UserRole.SuperAdmin && user.Role == UserRole.SuperAdmin)
+            newUser.Role = UserRole.Worker;
+        else
+            newUser.Role = user.Role;
+
 
         if (sender.Role == UserRole.SuperAdmin) //Only admins can set user business ID
         {
@@ -164,22 +169,22 @@ public class UsersController : ControllerBase
     public async Task<IActionResult> UpdateUser(int id, [FromBody] User user)
     {
         if (user == null)
-        {
             return BadRequest("Invalid user data.");
-        }
+        
 
         try
         {
             User? sender = await GetUserFromToken();
 
             User? existingUser = await _userRepository.GetUserByIdAsync(id);
-            _logger.LogInformation($"Sender: {sender} & existing user: {existingUser}");
 
             if (existingUser == null)
-            {
                 return NotFound($"User with ID {id} not found.");
-            }
+
             if (sender == null || sender.Role == UserRole.Worker)
+                return Unauthorized();
+
+            if (sender.BusinessId != existingUser.BusinessId && sender.Role != UserRole.SuperAdmin)
                 return Unauthorized();
 
             existingUser.Name = user.Name;
@@ -189,8 +194,12 @@ public class UsersController : ControllerBase
             existingUser.PasswordHash = BCrypt.Net.BCrypt.HashPassword(user.PasswordHash);
             existingUser.BusinessId = user.BusinessId;
             existingUser.EmploymentStatus = user.EmploymentStatus;
-            existingUser.Role = user.Role;
             existingUser.Username = user.Username;
+
+            if (sender.Role != UserRole.SuperAdmin && user.Role == UserRole.SuperAdmin)//Only superadmins can create more super admins
+                existingUser.Role = UserRole.Worker;
+            else
+                existingUser.Role = user.Role;
 
             if (sender.Role == UserRole.SuperAdmin) //Only admins can set user business ID
             {

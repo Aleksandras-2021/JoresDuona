@@ -17,7 +17,7 @@ public class OrderController : Controller
     private readonly HttpClient _httpClient;
     private readonly IUserSessionService _userSessionService;
 
-    private readonly string _apiUrl = UrlConstants.ApiBaseUrl;
+    private readonly string _apiUrl = ApiRoutes.ApiBaseUrl;
 
     public OrderController(HttpClient httpClient, IUserSessionService userSessionService)
     {
@@ -25,23 +25,27 @@ public class OrderController : Controller
         _userSessionService = userSessionService;
     }
     //Get api/Order
-    public async Task<IActionResult> Index()
+    public async Task<IActionResult> Index(int pageNumber = 1, int pageSize = 20)
     {
         string? token = Request.Cookies["authToken"];
         _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
-        var apiUrl = _apiUrl + "/api/Order";
+        var apiUrl = ApiRoutes.Orders.GetPaginated(pageNumber, pageSize);
         var response = await _httpClient.GetAsync(apiUrl);
 
         if (response.IsSuccessStatusCode)
         {
             var jsonData = await response.Content.ReadAsStringAsync();
-            var orders = JsonSerializer.Deserialize<List<Order>>(jsonData, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
-            return View(orders);
+            var result = JsonSerializer.Deserialize<PaginatedResult<Order>>(jsonData, new JsonSerializerOptions
+            {
+                PropertyNameCaseInsensitive = true
+            });
+
+            return View(result);
         }
 
         TempData["Error"] = "No orders to retrieve.";
-        return View(new List<Order>());
+        return View(new PaginatedResult<Order>());
     }
 
     // POST: Order/Create
@@ -51,7 +55,7 @@ public class OrderController : Controller
         string? token = Request.Cookies["authToken"];
         _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
-        var apiUrl = _apiUrl + "/api/Order";
+        var apiUrl = ApiRoutes.Orders.Create;
         var content = new StringContent(string.Empty, Encoding.UTF8, "application/json");
 
         var response = await _httpClient.PostAsync(apiUrl, content);
@@ -79,7 +83,8 @@ public class OrderController : Controller
         string? token = Request.Cookies["authToken"];
         _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
-        var apiUrl = _apiUrl + "/api/Order";
+        var apiUrl = ApiRoutes.Orders.Create;
+
         var content = new StringContent(string.Empty, Encoding.UTF8, "application/json");
 
         var response = await _httpClient.PostAsync(apiUrl, content);
@@ -89,7 +94,6 @@ public class OrderController : Controller
             var jsonResponse = await response.Content.ReadAsStringAsync();
             var createdOrder = JsonSerializer.Deserialize<Order>(jsonResponse, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
 
-            // Redirect to Index after successful creation
             return RedirectToAction(nameof(Index));
         }
 
@@ -107,8 +111,7 @@ public class OrderController : Controller
 
         _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
-        // Fetch available items from the API
-        var itemsApiUrl = $"{_apiUrl}/api/Items";
+        var itemsApiUrl = ApiRoutes.Items.GetAllItems;
         var itemsResponse = await _httpClient.GetAsync(itemsApiUrl);
 
         List<Item>? items = null;
@@ -122,8 +125,7 @@ public class OrderController : Controller
             items = new List<Item>();
         }
 
-        // Fetch existing order items from the API
-        var orderItemsApiUrl = $"{_apiUrl}/api/Order/{orderId}/OrderItems";
+        var orderItemsApiUrl = ApiRoutes.OrderItems.GetOrderItems(orderId);
         var orderItemsResponse = await _httpClient.GetAsync(orderItemsApiUrl);
 
         List<OrderItem>? orderItems = null;
@@ -137,8 +139,7 @@ public class OrderController : Controller
             orderItems = new List<OrderItem>();
         }
 
-        // Fetch existing order
-        var orderApiUrl = $"{_apiUrl}/api/Order/{orderId}";
+        var orderApiUrl = ApiRoutes.Orders.GetById(orderId);
         var orderResponse = await _httpClient.GetAsync(orderApiUrl);
         Order? order = null;
         if (orderResponse.IsSuccessStatusCode)
@@ -168,13 +169,13 @@ public class OrderController : Controller
 
     // GET: Order/Edit/
     [HttpGet]
-    public async Task<IActionResult> Edit(int id)
+    public async Task<IActionResult> Edit(int orderId)
     {
         string? token = Request.Cookies["authToken"];
 
         _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
-        var apiUrl = _apiUrl + $"/api/Order/{id}";
+        var apiUrl = ApiRoutes.Orders.GetById(orderId);
         var response = await _httpClient.GetAsync(apiUrl);
 
         if (response.IsSuccessStatusCode)
@@ -203,7 +204,7 @@ public class OrderController : Controller
 
         if (ModelState.IsValid)
         {
-            var apiUrl = _apiUrl + $"/api/Order/{order.Id}";
+            var apiUrl = ApiRoutes.Orders.Update(order.Id);
             var content = new StringContent(JsonSerializer.Serialize(order), Encoding.UTF8, "application/json");
 
             var response = await _httpClient.PutAsync(apiUrl, content);
@@ -228,12 +229,11 @@ public class OrderController : Controller
 
         _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
-        var apiUrl = $"{_apiUrl}/api/Order/{orderId}";
+        var apiUrl = ApiRoutes.Orders.Delete(orderId);
         var response = await _httpClient.DeleteAsync(apiUrl);
 
         if (response.IsSuccessStatusCode)
         {
-            // Redirect to the index after successfully deleting the order
             TempData["Message"] = "Order deleted successfully.";
             return RedirectToAction("Index");
         }
@@ -254,7 +254,7 @@ public class OrderController : Controller
 
         _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
-        var apiUrl = $"{_apiUrl}/api/Order/{orderId}/Items";
+        var apiUrl = ApiRoutes.OrderItems.AddOrderItem(orderId);
         var content = new StringContent(JsonSerializer.Serialize(new { ItemId = itemId }), Encoding.UTF8, "application/json");
 
         var response = await _httpClient.PostAsync(apiUrl, content);
@@ -279,7 +279,7 @@ public class OrderController : Controller
 
         _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
-        var apiUrl = $"{_apiUrl}/api/Order/{orderId}/Items/{orderItemId}";
+        var apiUrl = ApiRoutes.OrderItems.DeleteOrderItem(orderId, orderItemId);
         var response = await _httpClient.DeleteAsync(apiUrl);
 
         if (response.IsSuccessStatusCode)
@@ -297,25 +297,20 @@ public class OrderController : Controller
         string? token = Request.Cookies["authToken"];
         _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
-        // API endpoint to add variation to order item
-        var apiUrl = $"{_apiUrl}/api/Order/{orderId}/OrderItems/{orderItemId}/Variations";
+        var apiUrl = ApiRoutes.OrderItems.AddVariation(orderId, orderItemId);
 
-        // Construct the DTO object
         var addVariationDTO = new
         {
             VariationId = varId,
             Quantity = 1
         };
 
-        // Serialize the DTO to JSON
         var content = new StringContent(JsonSerializer.Serialize(addVariationDTO), Encoding.UTF8, "application/json");
 
-        // Call the API
         var response = await _httpClient.PostAsync(apiUrl, content);
 
         if (response.IsSuccessStatusCode)
         {
-            // Redirect back to the ItemVariations page to view updated order items
             TempData["Message"] = "Variation added successfully.";
             return RedirectToAction("ItemVariations", new { itemId, orderItemId, orderId });
         }
@@ -325,9 +320,8 @@ public class OrderController : Controller
         return RedirectToAction("ItemVariations", new { itemId, orderItemId, orderId });
     }
 
-
-
-    // GET: Order/ItemVariations
+    // GET: Items/{id}/Variations
+    // GET: Order/{orderId}/Items/{orderItemId}/Variations
     public async Task<IActionResult> ItemVariations(int itemId, int orderItemId, int orderId)
     {
         string? token = Request.Cookies["authToken"];
@@ -338,8 +332,7 @@ public class OrderController : Controller
 
         _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
-        // Fetch item variations from the API
-        var variationsApiUrl = $"{_apiUrl}/api/Items/{itemId}/Variations";
+        var variationsApiUrl = ApiRoutes.Items.GetItemVariationById(itemId);
         var response = await _httpClient.GetAsync(variationsApiUrl);
 
         List<ItemVariation>? variations = null;
@@ -353,8 +346,7 @@ public class OrderController : Controller
             variations = new List<ItemVariation>();
         }
 
-        // Fetch item variations from the API
-        var orderItemVariatonsApiUrl = $"{_apiUrl}/api/Order/{orderId}/OrderItems/{orderItemId}/Variations";
+        var orderItemVariatonsApiUrl = ApiRoutes.OrderItems.GetVariations(orderId, orderItemId);
         response = await _httpClient.GetAsync(orderItemVariatonsApiUrl);
 
         List<OrderItemVariation>? orderItemVariations = null;
@@ -380,44 +372,6 @@ public class OrderController : Controller
 
         return View(model);
     }
-    public async Task<IActionResult> GetOrderItemVariations(int itemId, int orderItemId, int orderId)
-    {
-        string? token = Request.Cookies["authToken"];
-        if (string.IsNullOrEmpty(token))
-        {
-            return RedirectToAction("Login", "Home");
-        }
-
-        _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
-
-        // Fetch variationsThemselves from the API
-        var itemVariationsApiUrl = $"{_apiUrl}/api/Order/{orderId}/OrderItems/{orderItemId}/ItemVariations";
-        var response = await _httpClient.GetAsync(itemVariationsApiUrl);
-
-        List<ItemVariation>? variations = null;
-
-        if (response.IsSuccessStatusCode)
-        {
-            var variationsJson = await response.Content.ReadAsStringAsync();
-            variations = JsonSerializer.Deserialize<List<ItemVariation>>(variationsJson, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
-        }
-
-        if (variations == null || !variations.Any())
-        {
-            TempData["Error"] = "No variations selected";
-            return RedirectToAction("SelectItems", new { orderId });
-        }
-
-        var model = new ItemVariationsViewModel
-        {
-            ItemId = itemId,
-            OrderItemId = orderItemId,
-            OrderId = orderId,
-            Variations = variations
-        };
-
-        return View("SelectedVariations", model);
-    }
 
     [HttpPost]
     public async Task<IActionResult> DeleteVariation(int orderId, int orderItemVariationId, int orderItemId, int itemId)
@@ -425,7 +379,7 @@ public class OrderController : Controller
         string? token = Request.Cookies["authToken"];
         _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
-        var apiUrl = $"{_apiUrl}/api/Order/{orderId}/Items/Variations/{orderItemVariationId}";
+        var apiUrl = ApiRoutes.OrderItems.DeleteVariation(orderId, orderItemId, orderItemVariationId);
         var response = await _httpClient.DeleteAsync(apiUrl);
 
         if (response.IsSuccessStatusCode)
@@ -444,7 +398,7 @@ public class OrderController : Controller
         string? token = Request.Cookies["authToken"];
         _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
-        var apiUrl = $"{_apiUrl}/api/Order/{orderId}/UpdateStatus/{status}";
+        var apiUrl = ApiRoutes.Orders.UpdateStatus(orderId, status);
         var response = await _httpClient.PostAsync(apiUrl, null);
 
         if (response.IsSuccessStatusCode)
@@ -458,7 +412,6 @@ public class OrderController : Controller
         return RedirectToAction("Index");
     }
 
-
     [HttpPost]
     public IActionResult RedirectToPayment(int orderId, decimal untaxedAmount, decimal tax)
     {
@@ -469,6 +422,12 @@ public class OrderController : Controller
     public IActionResult RedirectToGetPayment(int orderId)
     {
         return RedirectToAction("GetAllOrderPayments", "Payment", new { orderId });
+    }
+
+    [HttpGet]
+    public IActionResult RedirectToReceipt(int orderId)
+    {
+        return RedirectToAction("GetOrderReceipt", "Payment", new { orderId });
     }
 
 }

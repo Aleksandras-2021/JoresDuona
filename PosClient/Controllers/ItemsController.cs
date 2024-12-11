@@ -19,7 +19,7 @@ public class ItemsController : Controller
     private readonly IUserSessionService _userSessionService;
 
 
-    private readonly string _apiUrl = UrlConstants.ApiBaseUrl;
+    private readonly string _apiUrl = ApiRoutes.ApiBaseUrl;
 
     public ItemsController(HttpClient httpClient, IUserSessionService userSessionService)
     {
@@ -35,7 +35,7 @@ public class ItemsController : Controller
         string? token = Request.Cookies["authToken"];
         _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
-        var apiUrl = _apiUrl + "/api/Items";
+        var apiUrl = ApiRoutes.Items.GetAllItems;
         var response = await _httpClient.GetAsync(apiUrl);
         Console.WriteLine(HttpContext.Session.GetInt32("UserId"));
 
@@ -46,7 +46,6 @@ public class ItemsController : Controller
             return View(items);
         }
 
-        // Handle errors or empty results
         TempData["Error"] = "Could not retrieve users.";
         return View(new List<Item>());
     }
@@ -75,7 +74,7 @@ public class ItemsController : Controller
 
         Console.WriteLine(JsonSerializer.Serialize(item).ToString());
 
-        var apiUrl = _apiUrl + "/api/Items";
+        var apiUrl = ApiRoutes.Items.CreateItem;
         var itemJson = JsonSerializer.Serialize(item);
         var content = new StringContent(itemJson, Encoding.UTF8, "application/json");
 
@@ -83,11 +82,9 @@ public class ItemsController : Controller
 
         if (response.IsSuccessStatusCode)
         {
-            // Redirect to index page after successful creation
             return RedirectToAction(nameof(Index));
         }
 
-        // Handle errors
         var errorMessage = await response.Content.ReadAsStringAsync();
         ModelState.AddModelError(string.Empty, $"Error creating item: {errorMessage}");
 
@@ -106,7 +103,7 @@ public class ItemsController : Controller
 
         _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
-        var apiUrl = _apiUrl + $"/api/Items/{id}";
+        var apiUrl = ApiRoutes.Items.GetItemById(id);
         var response = await _httpClient.GetAsync(apiUrl);
 
         if (response.IsSuccessStatusCode)
@@ -145,7 +142,7 @@ public class ItemsController : Controller
 
         if (ModelState.IsValid)
         {
-            var apiUrl = _apiUrl + $"/api/Items/{id}";
+            var apiUrl = ApiRoutes.Items.UpdateItem(id);
             var content = new StringContent(JsonSerializer.Serialize(item), Encoding.UTF8, "application/json");
 
             var response = await _httpClient.PutAsync(apiUrl, content);
@@ -158,7 +155,7 @@ public class ItemsController : Controller
             TempData["Error"] = "Failed to update item.";
         }
 
-        return View(item); // Return to the edit view if validation fails or update fails
+        return View(item);
     }
 
     // GET: Items/Delete/{id}
@@ -168,7 +165,7 @@ public class ItemsController : Controller
         string? token = Request.Cookies["authToken"];
         _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
-        var apiUrl = _apiUrl + $"/api/Items/{id}";
+        var apiUrl = ApiRoutes.Items.GetItemById(id);
         var response = await _httpClient.GetAsync(apiUrl);
 
         if (response.IsSuccessStatusCode)
@@ -183,7 +180,7 @@ public class ItemsController : Controller
         }
         TempData["Error"] = "Could not delete item, if its part of an order, it cannot be deleted";
 
-        return NotFound(); // Return a 404 if the user was not found or request failed
+        return NotFound();
     }
 
     // POST: Items/Delete/{id}
@@ -193,7 +190,7 @@ public class ItemsController : Controller
         string? token = Request.Cookies["authToken"];
         _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
-        var apiUrl = _apiUrl + $"/api/Items/{id}";
+        var apiUrl = ApiRoutes.Items.DeleteItem(id);
         var response = await _httpClient.DeleteAsync(apiUrl);
 
         if (response.IsSuccessStatusCode)

@@ -17,7 +17,7 @@ public class PaymentController : Controller
     private readonly IUserSessionService _userSessionService;
 
 
-    private readonly string _apiUrl = UrlConstants.ApiBaseUrl;
+    private readonly string _apiUrl = ApiRoutes.ApiBaseUrl;
 
     public PaymentController(HttpClient httpClient, IUserSessionService userSessionService)
     {
@@ -93,8 +93,92 @@ public class PaymentController : Controller
         }
 
         TempData["Error"] = "Unable to fetch order payments. Most likely they do not exist.";
-        return RedirectToAction("Index", "Order"); 
+        return RedirectToAction("Index", "Order");
     }
 
+    [HttpGet]
+    public async Task<IActionResult> GetOrderReceipt(int orderId)
+    {
+        string? token = Request.Cookies["authToken"];
 
+        if (string.IsNullOrEmpty(token))
+        {
+            TempData["Error"] = "Authentication token is missing.";
+            return Unauthorized();
+        }
+
+        _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+
+        try
+        {
+            // Get Order Items
+            var orderItemsApiUrl = ApiRoutes.OrderItems.GetOrderItems(orderId);
+            var orderItemsResponse = await _httpClient.GetAsync(orderItemsApiUrl);
+
+            if (!orderItemsResponse.IsSuccessStatusCode)
+            {
+                TempData["Error"] = "Unable to fetch order items.";
+                return View("Receipt", new ReceiptViewModel() { OrderId = orderId });
+            }
+
+            var orderItemsData = await orderItemsResponse.Content.ReadAsStringAsync();
+            List<OrderItem>? orderItems = JsonSerializer.Deserialize<List<OrderItem>>(orderItemsData, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+
+            if (orderItems == null || !orderItems.Any())
+            {
+                TempData["Error"] = "No order items found.";
+                orderItems = new List<OrderItem>();
+            }
+
+            // Get Order Item Variations
+            var orderItemVariationsApiUrl = ApiRoutes.Orders.GetOrderVariations(orderId);
+            var orderItemVariationsResponse = await _httpClient.GetAsync(orderItemVariationsApiUrl);
+
+            List<OrderItemVariation>? orderItemVariations = null;
+            if (orderItemVariationsResponse.IsSuccessStatusCode)
+            {
+                var orderItemVariationsData = await orderItemVariationsResponse.Content.ReadAsStringAsync();
+                orderItemVariations = JsonSerializer.Deserialize<List<OrderItemVariation>>(orderItemVariationsData, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+            }
+            else
+            {
+                orderItemVariations = new List<OrderItemVariation>();
+
+            }
+            decimal totalTax = 0;
+            decimal totalCharge = 0;
+            decimal total = 0;
+
+
+            foreach (var item in orderItems)
+            {
+                totalCharge += item.Price * item.Quantity;
+                totalTax += item.TaxedAmount * item.Quantity;
+            }
+
+            foreach (var variation in orderItemVariations)
+            {
+                totalCharge += variation.AdditionalPrice * variation.Quantity;
+                totalTax += variation.TaxedAmount * variation.Quantity;
+            }
+            total = totalTax + totalCharge;
+
+            var model = new ReceiptViewModel()
+            {
+                OrderId = orderId,
+                OrderItems = orderItems,
+                OrderItemVariatons = orderItemVariations,
+                Total = total,
+                TotalCharge = totalCharge,
+                TotalTax = totalTax,
+            };
+
+            return View("Receipt", model);
+        }
+        catch (Exception ex)
+        {
+            TempData["Error"] = $"An unexpected error occurred: {ex.Message}";
+            return View("Receipt", new ReceiptViewModel() { OrderId = orderId });
+        }
+    }
 }

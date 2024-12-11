@@ -11,6 +11,14 @@
         </div>
 }
 
+@if (TempData["Message"] != null)
+{
+    <div class="alert alert-success">
+        @TempData["Message"]
+    </div>
+}
+
+
 <div class="container my-4">
     <h1 class="text-center text-primary">@ViewData["Title"]</h1>
     <h3 class="text-secondary">Item Variations for Item: <span class="text-dark">@Model.ItemId</span></h3>
@@ -79,6 +87,7 @@
                     <th>Variation ID</th>
                     <th>Quantity</th>
                     <th>Additional Cost</th>
+                    <th>Tax</th>
                     <th>Action</th>
                 </tr>
             </thead>
@@ -89,19 +98,19 @@
                         <td>@Model.OrderItemId</td>
                         <td>@orderItemVariation.Id</td>
                         <td>@orderItemVariation.Quantity</td>
-                        <td>@orderItemVariation.AdditionalPrice.ToString("C")</td>
+                        <td>@((orderItemVariation.AdditionalPrice * orderItemVariation.Quantity).ToString("C"))</td>
+                        <td>@((orderItemVariation.TaxedAmount * orderItemVariation.Quantity).ToString("C"))</td>
                         <td>
                             <form method="post" asp-action="DeleteVariation" class="d-inline">
-                                <input type="hidden" name="orderItemVariationId" value="@orderItemVariation.Id" />
                                 <input type="hidden" name="orderId" value="@Model.OrderId" />
+                                 <input type="hidden" name="orderItemVariationId" value="@orderItemVariation.Id" />
                                 <input type="hidden" name="orderItemId" value="@Model.OrderItemId" />
                                 <input type="hidden" name="itemId" value="@Model.ItemId" />
-
+                                
                                 <button type="submit" class="btn btn-danger btn-sm">
                                     Delete variation
                                 </button>
                             </form>
-
                         </td>
                     </tr>
                 }
