@@ -27,7 +27,7 @@ namespace PosClient.Controllers
         [HttpGet]
         public async Task<IActionResult> Index()
         {
-            string token = Request.Cookies["authToken"];
+            string? token = Request.Cookies["authToken"];
 
             _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
@@ -52,7 +52,7 @@ namespace PosClient.Controllers
         [HttpPost]
         public async Task<IActionResult> Create(TaxDTO tax)
         {
-            string token = Request.Cookies["authToken"];
+            string? token = Request.Cookies["authToken"];
             _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
             var content = new StringContent(JsonSerializer.Serialize(tax), Encoding.UTF8, "application/json");
@@ -70,7 +70,7 @@ namespace PosClient.Controllers
         [HttpGet]
         public async Task<IActionResult> Edit(int id)
         {
-            string token = Request.Cookies["authToken"];
+            string? token = Request.Cookies["authToken"];
             _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
             var response = await _httpClient.GetAsync(_apiUrl + $"/api/Tax/{id}");
