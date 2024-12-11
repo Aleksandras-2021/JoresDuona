@@ -59,7 +59,7 @@
                                 <a class="nav-link text-dark" asp-area="" asp-controller="Order" asp-action="Index">Orders</a>
                             </li>
                         }
-                        @if (userRole == "SuperAdmin" || userRole == "Owner" || userRole == "Manager" || userRole == "Worker")
+                        @if (userRole == "SuperAdmin" || userRole == "Owner" || userRole == "Manager")
                         {
                             <li class="nav-item">
                                 <a class="nav-link text-dark" asp-area="" asp-controller="Service" asp-action="Index">Services</a>
