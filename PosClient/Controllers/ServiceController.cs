@@ -189,4 +189,44 @@ public class ServiceController : Controller
         TempData["Error"] = "Unable to delete service. Please try again.";
         return RedirectToAction("Index");
     }
+
+    // GET: Service/Reserve/5
+    [HttpGet]
+    public IActionResult Reserve(int id)
+    {
+        var reservation = new Reservation
+        {
+            ServiceId = id,
+            ReservationTime = DateTime.Now,
+            Status = ReservationStatus.Booked
+        };
+        return View(reservation);
+    }
+
+    [HttpPost]
+    public async Task<IActionResult> Reserve(int id, Reservation reservation)
+    {
+        if (!ModelState.IsValid) return View(reservation);
+
+        string? token = Request.Cookies["authToken"];
+        _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+
+        reservation.ServiceId = id;
+        var apiUrl = _apiUrl + $"/api/Service/{id}/reserve";
+        var content = new StringContent(
+            JsonSerializer.Serialize(reservation), 
+            Encoding.UTF8, 
+            "application/json"
+        );
+
+        var response = await _httpClient.PostAsync(apiUrl, content);
+        
+        if (response.IsSuccessStatusCode)
+        {
+            return RedirectToAction("Index");
+        }
+
+        TempData["Error"] = await response.Content.ReadAsStringAsync();
+        return View(reservation);
+    }
 }
