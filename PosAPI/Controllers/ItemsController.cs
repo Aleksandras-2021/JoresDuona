@@ -131,7 +131,7 @@ public class ItemsController : ControllerBase
         try
         {
 
-            Item? existingItem = await _itemService.GetAuthorizedItemByIdAsync(id,sender);
+            Item? existingItem = await _itemService.GetAuthorizedItemForModificationByIdAsync(id,sender);
 
             if (existingItem == null)
             {
@@ -174,7 +174,7 @@ public class ItemsController : ControllerBase
 
         try
         {
-            Item? item = await _itemService.GetAuthorizedItemByIdAsync(id,sender);
+            Item? item = await _itemService.GetAuthorizedItemForModificationByIdAsync(id,sender);
             
             await _itemRepository.DeleteItemAsync(id);
             _logger.LogInformation($"User with id {sender.Id} deleted item with id {item.Id} at {DateTime.Now}");
@@ -270,7 +270,7 @@ public class ItemsController : ControllerBase
         if (sender == null)
             return Unauthorized();
 
-        var item = await _itemService.GetAuthorizedItemByIdAsync(variation.ItemId,sender);
+        var item = await _itemService.GetAuthorizedItemForModificationByIdAsync(variation.ItemId,sender);
 
         var newVariation = new ItemVariation
         {
@@ -314,7 +314,7 @@ public class ItemsController : ControllerBase
 
         try
         {
-            ItemVariation? variation = await _itemService.GetAuthorizedItemVariationByIdAsync(varId,sender);
+            ItemVariation? variation = await _itemService.GetAuthorizedItemVariationForModificationByIdAsync(varId,sender);
             await _itemRepository.DeleteItemVariationAsync(varId);
 
             _logger.LogInformation($"Variation with id {varId} deleted at {DateTime.Now} by userId:{sender.Id}");
@@ -345,7 +345,7 @@ public class ItemsController : ControllerBase
             if (sender == null)
                 return Unauthorized();
 
-            ItemVariation? existingVariation = await _itemService.GetAuthorizedItemVariationByIdAsync(id,sender);
+            ItemVariation? existingVariation = await _itemService.GetAuthorizedItemVariationForModificationByIdAsync(id,sender);
 
             existingVariation.AdditionalPrice = variation.AdditionalPrice;
             existingVariation.Name = variation.Name;

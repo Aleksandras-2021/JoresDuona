@@ -10,8 +10,11 @@ public interface IItemService
     Task<PaginatedResult<Item>> GetAuthorizedItemsAsync(User sender,int pageNumber = 1, int pageSize = 10);
         
     Task<Item?> GetAuthorizedItemByIdAsync(int id, User sender);
+    Task<Item?> GetAuthorizedItemForModificationByIdAsync(int id, User sender);
+
     Task<List<ItemVariation>> GetAuthorizedItemVariationsAsync(int id, User sender);
     Task<ItemVariation?> GetAuthorizedItemVariationByIdAsync(int varId, User sender);
+    Task<ItemVariation?> GetAuthorizedItemVariationForModificationByIdAsync(int varId, User sender);
 
 
     /*

@@ -31,6 +31,9 @@ public class ItemService: IItemService
         return items;
     }
 
+
+
+
     public async Task<Item?> GetAuthorizedItemByIdAsync(int id, User sender)
     {
         var item = await _itemRepository.GetItemByIdAsync(id);
@@ -44,6 +47,23 @@ public class ItemService: IItemService
         return item;
     }
     
+    public async Task<Item?> GetAuthorizedItemForModificationByIdAsync(int id, User sender)
+    {
+        var item = await _itemRepository.GetItemByIdAsync(id);
+
+        if (sender.Role != UserRole.SuperAdmin && item.BusinessId != sender.BusinessId)
+            throw new UnauthorizedAccessException();
+        
+        if(sender.Role == UserRole.Worker || sender.Role == UserRole.Manager)
+            throw new UnauthorizedAccessException();
+
+        if (item == null)
+            throw new KeyNotFoundException($"Item with ID {id} not found.");
+
+        return item;
+        
+    }
+    
     public async Task<ItemVariation?> GetAuthorizedItemVariationByIdAsync(int varId, User sender)
     {
         var variation = await _itemRepository.GetItemVariationByIdAsync(varId);
@@ -51,6 +71,26 @@ public class ItemService: IItemService
         
         if (sender.Role != UserRole.SuperAdmin && item.BusinessId != sender.BusinessId)
             throw new UnauthorizedAccessException();
+
+        if (variation == null)
+            throw new KeyNotFoundException($"Variation with ID {varId} not found.");
+
+        if (item == null)
+            throw new KeyNotFoundException($"Item with ID {variation.ItemId} not found.");
+
+        return variation;
+    }
+
+    public async Task<ItemVariation?> GetAuthorizedItemVariationForModificationByIdAsync(int varId, User sender)
+    {
+        var variation = await _itemRepository.GetItemVariationByIdAsync(varId);
+        var item = await  _itemRepository.GetItemByIdAsync(variation.ItemId);
+        
+        if (sender.Role != UserRole.SuperAdmin && item.BusinessId != sender.BusinessId)
+            throw new UnauthorizedAccessException();
+        if(sender.Role == UserRole.Worker || sender.Role == UserRole.Manager)
+            throw new UnauthorizedAccessException();
+
 
         if (variation == null)
             throw new KeyNotFoundException($"Variation with ID {varId} not found.");
