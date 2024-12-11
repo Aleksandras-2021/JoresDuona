@@ -1,5 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using PosAPI.Data.DbContext;
+using PosShared;
 using PosShared.Models;
 
 namespace PosAPI.Repositories
@@ -43,19 +44,31 @@ namespace PosAPI.Repositories
         }
 
 
-        public async Task<List<Item>> GetAllItemsAsync()
+        public async Task<PaginatedResult<Item>> GetAllItemsAsync(int pageNumber, int pageSize)
         {
-            return await _context.Set<Item>()
-                .OrderBy(item => item.Id)
+            var totalCount = await _context.Set<Item>().CountAsync();
+            
+            var items = await _context.Set<Item>()
+                .OrderByDescending(item => item.Id)
+                .Skip((pageNumber - 1) * pageSize)
+                .Take(pageSize)
                 .ToListAsync();
+            
+            return PaginatedResult<Item>.Create(items, totalCount, pageNumber, pageSize);
         }
 
-        public async Task<List<Item>> GetAllBusinessItemsAsync(int businessId)
+        public async Task<PaginatedResult<Item>> GetAllBusinessItemsAsync(int businessId,int pageNumber, int pageSize)
         {
-            return await _context.Set<Item>()
+            var totalCount = await _context.Set<Item>().CountAsync();
+            
+            var items = await _context.Set<Item>()
                 .Where(item => item.BusinessId == businessId)
-                .OrderBy(item => item.Id)
+                .OrderByDescending(item => item.Id)
+                .Skip((pageNumber - 1) * pageSize)
+                .Take(pageSize)
                 .ToListAsync();
+            
+            return PaginatedResult<Item>.Create(items, totalCount, pageNumber, pageSize);
         }
 
         public async Task<Item> GetItemByIdAsync(int id)

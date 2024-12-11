@@ -16,9 +16,7 @@ public class OrderController : Controller
 {
     private readonly HttpClient _httpClient;
     private readonly IUserSessionService _userSessionService;
-
-    private readonly string _apiUrl = ApiRoutes.ApiBaseUrl;
-
+    
     public OrderController(HttpClient httpClient, IUserSessionService userSessionService)
     {
         _httpClient = httpClient;
@@ -97,7 +95,6 @@ public class OrderController : Controller
             return RedirectToAction(nameof(Index));
         }
 
-        // Handle errors
         var errorMessage = await response.Content.ReadAsStringAsync();
         ModelState.AddModelError(string.Empty, $"Error creating order: {errorMessage}");
 
@@ -105,24 +102,24 @@ public class OrderController : Controller
         return RedirectToAction(nameof(Index));
     }
 
-    public async Task<IActionResult> SelectItems(int orderId)
+    public async Task<IActionResult> SelectItems(int orderId,int pageNumber = 1, int pageSize = 20)
     {
         string? token = Request.Cookies["authToken"];
 
         _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
-        var itemsApiUrl = ApiRoutes.Items.GetAllItems;
+        var itemsApiUrl = ApiRoutes.Items.GetItemsPaginated(pageNumber,pageSize);
         var itemsResponse = await _httpClient.GetAsync(itemsApiUrl);
 
-        List<Item>? items = null;
+        PaginatedResult<Item>? items = null;
         if (itemsResponse.IsSuccessStatusCode)
         {
             var itemsJson = await itemsResponse.Content.ReadAsStringAsync();
-            items = JsonSerializer.Deserialize<List<Item>>(itemsJson, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+            items = JsonSerializer.Deserialize<PaginatedResult<Item>>(itemsJson, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
         }
         else
         {
-            items = new List<Item>();
+            items = new PaginatedResult<Item>();
         }
 
         var orderItemsApiUrl = ApiRoutes.OrderItems.GetOrderItems(orderId);
@@ -152,21 +149,17 @@ public class OrderController : Controller
             TempData["Error"] = "Cannot fetch the order";
         }
 
-        // Prepare the view model
         var model = new SelectItemsViewModel
         {
             OrderId = orderId,
             Order = order,
-            Items = items.Where(Item => Item.Quantity > 0).ToList(),
+            Items = items,
             OrderItems = orderItems
         };
-
-
+        
         return View(model);
     }
-
-
-
+    
     // GET: Order/Edit/
     [HttpGet]
     public async Task<IActionResult> Edit(int orderId)
@@ -225,7 +218,6 @@ public class OrderController : Controller
     public async Task<IActionResult> DeleteOrder(int orderId)
     {
         string? token = Request.Cookies["authToken"];
-
 
         _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
@@ -421,7 +413,7 @@ public class OrderController : Controller
     [HttpGet]
     public IActionResult RedirectToGetPayment(int orderId)
     {
-        return RedirectToAction("GetAllOrderPayments", "Payment", new { orderId });
+        return RedirectToAction("GetOrderPayments", "Payment", new { orderId });
     }
 
     [HttpGet]

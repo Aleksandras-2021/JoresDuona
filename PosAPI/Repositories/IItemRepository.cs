@@ -1,4 +1,5 @@
-﻿using PosShared.Models;
+﻿using PosShared;
+using PosShared.Models;
 
 namespace PosAPI.Repositories;
 
@@ -6,8 +7,8 @@ public interface IItemRepository
 {
     // Items
     Task AddItemAsync(Item item);
-    Task<List<Item>> GetAllItemsAsync();
-    Task<List<Item>> GetAllBusinessItemsAsync(int businessId);
+    Task<PaginatedResult<Item>> GetAllItemsAsync(int pageNumber, int pageSize);
+    Task<PaginatedResult<Item>> GetAllBusinessItemsAsync(int businessId, int pageNumber, int pageSize);
     Task<Item> GetItemByIdAsync(int id);
     Task UpdateItemAsync(Item item);
     Task DeleteItemAsync(int id);

@@ -5,6 +5,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Internal;
 using PosAPI.Migrations;
 using PosAPI.Repositories;
+using PosAPI.Services;
 using PosShared.DTOs;
 using PosShared.Models;
 using PosShared.Ultilities;
@@ -21,49 +22,33 @@ public class ItemsController : ControllerBase
     private readonly ILogger<ItemsController> _logger;
     private readonly IItemRepository _itemRepository;
     private readonly IUserRepository _userRepository;
-    public ItemsController(ILogger<ItemsController> logger, IItemRepository itemRepository, IUserRepository userRepository)
+    private readonly IItemService _itemService;
+    public ItemsController(ILogger<ItemsController> logger, IItemRepository itemRepository, 
+        IUserRepository userRepository,IItemService itemService)
     {
         _logger = logger;
         _itemRepository = itemRepository;
         _userRepository = userRepository;
+        _itemService = itemService;
     }
 
 
     // GET: api/Items
     [HttpGet]
-    public async Task<IActionResult> GetAllItems()
+    public async Task<IActionResult> GetAllItems(int pageNumber = 1, int pageSize = 10)
     {
         User? sender = await GetUserFromToken();
 
         if (sender == null)
             return Unauthorized();
 
-        try
-        {
-            List<Item> items;
-            if (sender.Role == UserRole.SuperAdmin)
-            {
-                items = await _itemRepository.GetAllItemsAsync();
-            }
+       
+            var paginatedItems = await _itemService.GetAuthorizedItemsAsync(sender, pageNumber, pageSize);
+              
+            if (paginatedItems.Items.Count > 0)
+                return Ok(paginatedItems);
             else
-            {
-                items = await _itemRepository.GetAllBusinessItemsAsync(sender.BusinessId);
-            }
-
-
-            if (items == null || items.Count == 0)
-            {
-                return NotFound("No items found.");
-            }
-
-
-            return Ok(items);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError($"Error retrieving all items: {ex.Message}");
-            return StatusCode(500, "Internal server error");
-        }
+                return NotFound("No Items found.");
     }
 
 
@@ -138,10 +123,8 @@ public class ItemsController : ControllerBase
         newItem.Price = item.Price;
         newItem.BasePrice = item.BasePrice;
         newItem.Category = item.Category;
-
         newItem.Quantity = item.Quantity;
-
-
+        
         try
         {
             await _itemRepository.AddItemAsync(newItem);

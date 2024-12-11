@@ -36,8 +36,6 @@ public class OrderController : ControllerBase
     [HttpGet("")]
     public async Task<IActionResult> GetAllOrders(int pageNumber = 1, int pageSize = 10)
     {
-        string? token = HttpContext.Request.Headers["Authorization"].ToString();
-
         User? senderUser = await GetUserFromToken();
         if (senderUser == null)
         {

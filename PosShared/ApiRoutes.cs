@@ -37,7 +37,7 @@ public static class ApiRoutes
     }
     public static class Items
     {
-        public static string GetAllItems => $"{ApiBaseUrl}/api/Items";
+        public static string GetItemsPaginated(int pageNumber, int pageSize) => $"{ApiBaseUrl}/api/Items?pageNumber={pageNumber}&pageSize={pageSize}";
         public static string GetItemById(int itemId) => $"{ApiBaseUrl}/api/Items/{itemId}";
         public static string CreateItem => $"{ApiBaseUrl}/api/Items";
         public static string UpdateItem(int itemId) => $"{ApiBaseUrl}/api/Items/{itemId}";

@@ -1,4 +1,4 @@
-﻿@model List<PosShared.Models.Item>
+﻿@model PosShared.PaginatedResult<PosShared.Models.Item>
 
 <h1>Items</h1>
 
@@ -6,41 +6,73 @@
     <a href="@Url.Action("Create", "Items")">Create new item</a>
 </p>
 
-@if (Model != null && Model.Count > 0)
+@if (Model.Items.Any())
 {
     <table class="table">
         <thead>
-            <tr>
-                <th>Id</th>
-                <th>Business Id</th>
-                <th>Name</th>
-                <th>Description</th>
-                <th>Base Price</th>
-                <th>Price</th>
-                <th>Quantity</th>
-                <th>Actions</th>
-            </tr>
+        <tr>
+            <th>Id</th>
+            <th>Business Id</th>
+            <th>Name</th>
+            <th>Description</th>
+            <th>Base Price</th>
+            <th>Price</th>
+            <th>Quantity</th>
+            <th>Actions</th>
+        </tr>
         </thead>
         <tbody>
-            @foreach (var item in Model)
-            {
-                <tr>
-                    <td>@item.Id</td>
-                    <td>@item.BusinessId</td>
-                    <td>@item.Name</td>
-                    <td>@item.Description</td>
-                    <td>@item.BasePrice</td>
-                    <td>@item.Price</td>
-                    <td>@item.Quantity</td>
-                    <td>
-                        <a asp-action="Variations" asp-route-itemId="@item.Id" class="btn btn-primary">View Variations</a>
-                        <a href="/Items/Edit/@item.Id">Edit</a> |
-                        <a href="/Items/Delete/@item.Id">Delete</a>
-                    </td>
-                </tr>
-            }
+        @foreach (var item in Model.Items)
+        {
+            <tr>
+                <td>@item.Id</td>
+                <td>@item.BusinessId</td>
+                <td>@item.Name</td>
+                <td>@item.Description</td>
+                <td>@item.BasePrice</td>
+                <td>@item.Price</td>
+                <td>@item.Quantity</td>
+                <td>
+                    <a asp-action="Variations" asp-route-itemId="@item.Id" class="btn btn-primary">View Variations</a>
+                    <a href="/Items/Edit/@item.Id">Edit</a> |
+                    <a href="/Items/Delete/@item.Id">Delete</a>
+                </td>
+            </tr>
+        }
         </tbody>
     </table>
+    
+    <!-- Pagination -->
+    <nav aria-label="Order pagination">
+        <ul class="pagination justify-content-center">
+            @if (Model.HasPreviousPage)
+            {
+                <li class="page-item">
+                    <a class="page-link" href="?pageNumber=@(Model.PageNumber - 1)&pageSize=@Model.PageSize" aria-label="Previous">
+                        <span aria-hidden="true">&laquo;</span>
+                    </a>
+                </li>
+            }
+
+            @for (int i = 1; i <= Model.TotalPages; i++)
+            {
+                <li class="page-item @(i == Model.PageNumber ? "active" : "")">
+                    <a class="page-link" href="?pageNumber=@i&pageSize=@Model.PageSize">@i</a>
+                </li>
+            }
+
+            @if (Model.HasNextPage)
+            {
+                <li class="page-item">
+                    <a class="page-link" href="?pageNumber=@(Model.PageNumber + 1)&pageSize=@Model.PageSize" aria-label="Next">
+                        <span aria-hidden="true">&raquo;</span>
+                    </a>
+                </li>
+            }
+        </ul>
+    </nav>
+    
+    
 }
 else
 {
