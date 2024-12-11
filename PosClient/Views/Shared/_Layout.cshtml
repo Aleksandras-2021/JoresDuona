@@ -65,19 +65,20 @@
                                 <a class="nav-link text-dark" asp-area="" asp-controller="Service" asp-action="Index">Services</a>
                             </li>
                         }
-                        @if (userRole != null)
-                        {
-                            <li class="nav-item">
-                                <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Logout">Logout</a>
-                            </li>
-                        }
-                        @if (userRole != null)
-                        {
-                            <li class="nav-item">
-                                <a>User role : @userRole</a>
-                            </li>
-                        }
                     </ul>
+                    <div class="navbar-right">
+                        @if (userRole != null)
+                        {
+                            <ul class="navbar-nav d-flex flex-row align-items-center">
+                                <li>
+                                    <a><span class="fw-bold">User role:</span> @userRole</a>
+                                </li>
+                                <li class="nav-item">
+                                    <a class="nav-link text-white btn btn-danger btn-sm" asp-area="" asp-controller="Home" asp-action="Logout"><span class="fw-bold">Log out</span></a>
+                                </li>
+                            </ul>
+                        }
+                    </div>
                 </div>
             </div>
         </nav>
