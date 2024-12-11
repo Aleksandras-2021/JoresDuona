@@ -77,7 +77,7 @@ public class OrderRepository : IOrderRepository
 
         var orders = await _context.Set<Order>()
             .Where(order => order.BusinessId == businessId)
-            .OrderBy(order => order.CreatedAt)
+            .OrderByDescending(order => order.CreatedAt)
             .Skip((pageNumber - 1) * pageSize)
             .Take(pageSize)
             .ToListAsync();
@@ -102,7 +102,7 @@ public class OrderRepository : IOrderRepository
         // Find the order
         var order = await _context.Orders
             .Include(o => o.OrderItems)
-                .ThenInclude(oi => oi.OrderItemVariations) // Include variations
+            .ThenInclude(oi => oi.OrderItemVariations) // Include variations
             .FirstOrDefaultAsync(o => o.Id == orderId);
 
         if (order == null)
@@ -269,13 +269,10 @@ public class OrderRepository : IOrderRepository
 
     public async Task<List<OrderItemVariation>> GetOrderItemVariationsByOrderIdAsync(int orderId)
     {
-
-
         var orderItemsVariations = await _context.Set<OrderItemVariation>()
             .Where(orderItemVar => orderItemVar.OrderItem.OrderId == orderId)
             .OrderBy(orderItem => orderItem.Id)
             .ToListAsync();
-
 
         return orderItemsVariations;
     }

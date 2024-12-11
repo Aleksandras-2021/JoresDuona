@@ -111,7 +111,7 @@ public class OrderController : Controller
 
         _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
-        var itemsApiUrl = ApiRoutes.Items.GetAll;
+        var itemsApiUrl = ApiRoutes.Items.GetAllItems;
         var itemsResponse = await _httpClient.GetAsync(itemsApiUrl);
 
         List<Item>? items = null;
@@ -332,7 +332,7 @@ public class OrderController : Controller
 
         _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
-        var variationsApiUrl = ApiRoutes.Items.GetVariations(itemId);
+        var variationsApiUrl = ApiRoutes.Items.GetItemVariationById(itemId);
         var response = await _httpClient.GetAsync(variationsApiUrl);
 
         List<ItemVariation>? variations = null;

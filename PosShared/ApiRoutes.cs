@@ -37,8 +37,17 @@ public static class ApiRoutes
     }
     public static class Items
     {
-        public static string GetAll => $"{ApiBaseUrl}/api/Items";
-        public static string GetVariations(int itemId) => $"{ApiBaseUrl}/api/Items/{itemId}/Variations";
+        public static string GetAllItems => $"{ApiBaseUrl}/api/Items";
+        public static string GetItemById(int itemId) => $"{ApiBaseUrl}/api/Items/{itemId}";
+        public static string CreateItem => $"{ApiBaseUrl}/api/Items";
+        public static string UpdateItem(int itemId) => $"{ApiBaseUrl}/api/Items/{itemId}";
+        public static string DeleteItem(int itemId) => $"{ApiBaseUrl}/api/Items/{itemId}";
+
+        public static string GetItemVariations(int itemId) => $"{ApiBaseUrl}/api/Items/{itemId}/Variations";
+        public static string GetItemVariationById(int itemId) => $"{ApiBaseUrl}/api/Items/{itemId}/Variations";
+        public static string CreateVariation(int itemId) => $"{ApiBaseUrl}/api/Items/{itemId}/Variations";
+        public static string UpdateVariation(int variationId) => $"{ApiBaseUrl}/api/Items/Variations{variationId}";
+        public static string DeleteVariations(int variationId) => $"{ApiBaseUrl}/api/Items/Variations{variationId}";
     }
 
 
