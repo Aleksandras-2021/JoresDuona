@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Mvc;
 using PosAPI.Controllers;
 using PosAPI.Repositories;
+using PosShared;
 using PosShared.Models;
 
 namespace PosAPI.Services;
@@ -25,17 +26,21 @@ public class OrderService : IOrderService
     {
         return await _orderRepository.GetOrderByIdAsync(orderId);
     }
-    public async Task<List<Order>> GetAuthorizedOrders(User sender)
+    public async Task<PaginatedResult<Order>> GetAuthorizedOrders(
+        User sender,
+        int pageNumber = 1,
+        int pageSize = 10)
     {
-        List<Order>? orders = null;
+        PaginatedResult<Order>? orders = null;
 
         if (sender.Role == UserRole.SuperAdmin)
-            orders = await _orderRepository.GetAllOrdersAsync();
-        else if (sender.Role == UserRole.Manager || sender.Role == UserRole.Owner || sender.Role == UserRole.Worker)
-            orders = await _orderRepository.GetAllBusinessOrdersAsync(sender.BusinessId);
+            orders = await _orderRepository.GetAllOrdersAsync(pageNumber, pageSize);
+        else if (sender.Role == UserRole.Manager ||
+                 sender.Role == UserRole.Owner ||
+                 sender.Role == UserRole.Worker)
+            orders = await _orderRepository.GetAllBusinessOrdersAsync(sender.BusinessId, pageNumber, pageSize);
         else
-            orders = new List<Order>();
-
+            orders = PaginatedResult<Order>.Create(new List<Order>(), 0, pageNumber, pageSize);
 
         return orders;
     }

@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using PosAPI.Data.DbContext;
+using PosShared;
 using PosShared.Models;
 using System.Security.Cryptography.X509Certificates;
 
@@ -54,20 +55,36 @@ public class OrderRepository : IOrderRepository
     }
 
 
-    public async Task<List<Order>> GetAllBusinessOrdersAsync(int businessId)
+
+    public async Task<PaginatedResult<Order>> GetAllOrdersAsync(int pageNumber, int pageSize)
     {
-        return await _context.Set<Order>()
-            .Where(order => order.BusinessId == businessId)
-            .OrderBy(order => order.CreatedAt)
+        var totalCount = await _context.Set<Order>().CountAsync();
+
+        var orders = await _context.Set<Order>()
+            .OrderByDescending(order => order.CreatedAt)
+            .Skip((pageNumber - 1) * pageSize)
+            .Take(pageSize)
             .ToListAsync();
+
+        return PaginatedResult<Order>.Create(orders, totalCount, pageNumber, pageSize);
     }
 
-    public async Task<List<Order>> GetAllOrdersAsync()
+    public async Task<PaginatedResult<Order>> GetAllBusinessOrdersAsync(int businessId, int pageNumber, int pageSize)
     {
-        return await _context.Set<Order>()
+        var totalCount = await _context.Set<Order>()
+            .Where(order => order.BusinessId == businessId)
+            .CountAsync();
+
+        var orders = await _context.Set<Order>()
+            .Where(order => order.BusinessId == businessId)
             .OrderBy(order => order.CreatedAt)
+            .Skip((pageNumber - 1) * pageSize)
+            .Take(pageSize)
             .ToListAsync();
+
+        return PaginatedResult<Order>.Create(orders, totalCount, pageNumber, pageSize);
     }
+
 
     public async Task<Order> GetOrderByIdAsync(int id)
     {
@@ -144,7 +161,7 @@ public class OrderRepository : IOrderRepository
 
         try
         {
-            _context.Attach(order); 
+            _context.Attach(order);
             _context.Attach(item);
             await _context.OrderItems.AddAsync(orderItem);
 

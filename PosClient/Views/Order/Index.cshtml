@@ -2,11 +2,11 @@
     ViewData["Title"] = "Order Page";
 }
 @using PosShared.Models
-@model List<PosShared.Models.Order>
+@model PosShared.PaginatedResult<Order>
 
 @if (TempData["Error"] != null)
 {
-    <div class="alert alert-danger">
+    <div class="alert alert-danger" role="alert">
         <i class="bi bi-exclamation-circle"></i> @TempData["Error"]
     </div>
 }
@@ -23,26 +23,25 @@
         </form>
     </div>
 
-    @if (Model != null && Model.Count > 0)
+    @if (Model.Items.Any())
     {
         <div class="table-responsive">
             <table class="table table-striped table-hover align-middle">
                 <thead class="table-dark">
                     <tr>
-                        <th scope="col">#</th>
-                        <th scope="col">Creator</th>
-                        <th scope="col">Created At</th>
-                        <th scope="col">Status</th>
-                        <th scope="col">Closed At</th>
-                        <th scope="col">Tax Amount</th>
-                        <th scope="col">Charge</th>
-                        <th scope="col">Tip</th>
-                        <th scope="col">Actions</th>
-                        <th scope="col"></th>
+                        <th>#</th>
+                        <th>Creator</th>
+                        <th>Created At</th>
+                        <th>Status</th>
+                        <th>Closed At</th>
+                        <th>Tax Amount</th>
+                        <th>Charge</th>
+                        <th>Tip</th>
+                        <th colspan="3">Actions</th>
                     </tr>
                 </thead>
                 <tbody>
-                    @foreach (var order in Model)
+                    @foreach (var order in Model.Items)
                     {
                         <tr>
                             <td>@order.Id</td>
@@ -57,28 +56,35 @@
                             <td>@order.TaxAmount.ToString("C")</td>
                             <td>@order.ChargeAmount.ToString("C")</td>
                             <td>@order.TipAmount.ToString("C")</td>
-                            <td class="d-flex gap-2">
+                            <td>
                                 <a asp-action="SelectItems" asp-route-orderId="@order.Id" class="btn btn-secondary btn-sm">
                                     <i class="bi bi-eye"></i> View
                                 </a>
-                                @if (order.Status != PosShared.Models.OrderStatus.Closed)
-                                {
+                            </td>
+                            @if (order.Status != PosShared.Models.OrderStatus.Closed)
+                            {
+                                <td>
                                     <form asp-action="DeleteOrder" method="post" class="m-0">
                                         <input type="hidden" name="orderId" value="@order.Id" />
                                         <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('Are you sure you want to delete this order?');">
                                             <i class="bi bi-trash"></i> Delete
                                         </button>
                                     </form>
+                                </td>
+                                <td>
                                     <form asp-action="UpdateStatus" method="post" class="m-0">
                                         <input type="hidden" name="orderId" value="@order.Id" />
-                                        <input type="hidden" name="status" value="1" /> <!-- 1 corresponds to 'Closed' -->
+                                        <input type="hidden" name="status" value="1" />
                                         <button type="submit" class="btn btn-warning btn-sm" onclick="return confirm('Are you sure you want to close this order?');">
                                             <i class="bi bi-lock"></i> Close Order
                                         </button>
                                     </form>
-
-                                }
-                            </td>
+                                </td>
+                            }
+                            else
+                            {
+                                <td colspan="2"></td>
+                            }
                             <td>
                                 <a href="@Url.Action("GetOrderPayments", "Payment", new { orderId = order.Id })" class="btn btn-primary btn-sm">
                                     <i class="bi bi-credit-card"></i> Payments
@@ -89,6 +95,36 @@
                 </tbody>
             </table>
         </div>
+
+        <!-- Pagination -->
+        <nav aria-label="Order pagination">
+            <ul class="pagination justify-content-center">
+                @if (Model.HasPreviousPage)
+                {
+                    <li class="page-item">
+                        <a class="page-link" href="?pageNumber=@(Model.PageNumber - 1)&pageSize=@Model.PageSize" aria-label="Previous">
+                            <span aria-hidden="true">&laquo;</span>
+                        </a>
+                    </li>
+                }
+
+                @for (int i = 1; i <= Model.TotalPages; i++)
+                {
+                    <li class="page-item @(i == Model.PageNumber ? "active" : "")">
+                        <a class="page-link" href="?pageNumber=@i&pageSize=@Model.PageSize">@i</a>
+                    </li>
+                }
+
+                @if (Model.HasNextPage)
+                {
+                    <li class="page-item">
+                        <a class="page-link" href="?pageNumber=@(Model.PageNumber + 1)&pageSize=@Model.PageSize" aria-label="Next">
+                            <span aria-hidden="true">&raquo;</span>
+                        </a>
+                    </li>
+                }
+            </ul>
+        </nav>
     }
     else
     {

@@ -19,7 +19,7 @@ public class ItemsController : Controller
     private readonly IUserSessionService _userSessionService;
 
 
-    private readonly string _apiUrl = UrlConstants.ApiBaseUrl;
+    private readonly string _apiUrl = ApiRoutes.ApiBaseUrl;
 
     public ItemsController(HttpClient httpClient, IUserSessionService userSessionService)
     {

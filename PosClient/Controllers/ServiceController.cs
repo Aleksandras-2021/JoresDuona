@@ -13,7 +13,7 @@ public class ServiceController : Controller
     private readonly HttpClient _httpClient;
     private readonly IUserSessionService _userSessionService;
     
-    private readonly string _apiUrl = UrlConstants.ApiBaseUrl;
+    private readonly string _apiUrl = ApiRoutes.ApiBaseUrl;
     public ServiceController(HttpClient httpClient, IUserSessionService userSessionService)
     {
         _httpClient = httpClient;

@@ -8,6 +8,12 @@
     <p><strong>Taxes:</strong> @Model.TotalTax.ToString("C")</p>
     <p><strong>Total:</strong> @Model.Total.ToString("C")</p>
 </div>
+@if (TempData["Error"] != null)
+{
+    <div class="alert alert-danger">
+        @TempData["Error"]
+    </div>
+}
 
 
 <div class="container my-4">

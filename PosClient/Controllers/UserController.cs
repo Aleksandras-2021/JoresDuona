@@ -16,7 +16,7 @@ public class UserController : Controller
 {
     private readonly HttpClient _httpClient;
 
-    private readonly string _apiUrl = UrlConstants.ApiBaseUrl;
+    private readonly string _apiUrl = ApiRoutes.ApiBaseUrl;
 
     public UserController(HttpClient httpClient)
     {

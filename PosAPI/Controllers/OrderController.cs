@@ -34,7 +34,7 @@ public class OrderController : ControllerBase
 
     // GET: api/Order
     [HttpGet("")]
-    public async Task<IActionResult> GetAllOrders()
+    public async Task<IActionResult> GetAllOrders(int pageNumber = 1, int pageSize = 10)
     {
         string? token = HttpContext.Request.Headers["Authorization"].ToString();
 
@@ -43,13 +43,15 @@ public class OrderController : ControllerBase
         {
             return Unauthorized();
         }
-        List<Order> orders = await _orderService.GetAuthorizedOrders(senderUser);
 
-        if (orders.Count > 0)
-            return Ok(orders);
+        var paginatedOrders = await _orderService.GetAuthorizedOrders(senderUser, pageNumber, pageSize);
+
+        if (paginatedOrders.Items.Count > 0)
+            return Ok(paginatedOrders);
         else
             return NotFound("No Orders found.");
     }
+
 
     // GET: api/Order/id
     [HttpGet("{id}", Name = "GetOrderById")]

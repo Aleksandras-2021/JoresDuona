@@ -1,11 +1,12 @@
-﻿using PosShared.Models;
+﻿using PosShared;
+using PosShared.Models;
 
 namespace PosAPI.Services;
 
 public interface IOrderService
 {
     Task<Order?> GetOrderByIdAsync(int orderId);
-    Task<List<Order>> GetAuthorizedOrders(User sender);
+    Task<PaginatedResult<Order>> GetAuthorizedOrders(User sender, int pageNumber, int pageSize);
     Task<Order?> GetAuthorizedOrder(int orderId, User sender);
     Task<Order?> GetAuthorizedOrderForModification(int orderId, User sender);
     Task<OrderItem?> GetAuthorizedOrderItem(int orderItemId, User sender);

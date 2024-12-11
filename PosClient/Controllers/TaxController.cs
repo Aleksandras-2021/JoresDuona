@@ -16,7 +16,7 @@ namespace PosClient.Controllers
         private readonly IUserSessionService _userSessionService;
 
 
-        private readonly string _apiUrl = UrlConstants.ApiBaseUrl;
+        private readonly string _apiUrl = ApiRoutes.ApiBaseUrl;
 
         public TaxController(HttpClient httpClient, IUserSessionService userSessionService)
         {

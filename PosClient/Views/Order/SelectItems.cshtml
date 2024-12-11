@@ -30,8 +30,6 @@
     {
             <form asp-action="RedirectToReceipt" asp-controller="Order" method="get" class="mb-4">
                 <input type="hidden" name="orderId" value="@Model.OrderId" />
-                <input type="hidden" name="untaxedAmount" value="@Model.Order.ChargeAmount" />
-                <input type="hidden" name="tax" value="@Model.Order.TaxAmount" />
                 <button type="submit" class="btn btn-primary w-100">
                     <i class="bi bi-credit-card"></i> Receipt
                 </button>
