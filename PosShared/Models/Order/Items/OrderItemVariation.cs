@@ -20,6 +20,5 @@ public class OrderItemVariation
     public int Quantity { get; set; }
 
     public decimal AdditionalPrice { get; set; }
-
-    public ItemCategory Category { get; set; }
+    public decimal TaxedAmount { get; set; }
 }

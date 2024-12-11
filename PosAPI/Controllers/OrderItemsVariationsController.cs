@@ -19,13 +19,15 @@ public class OrderItemsVariationsController : ControllerBase
     private readonly IOrderService _orderService;
     private readonly IOrderRepository _orderRepository;
     private readonly IUserRepository _userRepository;
+    private readonly ITaxRepository _taxRepository;
     private readonly ILogger<OrderItemsVariationsController> _logger;
 
-    public OrderItemsVariationsController(IUserRepository userRepository, IOrderService orderService, IOrderRepository orderRepository, ILogger<OrderItemsVariationsController> logger)
+    public OrderItemsVariationsController(IUserRepository userRepository, IOrderService orderService, IOrderRepository orderRepository, ITaxRepository taxRepository, ILogger<OrderItemsVariationsController> logger)
     {
         _userRepository = userRepository;
         _orderService = orderService;
         _orderRepository = orderRepository;
+        _taxRepository = taxRepository;
         _logger = logger;
     }
 
@@ -104,13 +106,26 @@ public class OrderItemsVariationsController : ControllerBase
             var orderItem = await _orderService.GetAuthorizedOrderItem(itemId, sender);
             var variation = await _orderService.GetAuthorizedItemVariation(addVariationDTO.VariationId, sender);
 
+            Tax tax = await _taxRepository.GetTaxByItemIdAsync(variation.ItemId);
+
+            decimal taxedAmount;
+            if (tax.IsPercentage)
+            {
+                taxedAmount = variation.AdditionalPrice * addVariationDTO.Quantity * tax.Amount / 100;
+            }
+            else
+            {
+                taxedAmount = tax.Amount * addVariationDTO.Quantity;
+            }
+
+
             var orderItemVariation = new OrderItemVariation
             {
                 OrderItemId = itemId,
                 ItemVariationId = addVariationDTO.VariationId,
                 Quantity = addVariationDTO.Quantity,
                 AdditionalPrice = variation.AdditionalPrice,
-                Category = orderItem.Category
+                TaxedAmount = taxedAmount,
             };
 
             await _orderRepository.AddOrderItemVariationAsync(orderItemVariation);

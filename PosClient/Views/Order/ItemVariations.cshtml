@@ -87,6 +87,7 @@
                     <th>Variation ID</th>
                     <th>Quantity</th>
                     <th>Additional Cost</th>
+                    <th>Tax</th>
                     <th>Action</th>
                 </tr>
             </thead>
@@ -97,7 +98,8 @@
                         <td>@Model.OrderItemId</td>
                         <td>@orderItemVariation.Id</td>
                         <td>@orderItemVariation.Quantity</td>
-                        <td>@orderItemVariation.AdditionalPrice.ToString("C")</td>
+                        <td>@((orderItemVariation.AdditionalPrice * orderItemVariation.Quantity).ToString("C"))</td>
+                        <td>@((orderItemVariation.TaxedAmount * orderItemVariation.Quantity).ToString("C"))</td>
                         <td>
                             <form method="post" asp-action="DeleteVariation" class="d-inline">
                                 <input type="hidden" name="orderId" value="@Model.OrderId" />

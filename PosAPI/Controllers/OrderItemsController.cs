@@ -7,6 +7,7 @@ using PosAPI.Services;
 using PosShared.DTOs;
 using PosShared.Models;
 using PosShared.Ultilities;
+using System.Diagnostics.Eventing.Reader;
 
 namespace PosAPI.Controllers;
 
@@ -19,16 +20,18 @@ public class OrderItemsController : ControllerBase
     private readonly IOrderRepository _orderRepository;
     private readonly IUserRepository _userRepository;
     private readonly IItemRepository _itemRepository;
+    private readonly ITaxRepository _taxRepository;
     private readonly IOrderService _orderService;
 
     private readonly ILogger<OrderItemsController> _logger;
 
-    public OrderItemsController(IOrderRepository orderRepository, IUserRepository userRepository, IOrderService orderService, ILogger<OrderItemsController> logger, IItemRepository itemRepository)
+    public OrderItemsController(IOrderRepository orderRepository, IUserRepository userRepository, IOrderService orderService, ILogger<OrderItemsController> logger, IItemRepository itemRepository, ITaxRepository taxRepository)
     {
         _orderRepository = orderRepository;
         _userRepository = userRepository;
         _orderService = orderService;
         _itemRepository = itemRepository;
+        _taxRepository = taxRepository;
 
         _logger = logger;
     }
@@ -109,6 +112,18 @@ public class OrderItemsController : ControllerBase
             var order = await _orderService.GetAuthorizedOrderForModification(orderId, sender);
 
             var item = await _itemRepository.GetItemByIdAsync(addItemDTO.ItemId);
+            Tax tax = await _taxRepository.GetTaxByItemIdAsync(addItemDTO.ItemId);
+
+            decimal taxedAmount;
+            if (tax.IsPercentage)
+            {
+                taxedAmount = item.Price * tax.Amount / 100;
+            }
+            else
+            {
+                taxedAmount = tax.Amount;
+            }
+
 
             OrderItem orderItem = new OrderItem
             {
@@ -116,8 +131,7 @@ public class OrderItemsController : ControllerBase
                 ItemId = addItemDTO.ItemId,
                 Quantity = 1, //or addItemDto.Quantity if that ever gets implemented
                 Price = item.Price,
-                Category = item.Category
-                
+                TaxedAmount = taxedAmount
             };
 
             await _orderRepository.AddOrderItemAsync(orderItem);
