@@ -29,6 +29,25 @@ public class ReservationController : ControllerBase
         _logger = logger;
     }
 
+    [HttpGet]
+    public async Task<IActionResult> GetAll()
+    {
+        User? sender = await GetUserFromToken();
+        if (sender == null)
+            return Unauthorized();
+
+        try 
+        {
+            var reservations = await _reservationRepository.GetAllReservationsAsync();
+            return Ok(reservations);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError($"Error getting reservations: {ex.Message}");
+            return StatusCode(500, "Internal server error");
+        }
+    }
+
     [HttpGet("services/{serviceId}/available-slots")]
     public async Task<IActionResult> GetAvailableSlots(int serviceId, DateTime date)
     {
@@ -57,7 +76,8 @@ public class ReservationController : ControllerBase
 
         try
         {
-            // Create reservation logic here
+            // reservation logic
+
             return Ok();
         }
         catch (Exception ex)

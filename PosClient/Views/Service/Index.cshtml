@@ -62,6 +62,11 @@
                                    </button>
                                </form>
                            </td>
+                            <td>
+                                <a asp-action="Reserve" asp-controller="Reservation" asp-route-serviceId="@service.Id" class="btn btn-primary btn-sm">
+                                    <i class="bi bi-calendar-plus"></i> Reserve
+                                </a>
+                            </td>
                        </tr>
                    }
                </tbody>

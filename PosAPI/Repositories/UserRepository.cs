@@ -84,7 +84,6 @@ namespace PosAPI.Repositories
             User? user = await _context.Users
                 .FindAsync(userId);
 
-
             return user;
         }
 
@@ -130,7 +129,27 @@ namespace PosAPI.Repositories
             }
         }
 
-        public async Task<List<TimeOff>> GetTimeOffForUserAsync(int userId)
+  
+
+        public async Task<bool> HasOverlappingReservationsAsync(DateTime startTime, DateTime endTime, int? employeeId)
+        {
+            var query = _context.Reservations
+                .Where(r => 
+                    // Check if the new reservation overlaps with any existing ones
+                    r.ReservationTime < endTime && 
+                    r.ReservationTime.AddMinutes(r.Service.DurationInMinutes) > startTime);
+
+            if (employeeId.HasValue)
+            {
+                query = query.Where(r => r.EmployeeId == employeeId.Value);
+            }
+
+            bool hasOverlapping = await query.AnyAsync();
+
+            return hasOverlapping;
+        }
+
+        public async Task<bool> HasTimeOffAsync(int userId, DateTime date)
         {
             var user = await _context.Users.Include(u => u.TimeOffs).FirstOrDefaultAsync(u => u.Id == userId);
             if (user == null)
@@ -138,18 +157,7 @@ namespace PosAPI.Repositories
                 throw new KeyNotFoundException($"User with ID {userId} not found.");
             }
 
-            return user.TimeOffs.ToList();
-        }
-
-        //Yet to implement
-        public Task<bool> HasOverlappingReservationsAsync(DateTime requestedTime, DateTime serviceEndTime, int? employeeId)
-        {
-            throw new NotImplementedException();
-        }
-
-        public Task<bool> HasTimeOffAsync(int userId, DateTime date)
-        {
-            throw new NotImplementedException();
+            return user.TimeOffs.Any(to => to.StartDate <= date && to.EndDate >= date);
         }
     }
 }

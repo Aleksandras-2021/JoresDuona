@@ -26,7 +26,7 @@ public class Service
     public int DurationInMinutes { get; set; }
 
     public decimal BasePrice { get; set; }
-    public  ItemCategory category { get; set; }
+    public  ItemCategory Category { get; set; }
 
     [JsonIgnore]
     public ICollection<Reservation>? Reservations { get; set; }

@@ -49,9 +49,11 @@ builder.Services.AddScoped<IOrderRepository, OrderRepository>();
 builder.Services.AddScoped<ITaxRepository, TaxRepository>();
 builder.Services.AddScoped<IPaymentRepository, PaymentRepository>();
 builder.Services.AddScoped<IServiceRepository, ServiceRepository>();
+builder.Services.AddScoped<IReservationRepository, ReservationRepository>();
 
 builder.Services.AddScoped<IOrderService, PosAPI.Services.OrderService>();
 
+builder.Services.AddScoped<IServiceBusinessLogic, ServiceBusinessLogic>();
 
 
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
