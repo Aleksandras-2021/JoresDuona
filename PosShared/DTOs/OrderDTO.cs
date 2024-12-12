@@ -28,10 +28,4 @@ public class OrderDTO
 
     public decimal TipAmount { get; set; }
 
-    public Reservation? Reservation { get; set; }
-    public ICollection<OrderItem> OrderItems { get; set; }
-    public ICollection<Payment> Payments { get; set; }
-    public ICollection<OrderDiscount> OrderDiscounts { get; set; }
-    public ICollection<OrderService> OrderServices { get; set; }
-
 }

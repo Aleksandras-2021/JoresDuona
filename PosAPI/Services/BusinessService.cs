@@ -45,7 +45,7 @@ public class BusinessService : IBusinessService
         if (businessId != sender.BusinessId && sender.Role != UserRole.SuperAdmin)
             throw new UnauthorizedAccessException("You are not authorized to access this business.");
 
-        var business = await _businessRepository.GetBusinessByIdAsync(sender.BusinessId);
+        Business? business = await _businessRepository.GetBusinessByIdAsync(businessId);
 
         if (business == null)
             throw new KeyNotFoundException($"Business with ID {businessId} not found.");

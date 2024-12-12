@@ -170,7 +170,9 @@ public class TaxController : ControllerBase
             }
             if (sender == null || sender.Role == UserRole.Worker || existingTax.BusinessId != sender.BusinessId)
                 return Unauthorized();
-
+            
+            var existingTaxForcategory = await _taxRepository.GetTaxByCategoryAsync(tax.Category, sender.BusinessId);
+            
             existingTax.Name = tax.Name;
             existingTax.IsPercentage = tax.IsPercentage;
             existingTax.Amount = tax.Amount;

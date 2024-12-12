@@ -82,7 +82,7 @@ public class BusinessesController : ControllerBase
 
     // PUT: api/Businesses/{id}
     [HttpPut("{id}")]
-    public async Task<IActionResult> EditBusiness(int id, [FromBody] Business updatedBusiness)
+    public async Task<IActionResult> EditBusiness([FromRoute]int id, [FromBody] Business updatedBusiness)
     {
         User? sender = await GetUserFromToken();
         

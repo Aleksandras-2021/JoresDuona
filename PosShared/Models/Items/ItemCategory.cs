@@ -11,4 +11,8 @@ public enum ItemCategory
     Unlisted = 0,
     Food,
     Alcohol,
+    Cat1,
+    Cat2,
+    Cat3,
+    Cat4,
 }

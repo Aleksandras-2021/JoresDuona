@@ -101,10 +101,13 @@ namespace PosAPI.Repositories
             existingTax.IsPercentage = tax.IsPercentage;
             existingTax.Category = tax.Category;
 
+            Tax? taxForCategory = await GetTaxByCategoryAsync(tax.Category,tax.BusinessId);
+        
+            if (taxForCategory != null && taxForCategory != existingTax)
+                throw new Exception($"Tax with category {tax.Category.ToString()} already exists ");
+            
             if (existingTax.Business == null)
-                existingTax.Business = await _context.Businesses.FindAsync(tax.BusinessId);
-
-
+                await _context.Businesses.FindAsync(tax.BusinessId);
 
             _context.Set<Tax>().Update(existingTax);
             await _context.SaveChangesAsync();
