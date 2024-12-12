@@ -9,6 +9,7 @@ using PosShared;
 using PosShared.ViewModels;
 using Microsoft.EntityFrameworkCore.Query.Internal;
 using System.Net.Http.Headers;
+using PosShared.DTOs;
 
 namespace PosClient.Controllers;
 
@@ -24,24 +25,24 @@ public class UserController : Controller
     }
 
     // GET: User/Index
-    public async Task<IActionResult> Index()
+    public async Task<IActionResult> Index(int pageNumber = 1, int pageSize = 10)
     {
 
         string? token = Request.Cookies["authToken"];
         _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
-        var apiUrl = _apiUrl + "/api/Users";
+        var apiUrl = ApiRoutes.User.GetPaginated(pageNumber, pageSize);
         var response = await _httpClient.GetAsync(apiUrl);
 
         if (response.IsSuccessStatusCode)
         {
             var jsonData = await response.Content.ReadAsStringAsync();
-            var users = JsonSerializer.Deserialize<List<User>>(jsonData, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+            var users = JsonSerializer.Deserialize<PaginatedResult<User>>(jsonData, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
             return View(users);
         }
 
-        ViewBag.ErrorMessage = "Could not retrieve users.";
-        return View(new List<User>());
+        TempData["Error"] = "Could not retrieve users." + response.Content;
+        return View(new PaginatedResult<User>());
     }
 
     // GET: User/Create
@@ -59,7 +60,7 @@ public class UserController : Controller
 
         if (ModelState.IsValid)
         {
-            var apiUrl = _apiUrl + "/api/Users";
+            var apiUrl = ApiRoutes.User.Create;
             var content = new StringContent(JsonSerializer.Serialize(newUser), Encoding.UTF8, "application/json");
 
             var response = await _httpClient.PostAsync(apiUrl, content);
@@ -69,7 +70,7 @@ public class UserController : Controller
                 return RedirectToAction("Index");
             }
 
-            ViewBag.ErrorMessage = "Failed to create user.";
+            TempData["Error"] = "Failed to create user.";
         }
 
         return View(newUser);
@@ -83,18 +84,33 @@ public class UserController : Controller
         string? token = Request.Cookies["authToken"];
         _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
-        var apiUrl = _apiUrl + $"/api/Users/{id}";
+        var apiUrl = ApiRoutes.User.GetById(id);
         var response = await _httpClient.GetAsync(apiUrl);
 
-        if (response.IsSuccessStatusCode)
+        if(response.IsSuccessStatusCode)
         {
             string userData = await response.Content.ReadAsStringAsync();
-            User user = JsonSerializer.Deserialize<User>(userData);
+            UserDTO? user = JsonSerializer.Deserialize<UserDTO>(userData,new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
 
+
+            Console.WriteLine(response);
+            
             if (user != null)
             {
-                user.PasswordHash = string.Empty;
-                return View(user);
+                UserViewModel model = new UserViewModel()
+                {
+                    Id = user.Id,
+                    BusinessId = user.BusinessId,
+                    Username = user.Username,
+                    Name = user.Name,
+                    Email = user.Email,
+                    Phone = user.Phone,
+                    Address = user.Address,
+                    Role = user.Role,
+                    EmploymentStatus = user.EmploymentStatus
+                };
+
+                return View(model);
             }
         }
 
@@ -103,7 +119,7 @@ public class UserController : Controller
 
     // POST: User/Edit/
     [HttpPost]
-    public async Task<IActionResult> Edit(int id, User user)
+    public async Task<IActionResult> Edit(int id, UserViewModel user)
     {
 
         string? token = Request.Cookies["authToken"];
@@ -111,8 +127,20 @@ public class UserController : Controller
 
         if (ModelState.IsValid)
         {
-            var apiUrl = _apiUrl + $"/api/Users/{id}";
-            var content = new StringContent(JsonSerializer.Serialize(user), Encoding.UTF8, "application/json");
+            var apiUrl = ApiRoutes.User.Update(id);
+            
+            UserDTO dto = new UserDTO();
+            dto.Id = user.Id;
+            dto.BusinessId = user.BusinessId;
+            dto.Username = user.Username;
+            dto.Name = user.Name;
+            dto.Email = user.Email;
+            dto.Phone = user.Email;
+            dto.Address = user.Address;
+            dto.Role = user.Role;
+            dto.EmploymentStatus = user.EmploymentStatus;
+            
+            var content = new StringContent(JsonSerializer.Serialize(dto), Encoding.UTF8, "application/json");
 
             var response = await _httpClient.PutAsync(apiUrl, content);
 
@@ -121,7 +149,7 @@ public class UserController : Controller
                 return RedirectToAction("Index");
             }
 
-            ViewBag.ErrorMessage = "Failed to update user.";
+            TempData["Error"] = "Failed to update user.";
         }
 
         return View(user);
@@ -134,7 +162,7 @@ public class UserController : Controller
         string? token = Request.Cookies["authToken"];
         _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
-        var apiUrl = _apiUrl + $"/api/Users/{id}";
+        var apiUrl = ApiRoutes.User.GetById(id);
         var response = await _httpClient.GetAsync(apiUrl);
         Console.WriteLine(response);
 
@@ -159,7 +187,7 @@ public class UserController : Controller
         string? token = Request.Cookies["authToken"];
         _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
-        var apiUrl = _apiUrl + $"/api/Users/{id}";
+        var apiUrl = ApiRoutes.User.Delete(id);
         var response = await _httpClient.DeleteAsync(apiUrl);
 
         if (response.IsSuccessStatusCode)
@@ -167,7 +195,8 @@ public class UserController : Controller
             return RedirectToAction("Index");
         }
 
-        ViewBag.ErrorMessage = "Failed to delete user.";
+        TempData["Error"] = "Failed to delete user.";
         return RedirectToAction("Index");
     }
+    
 }

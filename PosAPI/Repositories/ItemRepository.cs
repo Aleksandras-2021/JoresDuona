@@ -59,7 +59,9 @@ namespace PosAPI.Repositories
 
         public async Task<PaginatedResult<Item>> GetAllBusinessItemsAsync(int businessId,int pageNumber, int pageSize)
         {
-            var totalCount = await _context.Set<Item>().CountAsync();
+            var totalCount = await _context.Set<Item>()
+                .Where(i=>i.BusinessId == businessId)
+                .CountAsync();
             
             var items = await _context.Set<Item>()
                 .Where(item => item.BusinessId == businessId)

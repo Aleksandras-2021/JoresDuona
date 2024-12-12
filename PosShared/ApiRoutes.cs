@@ -50,6 +50,16 @@ public static class ApiRoutes
     {
         public static string GetPaginated(int pageNumber,int pageSize) =>  $"{ApiBaseUrl}/api/Businesses?pageNumber={pageNumber}&pageSize={pageSize}";
         public static string Create =>  $"{ApiBaseUrl}/api/Businesses";
+    }
+
+    public static class User
+    {
+        public static string GetPaginated(int pageNumber,int pageSize) =>  $"{ApiBaseUrl}/api/Users?pageNumber={pageNumber}&pageSize={pageSize}";
+        public static string Create =>  $"{ApiBaseUrl}/api/Users";
+        public static string GetById(int id) =>  $"{ApiBaseUrl}/api/Users/{id}";
+        public static string Update(int id) =>  $"{ApiBaseUrl}/api/Users/{id}";
+        public static string Delete(int id) =>  $"{ApiBaseUrl}/api/Users/{id}";
+
         
     }
 

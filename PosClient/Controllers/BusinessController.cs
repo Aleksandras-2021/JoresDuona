@@ -43,7 +43,9 @@ namespace PosClient.Controllers
                 return View(paginatedResult);
             }
 
-            ViewBag.ErrorMessage = "Could not retrieve businesses.";
+            var errorContent = await response.Content.ReadAsStringAsync();
+            TempData["Error"] = $"Error: {errorContent}";
+            
             return View(new PaginatedResult<Business>());
         }
 
@@ -71,7 +73,7 @@ namespace PosClient.Controllers
                     return RedirectToAction("Index");
                 }
 
-                ViewBag.ErrorMessage = "Failed to create business." + response.Content;
+                TempData["Error"] = "Failed to create business." + response.Content;
             }
 
             return View(business);
@@ -98,7 +100,9 @@ namespace PosClient.Controllers
                 }
             }
 
-            return NotFound(); // Return a 404 if the business was not found or request failed
+            TempData["Error"] = $"Failed to create business: {response.Content}";
+
+            return NotFound();
         }
 
         // POST: Business/Edit/5
@@ -122,14 +126,12 @@ namespace PosClient.Controllers
 
                 if (response.IsSuccessStatusCode)
                 {
-                    // Redirect to the Index action after successful edit
                     return RedirectToAction("Index");
                 }
-
-                ViewBag.ErrorMessage = "Failed to update business.";
             }
+            TempData["Error"] = "Failed to update business.";
 
-            return View(business); // Return to the edit view if validation fails or update fails
+            return View(business); 
         }
 
         // GET: Business/Delete/5
@@ -153,7 +155,7 @@ namespace PosClient.Controllers
                 }
             }
 
-            return NotFound(); // Return a 404 if the business was not found or request failed
+            return NotFound();
         }
 
         // POST: Business/Delete/5
@@ -172,13 +174,8 @@ namespace PosClient.Controllers
                 return RedirectToAction("Index");
             }
 
-            ViewBag.ErrorMessage = "Failed to delete business.";
+            TempData["Error"] = $"Failed to delete business. {response.Content}";
             return RedirectToAction("Index");
         }
-
-
     }
-
-
-
 }

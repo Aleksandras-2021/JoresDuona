@@ -43,7 +43,9 @@ public class BusinessRepository : IBusinessRepository
 
     public async Task<PaginatedResult<Business>> GetPaginatedBusinessAsync(int businessId, int pageNumber = 1, int pageSize = 10)
     {
-        var totalCount = await _context.Set<Business>().CountAsync();
+        var totalCount = await _context.Set<Business>()
+            .Where(b =>b.Id == businessId)
+            .CountAsync();
 
         var businesses = await _context.Set<Business>()
             .Where(b => b.Id == businessId)

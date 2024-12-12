@@ -1,5 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using PosAPI.Data.DbContext;
+using PosShared;
 using PosShared.Models;
 
 namespace PosAPI.Repositories
@@ -53,29 +54,33 @@ namespace PosAPI.Repositories
             }
         }
 
-        public async Task<List<User>> GetAllUsersAsync()
+        public async Task<PaginatedResult<User>> GetAllUsersAsync(int pageNumber,int pageSize)
         {
-            List<User> users = await _context.Set<User>()
-                .OrderBy(user => user.Id)
+            var totalCount = await _context.Set<User>().CountAsync();
+            
+            var users = await _context.Set<User>()
+                .OrderByDescending(user => user.Id)
+                .Skip((pageNumber - 1) * pageSize)
+                .Take(pageSize)
                 .ToListAsync();
 
-            if (users == null)
-                users = new List<User>();
-
-            return users;
+            return PaginatedResult<User>.Create(users, totalCount, pageNumber, pageSize);
         }
 
-        public async Task<List<User>> GetAllUsersByBusinessIdAsync(int businessId)
+        public async Task<PaginatedResult<User>> GetAllUsersByBusinessIdAsync(int businessId,int pageNumber,int pageSize)
         {
-            List<User> users = await _context.Set<User>()
-                .Where(u => u.BusinessId == businessId)
-                .OrderBy(user => user.Id)
+            var totalCount = await _context.Set<User>()
+                .Where(u=>u.BusinessId == businessId)
+                .CountAsync();
+            
+            var users = await _context.Set<User>()
+                .Where(u=>u.BusinessId == businessId)
+                .OrderByDescending(user => user.Id)
+                .Skip((pageNumber - 1) * pageSize)
+                .Take(pageSize)
                 .ToListAsync();
 
-            if (users == null)
-                users = new List<User>();
-
-            return users;
+            return PaginatedResult<User>.Create(users, totalCount, pageNumber, pageSize);
         }
 
         public async Task<User?> GetUserByIdAsync(int? userId)
