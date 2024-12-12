@@ -1,0 +1,56 @@
+@model PosShared.ViewModels.ScheduleCreateViewModel
+@{
+    var currentDate = DateTime.Now;
+    var roundedStartTime = new DateTime(currentDate.Year, currentDate.Month, currentDate.Day, 
+        currentDate.Hour, 0, 0).AddHours(1);
+    var roundedEndTime = roundedStartTime.AddHours(1);
+}
+
+<div class="container my-4">
+    <h2 class="text-center mb-4">Create Schedule</h2>
+
+    @if (TempData["Error"] != null)
+    {
+        <div class="alert alert-danger" role="alert">
+            <i class="bi bi-exclamation-circle"></i> @TempData["Error"]
+        </div>
+    }
+
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <form asp-action="Create" method="post">
+                <input type="hidden" name="userId" value="@Model.UserId" />
+                <input type="hidden" asp-for="UserId" value="@Model.UserId" />
+
+                <div class="form-group mb-3">
+                    <label asp-for="StartTime" class="control-label">Start Time</label>
+                    <input asp-for="StartTime" class="form-control" type="datetime-local"
+                            value="@roundedStartTime.ToString("yyyy-MM-ddTHH:mm")" />
+                    <span asp-validation-for="StartTime" class="text-danger"></span>
+                </div>
+
+                <div class="form-group mb-3">
+                    <label asp-for="EndTime" class="control-label">End Time</label>
+                    <input asp-for="EndTime" class="form-control" type="datetime-local"
+                            value="@roundedEndTime.ToString("yyyy-MM-ddTHH:mm")" />
+                    <span asp-validation-for="EndTime" class="text-danger"></span>
+                </div>
+
+                <div class="form-group d-flex justify-content-between">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-plus-circle"></i> Create
+                    </button>
+                    <a href="@Url.Action("Schedules", "Schedule", new { userId = Model.UserId })" class="btn btn-secondary">
+                        <i class="bi bi-arrow-left"></i> Back to List
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+}

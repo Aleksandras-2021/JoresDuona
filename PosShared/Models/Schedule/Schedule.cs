@@ -1,4 +1,5 @@
 namespace PosShared.Models;
+using System.Text.Json.Serialization;
 
 public class Schedule
 {
@@ -6,7 +7,8 @@ public class Schedule
 
     public int UserId { get; set; }
 
-    public User User { get; set; }
+    [JsonIgnore]
+    public User? User { get; set; }
 
     public DateTime StartTime { get; set; }
 
