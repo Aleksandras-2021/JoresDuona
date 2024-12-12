@@ -70,17 +70,75 @@ public class ServiceBusinessLogic : IServiceBusinessLogic
         return time.Hour >= 9 && time.Hour < 17;
     }
 
-    private async Task<bool> IsTimeSlotFree(int serviceId, DateTime time, int duration)
+    private async Task<bool> IsTimeSlotFree(int serviceId, DateTime requestedTime, int duration, int? employeeId = null)
     {
-        // Implement check for existing reservations
-        return true; // Placeholder
+        try
+        {
+            DateTime serviceEndTime = requestedTime.AddMinutes(duration);
+
+            // Build the base query for overlapping appointments
+            var query = _context.Reservations
+                .Where(r => r.Status != ReservationStatus.Cancelled &&
+                        ((r.ReservationTime <= requestedTime && 
+                            r.ReservationTime.AddMinutes(r.Service.DurationInMinutes) > requestedTime) ||
+                            (r.ReservationTime < serviceEndTime && 
+                            r.ReservationTime >= requestedTime)));
+
+            // If employee is specified, check only their appointments
+            if (employeeId.HasValue)
+            {
+                query = query.Where(r => r.EmployeeId == employeeId.Value);
+            }
+
+            var hasOverlappingAppointment = await query.AnyAsync();
+
+            if (hasOverlappingAppointment)
+            {
+                _logger.LogInformation($"Found overlapping appointment at {requestedTime}");
+                return false;
+            }
+
+            return true;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError($"Error checking time slot availability: {ex.Message}");
+            return false;
+        }
     }
 
-    // Not sure if we want select employee for each reservation
     private async Task<bool> IsEmployeeAvailable(int employeeId, DateTime time, int duration)
     {
-        // Implement employee availability check
-        return true; // Placeholder
+        try
+        {
+            // Check if employee exists and is active
+            var employee = await _userRepository.GetUserByIdAsync(employeeId);
+            if (employee == null || employee.EmploymentStatus != EmploymentStatus.Active)
+            {
+                _logger.LogWarning($"Employee {employeeId} not found or not active");
+                return false;
+            }
+
+            // Check for time off requests
+            var timeOffs = await _context.TimeOffs
+                .Where(t => t.UserId == employeeId &&
+                        t.StartDate <= requestedTime &&
+                        t.EndDate >= requestedTime)
+                .AnyAsync();
+
+            if (timeOffs)
+            {
+                _logger.LogInformation($"Employee {employeeId} has time off during {requestedTime}");
+                return false;
+            }
+
+            return true;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError($"Error checking employee availability: {ex.Message}");
+            return false;
+        }    
     }
     public Task<bool> ConfirmReservation(int serviceId, DateTime time, int customerId, int? employeeId = null)
     {
