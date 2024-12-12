@@ -51,6 +51,7 @@ public class BusinessesController : ControllerBase
         }
         catch (Exception ex)
         {
+            _logger.LogError($"Internal server error {ex.Message}");
             return StatusCode(500, $"Internal server error {ex.Message}");
         }
     }
@@ -76,6 +77,8 @@ public class BusinessesController : ControllerBase
         }
         catch (Exception ex)
         {
+            _logger.LogError($"Internal server error {ex.Message}");
+
             return StatusCode(500, $"Internal server error {ex.Message}");
         }
     }
@@ -111,7 +114,7 @@ public class BusinessesController : ControllerBase
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex.Message);
+            _logger.LogError($"Internal server error {ex.Message}");
             return StatusCode(500, $"Internal server error {ex.Message}");
         }
     }
@@ -138,6 +141,7 @@ public class BusinessesController : ControllerBase
         }
         catch (Exception ex)
         {
+            _logger.LogError($"Internal server error {ex.Message}");
             return StatusCode(500, $"Internal server error {ex.Message}");
         }
     }
@@ -162,6 +166,7 @@ public class BusinessesController : ControllerBase
         }
         catch (Exception ex)
         {
+            _logger.LogError($"Internal server error {ex.Message}");
             return StatusCode(500, $"Internal server error {ex.Message}");
         }
     }
@@ -190,7 +195,6 @@ public class BusinessesController : ControllerBase
 
     }
     #endregion
-
-
+    
 }
 

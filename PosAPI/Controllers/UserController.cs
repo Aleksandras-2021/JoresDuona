@@ -10,6 +10,8 @@ using System;
 using System.Collections.Generic;
 using System.Reflection;
 using System.Threading.Tasks;
+using PosAPI.Services;
+using PosAPI.Services.Interfaces;
 
 namespace PosAPI.Controllers;
 
@@ -19,51 +21,38 @@ public class UsersController : ControllerBase
 {
     private readonly ILogger<UsersController> _logger;
     private readonly IUserRepository _userRepository;
+    private readonly IUserService _userService;
 
-    public UsersController(IUserRepository userRepository, ILogger<UsersController> logger)
+    public UsersController(IUserService userService,IUserRepository userRepository, ILogger<UsersController> logger)
     {
+        _userService = userService;
         _userRepository = userRepository;
         _logger = logger;
     }
 
     // GET: api/Users
     [HttpGet]
-    public async Task<IActionResult> GetAllUsers()
+    public async Task<IActionResult> GetAllUsers(int pageNumber = 1, int pageSize = 10)
     {
         User? sender = await GetUserFromToken();
-
-        if (sender == null)
-            return Unauthorized();
-
         try
         {
-            List<User> users;
-            if (sender.Role == UserRole.SuperAdmin)
-            {
-                users = await _userRepository.GetAllUsersAsync();
-            }
-            else if (sender.Role == UserRole.Owner || sender.Role == UserRole.Manager)
-            {
-                users = await _userRepository.GetAllUsersByBusinessIdAsync(sender.BusinessId);
-            }
-            else
-            {
-                return Unauthorized();
-            }
-
-
-            if (users == null || users.Count == 0)
-            {
-                return NotFound("No users found.");
-            }
-
+            var users = await _userService.GetAuthorizedUsers(sender,pageNumber,pageSize);
 
             return Ok(users);
         }
+        catch (UnauthorizedAccessException ex)
+        {
+            return Unauthorized(ex.Message);
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(ex.Message);
+        }
         catch (Exception ex)
         {
-            _logger.LogError($"Error retrieving all users: {ex.Message}");
-            return StatusCode(500, "Internal server error");
+            _logger.LogError($"Internal server error {ex.Message}");
+            return StatusCode(500, $"Internal server error {ex.Message}");
         }
     }
 
@@ -71,44 +60,26 @@ public class UsersController : ControllerBase
     [HttpGet("{id}")]
     public async Task<IActionResult> GetUserById(int id)
     {
-        User? senderUser = await GetUserFromToken();
-
-        if (senderUser == null)
-            return BadRequest();
+        User? sender = await GetUserFromToken();
 
         try
         {
-            User? user;
-
-            if (senderUser.Role == UserRole.SuperAdmin)
-            {
-                user = await _userRepository.GetUserByIdAsync(id);
-            }
-            else if (senderUser.Role == UserRole.Manager || senderUser.Role == UserRole.Owner)
-            {
-                user = await _userRepository.GetUserByIdAsync(id);
-
-                if (user.BusinessId != senderUser.BusinessId)
-                {
-                    return Unauthorized();
-                }
-            }
-            else
-            {
-                return Unauthorized();
-            }
-
-            if (user == null)
-            {
-                return NotFound($"User with ID {id} not found.");
-            }
+            User? user = await _userService.GetAuthorizedUserById(id,sender);
 
             return Ok(user);
         }
+        catch (UnauthorizedAccessException ex)
+        {
+            return Unauthorized(ex.Message);
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(ex.Message);
+        }
         catch (Exception ex)
         {
-            _logger.LogError($"Error retrieving user with ID {id}: {ex.Message}");
-            return StatusCode(500, "Internal server error");
+            _logger.LogError($"Internal server error {ex.Message}");
+            return StatusCode(500, $"Internal server error {ex.Message}");
         }
     }
 
@@ -117,45 +88,21 @@ public class UsersController : ControllerBase
     public async Task<IActionResult> CreateUser([FromBody] User user)
     {
         User? sender = await GetUserFromToken();
-
-        if (sender == null || sender.Role == UserRole.Worker)
-            return Unauthorized();
-
-        if (user == null)
-            return BadRequest("User data is null.");
-
-        if (await _userRepository.GetUserByEmailAsync(user.Email) != null)
-            return BadRequest("User with that email already exists");
-
-        User newUser = new User();
-
-        newUser.Name = user.Name;
-        newUser.Address = user.Address;
-        newUser.Email = user.Email;
-        newUser.Phone = user.Phone;
-        newUser.PasswordHash = BCrypt.Net.BCrypt.HashPassword(user.PasswordHash);
-        newUser.EmploymentStatus = user.EmploymentStatus;
-        newUser.Username = user.Username;
-
-        if (sender.Role != UserRole.SuperAdmin && user.Role == UserRole.SuperAdmin)
-            newUser.Role = UserRole.Worker;
-        else
-            newUser.Role = user.Role;
-
-
-        if (sender.Role == UserRole.SuperAdmin) //Only admins can set user business ID
-        {
-            newUser.BusinessId = user.BusinessId;
-        }
-        else //Business owners/Managers can only create users for their business
-        {
-            newUser.BusinessId = sender.BusinessId;
-        }
-
+        
         try
         {
+            var newUser = await _userService.CreateAuthorizedUser(user, sender);
+            
             await _userRepository.AddUserAsync(newUser);
             return CreatedAtAction(nameof(GetUserById), new { id = newUser.Id }, newUser);
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            return Unauthorized(ex.Message);
+        }
+        catch (MissingFieldException ex)
+        {
+            return BadRequest(ex.Message);
         }
         catch (Exception ex)
         {
@@ -168,55 +115,19 @@ public class UsersController : ControllerBase
     [HttpPut("{id}")]
     public async Task<IActionResult> UpdateUser(int id, [FromBody] User user)
     {
-        if (user == null)
-            return BadRequest("Invalid user data.");
-        
+        User? sender = await GetUserFromToken();
 
         try
         {
-            User? sender = await GetUserFromToken();
-
-            User? existingUser = await _userRepository.GetUserByIdAsync(id);
-
-            if (existingUser == null)
-                return NotFound($"User with ID {id} not found.");
-
-            if (sender == null || sender.Role == UserRole.Worker)
-                return Unauthorized();
-
-            if (sender.BusinessId != existingUser.BusinessId && sender.Role != UserRole.SuperAdmin)
-                return Unauthorized();
-
-            existingUser.Name = user.Name;
-            existingUser.Address = user.Address;
-            existingUser.Email = user.Email;
-            existingUser.Phone = user.Phone;
-            existingUser.PasswordHash = BCrypt.Net.BCrypt.HashPassword(user.PasswordHash);
-            existingUser.BusinessId = user.BusinessId;
-            existingUser.EmploymentStatus = user.EmploymentStatus;
-            existingUser.Username = user.Username;
-
-            if (sender.Role != UserRole.SuperAdmin && user.Role == UserRole.SuperAdmin)//Only superadmins can create more super admins
-                existingUser.Role = UserRole.Worker;
-            else
-                existingUser.Role = user.Role;
-
-            if (sender.Role == UserRole.SuperAdmin) //Only admins can set user business ID
-            {
-                existingUser.BusinessId = user.BusinessId;
-            }
-            else
-            {
-                existingUser.BusinessId = sender.BusinessId;
-            }
-
-
-            await _userRepository.UpdateUserAsync(existingUser);
+            await _userService.UpdateAuthorizedUser(id, user, sender);
             return NoContent();
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            return Unauthorized(ex.Message);
         }
         catch (KeyNotFoundException ex)
         {
-            _logger.LogWarning($"User with ID {id} not found: {ex.Message}");
             return NotFound(ex.Message);
         }
         catch (Exception ex)
@@ -232,34 +143,20 @@ public class UsersController : ControllerBase
     {
         User? sender = await GetUserFromToken();
 
-        if (sender == null || sender.Role == UserRole.Worker)
-            return Unauthorized();
-
         try
         {
-            User? user = await _userRepository.GetUserByIdAsync(id);
+            await _userService.DeleteAuthorizedUser(id, sender);
 
-            if (user == null)
-            {
-                return NotFound($"User with ID {id} not found.");
-            }
-
-            if (sender.Role == UserRole.SuperAdmin)
-            {
-                await _userRepository.DeleteUserAsync(id);
-            }
-            else if ((sender.Role == UserRole.Owner || sender.Role == UserRole.Manager) && user.BusinessId == sender.BusinessId)
-            {
-                await _userRepository.DeleteUserAsync(id);
-            }
-            else
-            {
-                return Unauthorized();
-            }
-
-            _logger.LogInformation($"User with id {id} deleted at {DateTime.Now}");
-
+            _logger.LogInformation($"User with id {id} deleted at {DateTime.Now} by {sender.Id}");
             return NoContent();
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            return Unauthorized(ex.Message);
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(ex.Message);
         }
         catch (Exception ex)
         {
