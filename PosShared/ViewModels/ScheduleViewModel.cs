@@ -1,14 +1,11 @@
+using PosShared.Models;
+
 namespace PosShared.ViewModels
 {
     public class ScheduleViewModel
     {
-        public int Id { get; set; }
-        public int UserId { get; set; }
-        public string UserName { get; set; }
-        public DateTime StartTime { get; set; }
-        public DateTime EndTime { get; set; }
-        public string StartTimeString => StartTime.ToString("yyyy-MM-ddTHH:mm");
-        public string EndTimeString => EndTime.ToString("yyyy-MM-ddTHH:mm");
+        public User User { get; set; }
+        public List<Schedule> Schedules { get; set; }
     }
 
     public class WeeklyScheduleViewModel

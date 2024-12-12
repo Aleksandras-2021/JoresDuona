@@ -43,7 +43,6 @@ namespace PosAPI.Repositories
                 throw new ArgumentNullException(nameof(schedule));
             }
 
-            // Check if User exists in the table
             var userExists = await _context.Users.AnyAsync(u => u.Id == schedule.UserId);
 
             if (!userExists)

@@ -1,4 +1,4 @@
-@model PosShared.Models.Schedule
+@model PosShared.ViewModels.ScheduleCreateViewModel
 @{
     var currentDate = DateTime.Now;
     var roundedStartTime = new DateTime(currentDate.Year, currentDate.Month, currentDate.Day, 
@@ -19,7 +19,6 @@
     <div class="row justify-content-center">
         <div class="col-md-6">
             <form asp-action="Create" method="post">
-                <input type="hidden" asp-for="UserId" />
 
                 <div class="form-group mb-3">
                     <label asp-for="StartTime" class="control-label">Start Time</label>
@@ -39,7 +38,7 @@
                     <button type="submit" class="btn btn-primary">
                         <i class="bi bi-plus-circle"></i> Create
                     </button>
-                    <a href="@Url.Action("Schedules", "Schedule", new { userId = Model.UserId })" class="btn btn-secondary">
+                    <a href="@Url.Action("Schedules", "Schedule", new { user = Model.User })" class="btn btn-secondary">
                         <i class="bi bi-arrow-left"></i> Back to List
                     </a>
                 </div>

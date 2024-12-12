@@ -24,19 +24,24 @@ namespace PosAPI.Controllers
             _logger = logger;
         }
 
-        [HttpGet("User/{userId}")]
-        public async Task<IActionResult> GetUserSchedules(int userId, [FromQuery] DateTime startDate, [FromQuery] DateTime endDate)
+        [HttpGet("{userId}/User")]
+        public async Task<IActionResult> GetUserSchedules(int userId)
         {
             try
             {
+                Console.WriteLine("Getting user schedules");
                 var sender = await GetUserFromToken();
                 if (sender == null)
                     return Unauthorized();
 
-                startDate = DateTime.SpecifyKind(startDate, DateTimeKind.Utc);
-                endDate = DateTime.SpecifyKind(endDate, DateTimeKind.Utc);
+                var currentDate = DateTime.Today;
+                var weekStart = currentDate.AddDays(-(int)currentDate.DayOfWeek);
+                var weekEnd = weekStart.AddDays(7);
+        
+                weekStart = DateTime.SpecifyKind(weekStart, DateTimeKind.Utc);
+                weekEnd = DateTime.SpecifyKind(weekEnd, DateTimeKind.Utc);
 
-                var schedules = await _scheduleRepository.GetSchedulesByUserIdAsync(userId, startDate, endDate);
+                var schedules = await _scheduleRepository.GetSchedulesByUserIdAsync(userId, weekStart, weekEnd);
 
                 var user = await _userRepository.GetUserByIdAsync(userId);
                 if (sender.Role != UserRole.SuperAdmin && user.BusinessId != sender.BusinessId)
