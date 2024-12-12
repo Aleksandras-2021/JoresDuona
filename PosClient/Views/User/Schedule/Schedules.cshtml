@@ -1,0 +1,129 @@
+@{
+    ViewData["Title"] = "Schedule Page";
+}
+@model List<PosShared.Models.Schedule>
+
+@if (TempData["Error"] != null)
+{
+    <div class="alert alert-danger" role="alert">
+        <i class="bi bi-exclamation-circle"></i> @TempData["Error"]
+    </div>
+}
+
+<div class="container my-4">
+    <h1 class="text-center mb-4">@ViewData["Title"]</h1>
+
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <div>
+            <p class="m-0">Below is the weekly schedule calendar.</p>
+        </div>
+        <div class="d-flex gap-2">
+            <button class="btn btn-outline-secondary btn-sm" onclick="previousWeek()">
+                <i class="bi bi-chevron-left"></i> Previous Week
+            </button>
+            <button class="btn btn-outline-secondary btn-sm" onclick="nextWeek()">
+                Next Week <i class="bi bi-chevron-right"></i>
+            </button>
+            <a href="@Url.Action("Create", "Schedule")" class="btn btn-outline-primary btn-sm">
+                <i class="bi bi-plus-circle"></i> Create New Schedule
+            </a>
+        </div>
+    </div>
+
+    <div class="table-responsive">
+        <table class="table table-bordered">
+            <thead class="table-dark">
+                <tr>
+                    <th class="text-center" style="width: 100px">Time</th>
+                    @{
+                        var currentDate = DateTime.Now.Date;
+                        var weekStart = currentDate.AddDays(-(int)currentDate.DayOfWeek);
+                        
+                        for (int i = 0; i < 7; i++)
+                        {
+                            var day = weekStart.AddDays(i);
+                            <th class="text-center @(day.Date == DateTime.Now.Date ? "table-primary" : "")">
+                                @day.ToString("dddd")
+                                <br />
+                                @day.ToString("MMM dd, yyyy")
+                            </th>
+                        }
+                    }
+                </tr>
+            </thead>
+            <tbody>
+                @{
+                    // Create time slots from 8 AM to 8 PM
+                    for (int hour = 8; hour <= 20; hour++)
+                    {
+                        <tr>
+                            <td class="align-middle text-center bg-light">
+                                @(hour.ToString("00")):00
+                            </td>
+                            @for (int day = 0; day < 7; day++)
+                            {
+                                var currentSlotDate = weekStart.AddDays(day).AddHours(hour);
+                                var schedulesInSlot = Model?.Where(s => 
+                                    s.StartTime.Date == currentSlotDate.Date && 
+                                    s.StartTime.Hour <= hour && 
+                                    s.EndTime.Hour > hour).ToList();
+
+                                <td class="position-relative @(currentSlotDate.Date == DateTime.Now.Date ? "bg-light" : "")" 
+                                    style="height: 80px; min-width: 150px">
+                                    @if (schedulesInSlot != null && schedulesInSlot.Any())
+                                    {
+                                        foreach (var schedule in schedulesInSlot)
+                                        {
+                                            var duration = (schedule.EndTime - schedule.StartTime).TotalHours;
+                                            var heightPercent = Math.Min(duration * 100, 100);
+                                            
+                                            <div class="position-absolute rounded border border-primary"
+                                                 style="top: 0; left: 5px; right: 5px; height: @(heightPercent)%; background-color: rgba(13, 110, 253, 0.1);">
+                                                <div class="p-1">
+                                                    <strong class="d-block">@schedule.User?.Name</strong>
+                                                    <small class="d-block text-muted">
+                                                        @schedule.StartTime.ToString("HH:mm") - @schedule.EndTime.ToString("HH:mm")
+                                                    </small>
+                                                    <div class="mt-1">
+                                                        <a asp-action="Edit" asp-route-id="@schedule.Id" class="btn btn-warning btn-sm">
+                                                            <i class="bi bi-pencil"></i>
+                                                        </a>
+                                                        <form asp-action="Delete" method="post" style="display: inline-block;" class="m-0">
+                                                            <input type="hidden" name="id" value="@schedule.Id" />
+                                                            <button type="submit" class="btn btn-danger btn-sm"
+                                                                    onclick="return confirm('Are you sure you want to delete this schedule?');">
+                                                                <i class="bi bi-trash"></i>
+                                                            </button>
+                                                        </form>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        }
+                                    }
+                                </td>
+                            }
+                        </tr>
+                    }
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        function previousWeek() {
+            const urlParams = new URLSearchParams(window.location.search);
+            let currentDate = new Date(urlParams.get('date') || Date.now());
+            currentDate.setDate(currentDate.getDate() - 7);
+            window.location.href = '@Url.Action("Schedules", "User")?date=' + currentDate.toISOString().split('T')[0];
+        }
+
+        function nextWeek() {
+            const urlParams = new URLSearchParams(window.location.search);
+            let currentDate = new Date(urlParams.get('date') || Date.now());
+            currentDate.setDate(currentDate.getDate() + 7);
+            window.location.href = '@Url.Action("Schedules", "User")?date=' + currentDate.toISOString().split('T')[0];
+        }
+    </script>
+}
