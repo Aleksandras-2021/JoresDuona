@@ -1,9 +1,5 @@
 ﻿using PosShared.Models;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+
 
 namespace PosShared;
 
@@ -48,6 +44,13 @@ public static class ApiRoutes
         public static string CreateVariation(int itemId) => $"{ApiBaseUrl}/api/Items/{itemId}/Variations";
         public static string UpdateVariation(int variationId) => $"{ApiBaseUrl}/api/Items/Variations{variationId}";
         public static string DeleteVariations(int variationId) => $"{ApiBaseUrl}/api/Items/Variations{variationId}";
+    }
+
+    public static class Business
+    {
+        public static string GetPaginated(int pageNumber,int pageSize) =>  $"{ApiBaseUrl}/api/Businesses?pageNumber={pageNumber}&pageSize={pageSize}";
+        public static string Create =>  $"{ApiBaseUrl}/api/Businesses";
+        
     }
 
 

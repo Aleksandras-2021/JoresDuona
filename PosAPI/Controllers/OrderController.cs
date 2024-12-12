@@ -1,16 +1,10 @@
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using PosAPI.Data.DbContext;
 using PosAPI.Repositories;
 using PosAPI.Services;
-using PosShared.DTOs;
 using PosShared.Models;
 using PosShared.Ultilities;
-using PosShared.ViewModels;
-using System.Runtime.InteropServices;
-
 namespace PosAPI.Controllers;
 
 [Authorize]
@@ -89,12 +83,11 @@ public class OrderController : ControllerBase
     public async Task<IActionResult> CreateOrder()
     {
         User? sender = await GetUserFromToken();
-
-        _logger.LogInformation($"User with id: {sender.Id} is creating an order at {DateTime.Now}");
-
         if (sender == null)
             return Unauthorized();
 
+        _logger.LogInformation($"User with id: {sender.Id} is creating an order at {DateTime.Now}");
+        
         if (sender.BusinessId <= 0)
             return BadRequest("Invalid BusinessId associated with the user.");
 

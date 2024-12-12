@@ -1,4 +1,4 @@
-﻿@model List<PosShared.Models.Business>
+﻿@model PosShared.PaginatedResult<PosShared.Models.Business>
 
 <h1>Businesses</h1>
 
@@ -6,7 +6,7 @@
     <a href="@Url.Action("Create", "Business")">Create New Business</a>
 </p>
 
-@if (Model != null && Model.Count > 0)
+@if (Model.Items.Any())
 {
     <table class="table">
         <thead>
@@ -22,7 +22,7 @@
             </tr>
         </thead>
         <tbody>
-            @foreach (var business in Model)
+            @foreach (var business in Model.Items)
             {
                 <tr>
                     <td>@business.Id</td>
@@ -33,7 +33,6 @@
                     <td>@business.VATCode</td>
                     <td>@business.Type</td>
                     <td>
-                        <!-- Add Edit and Delete actions here -->
                         <a href="/Business/Edit/@business.Id">Edit</a> |
                         <a href="/Business/Delete/@business.Id">Delete</a>
                     </td>
@@ -41,6 +40,37 @@
             }
         </tbody>
     </table>
+
+    <!-- Pagination -->
+    <nav aria-label="Order pagination">
+        <ul class="pagination justify-content-center">
+            @if (Model.HasPreviousPage)
+            {
+                <li class="page-item">
+                    <a class="page-link" href="?pageNumber=@(Model.PageNumber - 1)&pageSize=@Model.PageSize" aria-label="Previous">
+                        <span aria-hidden="true">&laquo;</span>
+                    </a>
+                </li>
+            }
+
+            @for (int i = 1; i <= Model.TotalPages; i++)
+            {
+                <li class="page-item @(i == Model.PageNumber ? "active" : "")">
+                    <a class="page-link" href="?pageNumber=@i&pageSize=@Model.PageSize">@i</a>
+                </li>
+            }
+
+            @if (Model.HasNextPage)
+            {
+                <li class="page-item">
+                    <a class="page-link" href="?pageNumber=@(Model.PageNumber + 1)&pageSize=@Model.PageSize" aria-label="Next">
+                        <span aria-hidden="true">&raquo;</span>
+                    </a>
+                </li>
+            }
+        </ul>
+    </nav>
+
 }
 else
 {

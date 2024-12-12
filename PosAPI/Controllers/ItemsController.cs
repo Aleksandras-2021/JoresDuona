@@ -1,16 +1,12 @@
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Metadata.Internal;
-using PosAPI.Migrations;
 using PosAPI.Repositories;
 using PosAPI.Services;
 using PosShared.DTOs;
 using PosShared.Models;
 using PosShared.Ultilities;
 using PosShared.ViewModels;
-using static Microsoft.EntityFrameworkCore.DbLoggerCategory.Model;
 
 namespace PosAPI.Controllers;
 
@@ -311,7 +307,6 @@ public class ItemsController : ControllerBase
         User? sender = await GetUserFromToken();
         if (sender == null)
             return Unauthorized();
-
         try
         {
             ItemVariation? variation = await _itemService.GetAuthorizedItemVariationForModificationByIdAsync(varId,sender);
@@ -352,7 +347,6 @@ public class ItemsController : ControllerBase
             existingVariation.ItemId = variation.ItemId;
             existingVariation.Id = variation.Id;
 
-
             await _itemRepository.UpdateItemVariationAsync(existingVariation);
 
             return NoContent();
@@ -388,7 +382,7 @@ public class ItemsController : ControllerBase
         int? userId = Ultilities.ExtractUserIdFromToken(token);
         User? user = await _userRepository.GetUserByIdAsync(userId);
 
-        if (user == null)
+        if(user == null)
         {
             _logger.LogWarning($"Failed to find user with {userId} in DB");
             return null;

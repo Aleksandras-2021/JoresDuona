@@ -7,7 +7,12 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using PosShared.Models;
 using PosAPI.Repositories;
 using Microsoft.OpenApi.Models;
+using PosAPI.Repositories;
+using PosAPI.Repositories.Interfaces;
 using PosAPI.Services;
+using PosAPI.Services;
+using PosAPI.Services.Interfaces;
+using PosShared.Models;
 
 
 var builder = WebApplication.CreateBuilder(args);
@@ -43,6 +48,7 @@ builder.Services.AddSwaggerGen(options =>
 });
 
 //Add repositories here
+builder.Services.AddScoped<IBusinessRepository, BusinessRepository>();
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IItemRepository, ItemRepository>();
 builder.Services.AddScoped<IOrderRepository, OrderRepository>();
@@ -52,6 +58,7 @@ builder.Services.AddScoped<IServiceRepository, ServiceRepository>();
 
 builder.Services.AddScoped<IOrderService, PosAPI.Services.OrderService>();
 builder.Services.AddScoped<IItemService, PosAPI.Services.ItemService>();
+builder.Services.AddScoped<IBusinessService, BusinessService>();
 
 
 

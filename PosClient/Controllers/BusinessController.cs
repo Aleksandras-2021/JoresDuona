@@ -25,25 +25,26 @@ namespace PosClient.Controllers
         }
 
         // GET: Business/Index (retrieves all businesses)
-        public async Task<IActionResult> Index()
+        public async Task<IActionResult> Index(int pageNumber = 1, int pageSize = 20)
         {
             string? token = Request.Cookies["authToken"]; // Retrieve the token from cookies
 
             _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token); // Put the token into authroization header
 
-            var apiUrl = _apiUrl + "/api/Businesses";
+            var apiUrl = ApiRoutes.Business.GetPaginated(pageNumber, pageSize);
             var response = await _httpClient.GetAsync(apiUrl);
 
             if (response.IsSuccessStatusCode)
             {
                 var jsonData = await response.Content.ReadAsStringAsync();
-                List<Business> businesses = JsonSerializer.Deserialize<List<Business>>(jsonData, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
-                return View(businesses);
+                var paginatedResult = JsonSerializer.Deserialize<PaginatedResult<Business>>(jsonData, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+                
+                
+                return View(paginatedResult);
             }
 
-            // Handle errors or empty results
             ViewBag.ErrorMessage = "Could not retrieve businesses.";
-            return View(new List<Business>());
+            return View(new PaginatedResult<Business>());
         }
 
         // GET: Business/Create
@@ -61,7 +62,7 @@ namespace PosClient.Controllers
 
             if (ModelState.IsValid)
             {
-                var apiUrl = _apiUrl + "/api/Businesses";
+                var apiUrl = ApiRoutes.Business.Create;
                 var content = new StringContent(JsonSerializer.Serialize(business), Encoding.UTF8, "application/json");
 
                 var response = await _httpClient.PostAsync(apiUrl, content);
@@ -70,14 +71,13 @@ namespace PosClient.Controllers
                     return RedirectToAction("Index");
                 }
 
-                // Handle error response
-                ViewBag.ErrorMessage = "Failed to create business.";
+                ViewBag.ErrorMessage = "Failed to create business." + response.Content;
             }
 
             return View(business);
         }
 
-        // GET: Business/Edit/5
+        // GET: Business/Edit/
         [HttpGet]
         public async Task<IActionResult> Edit(int id)
         {
