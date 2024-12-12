@@ -54,13 +54,16 @@ namespace PosAPI.Repositories
             if (schedule.User == null)
                 schedule.User = await _context.Users.FindAsync(schedule.UserId);
 
-            // Validate time range
+
+            schedule.StartTime = DateTime.SpecifyKind(schedule.StartTime, DateTimeKind.Utc);
+            schedule.EndTime = DateTime.SpecifyKind(schedule.EndTime, DateTimeKind.Utc);
+
+
             if (schedule.EndTime <= schedule.StartTime)
             {
                 throw new Exception("End time must be after start time.");
             }
 
-            // Check for overlapping schedules
             var hasOverlap = await _context.Schedules
                 .AnyAsync(s => s.UserId == schedule.UserId &&
                               s.Id != schedule.Id &&

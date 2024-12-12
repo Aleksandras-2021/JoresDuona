@@ -24,26 +24,23 @@ namespace PosAPI.Controllers
             _logger = logger;
         }
 
-        // GET: api/Schedule
-        [HttpGet]
-        public async Task<IActionResult> GetAllSchedules(DateTime startDate, DateTime endDate)
+        [HttpGet("User/{userId}")]
+        public async Task<IActionResult> GetUserSchedules(int userId, [FromQuery] DateTime startDate, [FromQuery] DateTime endDate)
         {
-            User? sender = await GetUserFromToken();
-
-            if (sender == null)
-                return Unauthorized();
-
             try
             {
-                List<Schedule> schedules;
-                if (sender.Role == UserRole.SuperAdmin)
-                {
-                    schedules = await _scheduleRepository.GetSchedulesForDateRangeAsync(startDate, endDate);
-                }
-                else
-                {
-                    schedules = await _scheduleRepository.GetSchedulesByBusinessIdAsync(sender.BusinessId, startDate, endDate);
-                }
+                var sender = await GetUserFromToken();
+                if (sender == null)
+                    return Unauthorized();
+
+                startDate = DateTime.SpecifyKind(startDate, DateTimeKind.Utc);
+                endDate = DateTime.SpecifyKind(endDate, DateTimeKind.Utc);
+
+                var schedules = await _scheduleRepository.GetSchedulesByUserIdAsync(userId, startDate, endDate);
+
+                var user = await _userRepository.GetUserByIdAsync(userId);
+                if (sender.Role != UserRole.SuperAdmin && user.BusinessId != sender.BusinessId)
+                    return Unauthorized();
 
                 if (schedules == null || schedules.Count == 0)
                 {
@@ -54,7 +51,7 @@ namespace PosAPI.Controllers
             }
             catch (Exception ex)
             {
-                _logger.LogError($"Error retrieving all schedules: {ex.Message}");
+                _logger.LogError($"Error retrieving schedules: {ex.Message}");
                 return StatusCode(500, "Internal server error");
             }
         }
@@ -105,6 +102,9 @@ namespace PosAPI.Controllers
             if (sender == null || sender.Role == UserRole.Worker)
                 return Unauthorized();
 
+            schedule.StartTime = DateTime.SpecifyKind(schedule.StartTime, DateTimeKind.Utc);
+            schedule.EndTime = DateTime.SpecifyKind(schedule.EndTime, DateTimeKind.Utc);
+
             try
             {
                 User? user = await _userRepository.GetUserByIdAsync(schedule.UserId);
@@ -148,6 +148,10 @@ namespace PosAPI.Controllers
 
                 if (sender.Role != UserRole.SuperAdmin && existingSchedule.User.BusinessId != sender.BusinessId)
                     return Unauthorized();
+
+                schedule.StartTime = DateTime.SpecifyKind(schedule.StartTime, DateTimeKind.Utc);
+                schedule.EndTime = DateTime.SpecifyKind(schedule.EndTime, DateTimeKind.Utc);
+                schedule.Id = id;
 
                 await _scheduleRepository.UpdateScheduleAsync(schedule);
 
