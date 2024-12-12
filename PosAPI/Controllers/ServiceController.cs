@@ -4,7 +4,6 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Internal;
 using PosAPI.Repositories;
-using PosShared.DTOs;
 using PosShared.Models;
 using PosShared.Ultilities;
 using PosShared.ViewModels;
@@ -107,13 +106,13 @@ namespace PosAPI.Controllers
 
         // POST: api/Service
         [HttpPost]
-        public async Task<IActionResult> CreateService([FromBody] ServiceDTO serviceDTO)
+        public async Task<IActionResult> CreateService([FromBody] Service service)
         {
             User? senderUser = await GetUserFromToken();
 
-            _logger.LogInformation($"User {senderUser?.Id} is creating a service {serviceDTO.Name}");
+            _logger.LogInformation($"User {senderUser?.Id} is creating a service {service.Name}");
 
-            if (serviceDTO == null)
+            if (service == null)
                 return BadRequest("Service is null");
 
             if (senderUser == null || senderUser.Role == UserRole.Worker)
@@ -125,10 +124,10 @@ namespace PosAPI.Controllers
             Service newService = new Service();
 
             newService.BusinessId = senderUser.BusinessId;
-            newService.Name = serviceDTO.Name;
-            newService.Description = serviceDTO.Description;
-            newService.BasePrice = serviceDTO.BasePrice;
-            newService.DurationInMinutes = serviceDTO.DurationInMinutes;
+            newService.Name = service.Name;
+            newService.Description = service.Description;
+            newService.BasePrice = service.BasePrice;
+            newService.DurationInMinutes = service.DurationInMinutes;
 
             try
             {
@@ -145,10 +144,10 @@ namespace PosAPI.Controllers
 
         // PUT: api/Service/{id}
         [HttpPut("{id}")]
-        public async Task<IActionResult> UpdateService(int id, [FromBody] ServiceDTO serviceDTO)
+        public async Task<IActionResult> UpdateService(int id, [FromBody] Service service)
         {
 
-            if (serviceDTO == null)
+            if (service == null)
                 return BadRequest("Invalid service data.");
 
             try
@@ -163,10 +162,10 @@ namespace PosAPI.Controllers
                 if (senderUser == null || senderUser.Role == UserRole.Worker)
                     return Unauthorized();
 
-                existingService.Name = serviceDTO.Name;
-                existingService.Description = serviceDTO.Description;
-                existingService.BasePrice = serviceDTO.BasePrice;
-                existingService.DurationInMinutes = serviceDTO.DurationInMinutes;
+                existingService.Name = service.Name;
+                existingService.Description = service.Description;
+                existingService.BasePrice = service.BasePrice;
+                existingService.DurationInMinutes = service.DurationInMinutes;
 
                 await _serviceRepository.UpdateServiceAsync(existingService);
 

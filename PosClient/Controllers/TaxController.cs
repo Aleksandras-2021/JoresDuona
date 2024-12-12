@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc;
 using PosClient.Services;
 using PosShared;
 using PosShared.DTOs;
@@ -16,7 +16,7 @@ namespace PosClient.Controllers
         private readonly IUserSessionService _userSessionService;
 
 
-        private readonly string _apiUrl = UrlConstants.ApiBaseUrl;
+        private readonly string _apiUrl = ApiRoutes.ApiBaseUrl;
 
         public TaxController(HttpClient httpClient, IUserSessionService userSessionService)
         {
@@ -27,11 +27,7 @@ namespace PosClient.Controllers
         [HttpGet]
         public async Task<IActionResult> Index()
         {
-            string token = Request.Cookies["authToken"];
-            if (string.IsNullOrEmpty(token))
-            {
-                return RedirectToAction("Login", "Home");
-            }
+            string? token = Request.Cookies["authToken"];
 
             _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
@@ -56,7 +52,7 @@ namespace PosClient.Controllers
         [HttpPost]
         public async Task<IActionResult> Create(TaxDTO tax)
         {
-            string token = Request.Cookies["authToken"];
+            string? token = Request.Cookies["authToken"];
             _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
             var content = new StringContent(JsonSerializer.Serialize(tax), Encoding.UTF8, "application/json");
@@ -67,14 +63,14 @@ namespace PosClient.Controllers
                 return RedirectToAction("Index");
             }
 
-            TempData["Error"] = "Failed to create tax. Please try again.\n" + response.ToString();
+            TempData["Error"] = "Failed to create tax. See if tax with same category does not already exist.\n";
             return View(tax);
         }
 
         [HttpGet]
         public async Task<IActionResult> Edit(int id)
         {
-            string token = Request.Cookies["authToken"];
+            string? token = Request.Cookies["authToken"];
             _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
             var response = await _httpClient.GetAsync(_apiUrl + $"/api/Tax/{id}");
@@ -100,7 +96,7 @@ namespace PosClient.Controllers
         [HttpPost]
         public async Task<IActionResult> Edit(int id, TaxDTO tax)
         {
-            string token = Request.Cookies["authToken"];
+            string? token = Request.Cookies["authToken"];
             _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
             var content = new StringContent(JsonSerializer.Serialize(tax), Encoding.UTF8, "application/json");
@@ -119,7 +115,7 @@ namespace PosClient.Controllers
         [HttpPost]
         public async Task<IActionResult> Delete(int id)
         {
-            string token = Request.Cookies["authToken"];
+            string? token = Request.Cookies["authToken"];
             _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
             var response = await _httpClient.DeleteAsync(_apiUrl + $"/api/Tax/{id}");

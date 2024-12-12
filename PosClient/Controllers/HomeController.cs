@@ -17,7 +17,7 @@ namespace PosClient.Controllers
     {
         private readonly HttpClient _httpClient;
         private readonly IUserSessionService _userSessionService;
-        private readonly string _apiUrl = UrlConstants.ApiBaseUrl;
+        private readonly string _apiUrl = ApiRoutes.ApiBaseUrl;
         private readonly ILogger<HomeController> _logger;
 
         public HomeController(HttpClient httpClient, IUserSessionService userSessionService, ILogger<HomeController> logger)
@@ -83,7 +83,7 @@ namespace PosClient.Controllers
                 {
                     HttpOnly = true,
                     Secure = true,
-                    Expires = DateTime.UtcNow.AddMinutes(10),
+                    Expires = DateTime.UtcNow.AddMinutes(15),
                     SameSite = SameSiteMode.None  // Important for cross-origin requests,
                 };
 

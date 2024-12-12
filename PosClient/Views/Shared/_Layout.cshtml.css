@@ -46,3 +46,27 @@ button.accept-policy {
   white-space: nowrap;
   line-height: 60px;
 }
+
+.navbar-right {
+  margin-left: auto !important;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.navbar-right li{
+  padding-right: 1rem;
+}
+
+td div.text-truncate:hover {
+  white-space: normal;
+  overflow: visible;
+  cursor: pointer;
+  position: relative;
+  z-index: 1;
+  background-color: white;
+  box-shadow: 0 0 10px rgba(0,0,0,0.1);
+  padding: 5px;
+  border-radius: 4px;
+  max-width: none !important;
+}

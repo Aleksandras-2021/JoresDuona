@@ -14,7 +14,7 @@ namespace PosClient.Controllers
     public class BusinessController : Controller
     {
         private readonly HttpClient _httpClient;
-        private readonly string _apiUrl = UrlConstants.ApiBaseUrl;
+        private readonly string _apiUrl = ApiRoutes.ApiBaseUrl;
         private readonly ILogger<BusinessController> _logger;
 
 

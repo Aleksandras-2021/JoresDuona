@@ -234,7 +234,7 @@ namespace PosAPI.Migrations
                     b.Property<DateTime>("SentAt")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("timestamp with time zone")
-                        .HasDefaultValue(new DateTime(2024, 12, 8, 11, 56, 36, 572, DateTimeKind.Utc).AddTicks(6972));
+                        .HasDefaultValue(new DateTime(2024, 12, 11, 0, 14, 25, 575, DateTimeKind.Utc).AddTicks(3066));
 
                     b.Property<string>("Type")
                         .IsRequired()
@@ -271,7 +271,7 @@ namespace PosAPI.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("timestamp with time zone")
-                        .HasDefaultValue(new DateTime(2024, 12, 8, 11, 56, 36, 561, DateTimeKind.Utc).AddTicks(3360));
+                        .HasDefaultValue(new DateTime(2024, 12, 11, 0, 14, 25, 573, DateTimeKind.Utc).AddTicks(1077));
 
                     b.Property<decimal>("DiscountAmount")
                         .HasColumnType("numeric");
@@ -342,6 +342,9 @@ namespace PosAPI.Migrations
 
                     b.Property<int>("Quantity")
                         .HasColumnType("integer");
+
+                    b.Property<decimal>("TaxedAmount")
+                        .HasColumnType("numeric");
 
                     b.HasKey("Id");
 
@@ -424,6 +427,9 @@ namespace PosAPI.Migrations
                     b.Property<int>("Quantity")
                         .HasColumnType("integer");
 
+                    b.Property<decimal>("TaxedAmount")
+                        .HasColumnType("numeric");
+
                     b.HasKey("Id");
 
                     b.HasIndex("ItemVariationId");
@@ -479,7 +485,7 @@ namespace PosAPI.Migrations
                     b.Property<DateTime>("PaymentDate")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("timestamp with time zone")
-                        .HasDefaultValue(new DateTime(2024, 12, 8, 11, 56, 36, 564, DateTimeKind.Utc).AddTicks(7249));
+                        .HasDefaultValue(new DateTime(2024, 12, 11, 0, 14, 25, 573, DateTimeKind.Utc).AddTicks(7213));
 
                     b.Property<string>("PaymentGateway")
                         .IsRequired()
@@ -490,7 +496,6 @@ namespace PosAPI.Migrations
                         .HasColumnType("text");
 
                     b.Property<string>("TransactionId")
-                        .IsRequired()
                         .HasColumnType("text");
 
                     b.HasKey("Id");
@@ -520,7 +525,7 @@ namespace PosAPI.Migrations
                     b.Property<DateTime>("RefundDate")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("timestamp with time zone")
-                        .HasDefaultValue(new DateTime(2024, 12, 8, 11, 56, 36, 565, DateTimeKind.Utc).AddTicks(9075));
+                        .HasDefaultValue(new DateTime(2024, 12, 11, 0, 14, 25, 573, DateTimeKind.Utc).AddTicks(9579));
 
                     b.HasKey("Id");
 
@@ -540,7 +545,7 @@ namespace PosAPI.Migrations
                     b.Property<DateTime>("BookedAt")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("timestamp with time zone")
-                        .HasDefaultValue(new DateTime(2024, 12, 8, 11, 56, 36, 570, DateTimeKind.Utc).AddTicks(235));
+                        .HasDefaultValue(new DateTime(2024, 12, 11, 0, 14, 25, 574, DateTimeKind.Utc).AddTicks(8599));
 
                     b.Property<string>("CustomerEmail")
                         .IsRequired()
@@ -607,7 +612,7 @@ namespace PosAPI.Migrations
                     b.Property<DateTime>("LastUpdate")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("timestamp with time zone")
-                        .HasDefaultValue(new DateTime(2024, 12, 8, 11, 56, 36, 559, DateTimeKind.Utc).AddTicks(7313));
+                        .HasDefaultValue(new DateTime(2024, 12, 11, 0, 14, 25, 572, DateTimeKind.Utc).AddTicks(8721));
 
                     b.Property<DateTime>("StartTime")
                         .HasColumnType("timestamp with time zone");
@@ -885,7 +890,7 @@ namespace PosAPI.Migrations
                     b.HasOne("PosShared.Models.Item", "Item")
                         .WithMany("OrderItems")
                         .HasForeignKey("ItemId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.HasOne("PosShared.Models.Order", "Order")

@@ -13,6 +13,7 @@ using Microsoft.EntityFrameworkCore.ChangeTracking.Internal;
 
 namespace PosAPI.Controllers;
 
+[Authorize]
 [Route("api/[controller]")]
 [ApiController]
 public class BusinessesController : ControllerBase

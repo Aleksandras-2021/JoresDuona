@@ -15,5 +15,6 @@ namespace PosShared.ViewModels
         public int OrderId { get; set; }  // The ID of the order item to associate variations with
 
         public List<ItemVariation>? Variations { get; set; }  // List of variations for the item
+        public List<OrderItemVariation>? OrderItemVariations { get; set; }  // List of variations for the item
     }
 }

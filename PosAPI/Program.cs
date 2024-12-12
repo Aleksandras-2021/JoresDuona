@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using PosShared.Models;
 using PosAPI.Repositories;
 using Microsoft.OpenApi.Models;
+using PosAPI.Services;
 
 
 var builder = WebApplication.CreateBuilder(args);
@@ -46,7 +47,11 @@ builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IItemRepository, ItemRepository>();
 builder.Services.AddScoped<IOrderRepository, OrderRepository>();
 builder.Services.AddScoped<ITaxRepository, TaxRepository>();
+builder.Services.AddScoped<IPaymentRepository, PaymentRepository>();
 builder.Services.AddScoped<IServiceRepository, ServiceRepository>();
+
+builder.Services.AddScoped<IOrderService, PosAPI.Services.OrderService>();
+
 
 
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");

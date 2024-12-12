@@ -1,3 +1,5 @@
+using System.Text.Json.Serialization;
+
 namespace PosShared.Models;
 
 public class Payment
@@ -5,7 +7,7 @@ public class Payment
     public int Id { get; set; }
 
     public int OrderId { get; set; }
-
+    [JsonIgnore]
     public Order Order { get; set; }
 
     public decimal Amount { get; set; }
@@ -16,7 +18,7 @@ public class Payment
 
     public PaymentGateway PaymentGateway { get; set; }
 
-    public string TransactionId { get; set; }
+    public string? TransactionId { get; set; } //Set same as ID, because no stripe for us 
 
-    public ICollection<Refund> Refunds { get; set; }
+    public ICollection<Refund>? Refunds { get; set; } //Nullable, because Refunds can also not exist
 }

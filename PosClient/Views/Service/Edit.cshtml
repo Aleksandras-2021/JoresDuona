@@ -1,6 +1,6 @@
-@model PosShared.DTOs.ServiceDTO;
+@model PosShared.Models.Service;
 
-<h2>Edit Service</h2>
+<h2>Edit Service @Model.Name</h2>
 
 @if (TempData["Error"] != null)
 {
@@ -35,6 +35,4 @@
     </div>
 
     <button type="submit" class="btn btn-primary">Save</button>
-
-    <a asp-action="Index" class="btn btn-secondary">Back to List</a>
 </form>

@@ -5,7 +5,6 @@ using PosShared;
 using PosShared.Models;
 using System.Text.Json;
 using System.Text;
-using PosShared.DTOs;
 
 namespace PosClient.Controllers;
 
@@ -14,7 +13,7 @@ public class ServiceController : Controller
     private readonly HttpClient _httpClient;
     private readonly IUserSessionService _userSessionService;
     
-    private readonly string _apiUrl = UrlConstants.ApiBaseUrl;
+    private readonly string _apiUrl = ApiRoutes.ApiBaseUrl;
     public ServiceController(HttpClient httpClient, IUserSessionService userSessionService)
     {
         _httpClient = httpClient;
@@ -62,23 +61,18 @@ public class ServiceController : Controller
     // GET: Service/Create
     public IActionResult Create()
     {
-        return View(new ServiceDTO());
+        return View();
     }
 
     // POST: Service/Create
     [HttpPost]
-    public async Task<IActionResult> Create(ServiceDTO serviceDTO)
+    public async Task<IActionResult> Create(Service service)
     {
-        if (!ModelState.IsValid)
-        {
-            return View(serviceDTO);
-        }
-
         string? token = Request.Cookies["authToken"];
         _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
         var apiUrl = _apiUrl + "/api/Service";
-        var content = new StringContent(JsonSerializer.Serialize(serviceDTO), Encoding.UTF8, "application/json");
+        var content = new StringContent(JsonSerializer.Serialize(service), Encoding.UTF8, "application/json");
 
         var response = await _httpClient.PostAsync(apiUrl, content);
 
@@ -92,7 +86,7 @@ public class ServiceController : Controller
 
         Console.WriteLine(errorMessage);
         TempData["Error"] = errorMessage;
-        return View(serviceDTO);
+        return View(service);
     }
 
     // GET: Service/Edit/
@@ -105,17 +99,10 @@ public class ServiceController : Controller
         if (response.IsSuccessStatusCode)
         {
             var serviceData = await response.Content.ReadAsStringAsync();
-            var service = JsonSerializer.Deserialize<Service>(serviceData, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+            var service = JsonSerializer.Deserialize<Service>(serviceData);
             if (service != null)
             {
-                var serviceDTO = new ServiceDTO
-                {
-                    Name = service.Name,
-                    Description = service.Description,
-                    BasePrice = service.BasePrice,
-                    DurationInMinutes = service.DurationInMinutes
-                };
-                return View(serviceDTO);
+                return View(service);
             }
         }
 
@@ -125,15 +112,15 @@ public class ServiceController : Controller
 
     // POST: Service/Edit/
     [HttpPost]
-    public async Task<IActionResult> Edit(int id, ServiceDTO serviceDTO)
+    public async Task<IActionResult> Edit(Service service)
     {
         string? token = Request.Cookies["authToken"];
         _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
         if (ModelState.IsValid)
         {
-            var apiUrl = _apiUrl + $"/api/Service/{id}";
-            var content = new StringContent(JsonSerializer.Serialize(serviceDTO), Encoding.UTF8, "application/json");
+            var apiUrl = _apiUrl + $"/api/Service/{service.Id}";
+            var content = new StringContent(JsonSerializer.Serialize(service), Encoding.UTF8, "application/json");
             var response = await _httpClient.PutAsync(apiUrl, content);
             if (response.IsSuccessStatusCode)
             {
@@ -144,7 +131,7 @@ public class ServiceController : Controller
         }
 
         TempData["Error"] = "Unable to edit service. Please try again.";
-        return View(serviceDTO);
+        return View(service);
     }
 
     // GET: Service/Delete/5
@@ -188,45 +175,5 @@ public class ServiceController : Controller
 
         TempData["Error"] = "Unable to delete service. Please try again.";
         return RedirectToAction("Index");
-    }
-
-    // GET: Service/Reserve/5
-    [HttpGet]
-    public IActionResult Reserve(int id)
-    {
-        var reservation = new Reservation
-        {
-            ServiceId = id,
-            ReservationTime = DateTime.Now,
-            Status = ReservationStatus.Booked
-        };
-        return View(reservation);
-    }
-
-    [HttpPost]
-    public async Task<IActionResult> Reserve(int id, Reservation reservation)
-    {
-        if (!ModelState.IsValid) return View(reservation);
-
-        string? token = Request.Cookies["authToken"];
-        _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
-
-        reservation.ServiceId = id;
-        var apiUrl = _apiUrl + $"/api/Service/{id}/reserve";
-        var content = new StringContent(
-            JsonSerializer.Serialize(reservation), 
-            Encoding.UTF8, 
-            "application/json"
-        );
-
-        var response = await _httpClient.PostAsync(apiUrl, content);
-        
-        if (response.IsSuccessStatusCode)
-        {
-            return RedirectToAction("Index");
-        }
-
-        TempData["Error"] = await response.Content.ReadAsStringAsync();
-        return View(reservation);
     }
 }

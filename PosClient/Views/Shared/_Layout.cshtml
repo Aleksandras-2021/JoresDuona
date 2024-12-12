@@ -41,25 +41,44 @@
                                 <a class="nav-link text-dark" asp-area="" asp-controller="User" asp-action="Index">Users</a>
                             </li>
                         }
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Items" asp-action="Index">Items</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Tax" asp-action="Index">Tax</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Order" asp-action="Index">Orders</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Service" asp-action="Index">Services</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Logout">Logout</a>
-                        </li>
-                        <l1>
-                            <a>User role : @userRole</a>
-                        </l1>
+                        @if (userRole == "SuperAdmin" || userRole == "Owner" || userRole == "Manager")
+                        {
+                            <li class="nav-item">
+                                <a class="nav-link text-dark" asp-area="" asp-controller="Items" asp-action="Index">Items</a>
+                            </li>
+                        }
+                         @if (userRole == "SuperAdmin" || userRole == "Owner" || userRole == "Manager")
+                        {
+                            <li class="nav-item">
+                                <a class="nav-link text-dark" asp-area="" asp-controller="Tax" asp-action="Index">Tax</a>
+                            </li>
+                        }
+                         @if (userRole == "SuperAdmin" || userRole == "Owner" || userRole == "Manager" || userRole == "Worker")
+                        {
+                            <li class="nav-item">
+                                <a class="nav-link text-dark" asp-area="" asp-controller="Order" asp-action="Index">Orders</a>
+                            </li>
+                        }
+                        @if (userRole == "SuperAdmin" || userRole == "Owner" || userRole == "Manager")
+                        {
+                            <li class="nav-item">
+                                <a class="nav-link text-dark" asp-area="" asp-controller="Service" asp-action="Index">Services</a>
+                            </li>
+                        }
                     </ul>
+                    <div class="navbar-right">
+                        @if (userRole != null)
+                        {
+                            <ul class="navbar-nav d-flex flex-row align-items-center">
+                                <li>
+                                    <a><span class="fw-bold">User role:</span> @userRole</a>
+                                </li>
+                                <li class="nav-item">
+                                    <a class="nav-link text-white btn btn-danger btn-sm" asp-area="" asp-controller="Home" asp-action="Logout"><span class="fw-bold">Log out</span></a>
+                                </li>
+                            </ul>
+                        }
+                    </div>
                 </div>
             </div>
         </nav>
@@ -72,7 +91,7 @@
 
     <footer class="border-top footer text-muted">
         <div class="container">
-            &copy; 2024 - PosClient - <a asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
+            &copy; 2024 - PosClient - <a asp-area="" asp-controller="" asp-action=""></a>
         </div>
     </footer>
     <script src="~/lib/jquery/dist/jquery.min.js"></script>

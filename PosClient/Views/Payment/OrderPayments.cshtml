@@ -1,0 +1,39 @@
+﻿@model PosShared.ViewModels.OrderPaymentViewModel
+
+<h2>Payments for Order @Model.OrderId</h2>
+
+@if (TempData["Error"] != null)
+{
+    <div class="alert alert-danger">
+        @TempData["Error"]
+    </div>
+}
+
+@if (Model.Payments != null && Model.Payments.Any())
+{
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Payment ID</th>
+                <th>Amount</th>
+                <th>Payment Method</th>
+                <th>Created At</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var payment in Model.Payments)
+            {
+                <tr>
+                    <td>@payment.Id</td>
+                    <td>@payment.Amount.ToString("C")</td>
+                    <td>@payment.PaymentMethod</td>
+                    <td>@payment.PaymentDate</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+else
+{
+    <p>No payments found for this order.</p>
+}

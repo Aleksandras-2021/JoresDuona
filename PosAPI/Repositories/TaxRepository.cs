@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using PosAPI.Data.DbContext;
 using PosAPI.Migrations;
 using PosShared.Models;
@@ -31,6 +31,12 @@ namespace PosAPI.Repositories
             if (tax.Business == null)
                 tax.Business = await _context.Businesses.FindAsync(tax.BusinessId);
 
+            Tax? taxForCategory = await GetTaxByCategoryAsync(tax.Category,tax.BusinessId);
+
+            if (taxForCategory != null)
+                throw new Exception($"Tax with category {tax.Category.ToString()} already exists ");
+
+
             try
             {
                 await _context.Taxes.AddAsync(tax);
@@ -42,6 +48,24 @@ namespace PosAPI.Repositories
             }
 
         }
+
+        public async Task<Tax> GetTaxByItemIdAsync(int itemId)
+        {
+            Item? item = await _context.Items.FindAsync(itemId);
+            if (item == null)
+                throw new KeyNotFoundException($"Tax for item with ID {itemId} not found, because Item could not be found.");
+
+            var tax = GetTaxByCategoryAsync(item.Category, item.BusinessId);
+
+            if (tax == null)
+            {
+                throw new KeyNotFoundException($"Tax with for category {item.Category} not found.");
+            }
+
+            return await tax;
+
+        }
+
         public async Task<List<Tax>> GetAllTaxesAsync()
         {
             return await _context.Set<Tax>()
@@ -112,14 +136,14 @@ namespace PosAPI.Repositories
         }
 
 
-        public async Task<Tax> GetTaxByCategoryAsync(PosShared.Models.Items.ItemCategory category)
+        public async Task<Tax?> GetTaxByCategoryAsync(PosShared.Models.Items.ItemCategory category, int businessId)
         {
             var tax = await _context.Taxes
-                .FirstOrDefaultAsync(t => t.Category == category);
+                .FirstOrDefaultAsync(t => t.Category == category && t.BusinessId == businessId);
 
             if (tax == null)
             {
-                throw new KeyNotFoundException($"Tax with category '{category}' not found.");
+                return null;
             }
 
             return tax;

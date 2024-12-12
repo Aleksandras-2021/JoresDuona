@@ -1,3 +1,4 @@
+using PosShared.Models.Items;
 using System.Text.Json.Serialization;
 
 namespace PosShared.Models;
@@ -19,4 +20,5 @@ public class OrderItemVariation
     public int Quantity { get; set; }
 
     public decimal AdditionalPrice { get; set; }
+    public decimal TaxedAmount { get; set; }
 }
