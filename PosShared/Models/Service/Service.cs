@@ -1,7 +1,6 @@
-
 namespace PosShared.Models;
 using System.Text.Json.Serialization;
-
+using PosShared.Models.Items;
 
 public class Service
 {
@@ -27,6 +26,7 @@ public class Service
     public int DurationInMinutes { get; set; }
 
     public decimal BasePrice { get; set; }
+    public  ItemCategory category { get; set; }
 
     [JsonIgnore]
     public ICollection<Reservation>? Reservations { get; set; }
