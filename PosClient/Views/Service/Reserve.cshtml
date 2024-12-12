@@ -1,35 +1,10 @@
 @* @model PosShared.Models.Reservation
 
-<h2>Reserve Service</h2>
-
-<form asp-action="Reserve" method="post">
-    <div class="form-group">
-        <label asp-for="ReservationTime" class="control-label">Date and Time</label>
-        <input asp-for="ReservationTime" class="form-control" type="datetime-local" />
-        <span asp-validation-for="ReservationTime" class="text-danger"></span>
-    </div>
-
-    <div class="form-group">
-        <label asp-for="CustomerName" class="control-label">Name</label>
-        <input asp-for="CustomerName" class="form-control" />
-        <span asp-validation-for="CustomerName" class="text-danger"></span>
-    </div>
-
-    <div class="form-group">
-        <label asp-for="CustomerPhone" class="control-label">Phone</label>
-        <input asp-for="CustomerPhone" class="form-control" />
-        <span asp-validation-for="CustomerPhone" class="text-danger"></span>
-    </div>
-
-    <button type="submit" class="btn btn-primary">Reserve</button>
-</form> *@
-
-@model PosShared.Models.Reservation
-
 <div class="container mt-4">
     <h2>Make a Reservation</h2>
 
     <form asp-action="Reserve" method="post">
+        <input type="hidden" asp-for="ServiceId" />
         <div class="form-group mb-3">
             <label asp-for="CustomerName" class="form-label">Customer Name</label>
             <input asp-for="CustomerName" class="form-control" />
@@ -38,27 +13,15 @@
 
         <div class="form-group mb-3">
             <label asp-for="ReservationTime" class="form-label">Select Date and Time</label>
-            @{
-                var currentTime = DateTime.Now;
-                // Round up to the next hour
-                var roundedTime = new DateTime(
-                    currentTime.Year, 
-                    currentTime.Month, 
-                    currentTime.Day, 
-                    currentTime.Hour, 
-                    0, 
-                    0
-                ).AddHours(1);
-                
-                var minDate = roundedTime.ToString("yyyy-MM-ddTHH:mm");
-                var maxDate = roundedTime.AddDays(30).ToString("yyyy-MM-ddTHH:mm");
-            }
-            <input asp-for="ReservationTime" 
-                   class="form-control" 
-                   type="datetime-local"
-                   min="@minDate"
-                   max="@maxDate"
-                   value="@roundedTime.ToString("yyyy-MM-ddTHH:mm")" />
+            <select asp-for="ReservationTime" class="form-control">
+                @foreach (var slot in Model.AvailableTimeSlots)
+                {
+                    <option value="@slot.Time.ToString("yyyy-MM-ddTHH:mm:ss")" 
+                            disabled="@(!slot.IsAvailable)">
+                        @slot.StartTime.ToString("HH:mm")
+                    </option>
+                }
+            </select>
             <span asp-validation-for="ReservationTime" class="text-danger"></span>
         </div>
 
@@ -73,4 +36,54 @@
             <a asp-action="Index" class="btn btn-secondary">Back to List</a>
         </div>
     </form>
+</div> *@
+
+
+@model PosShared.Models.Reservation
+<div class="container mt-4">
+    <h2>Make a Reservation</h2>
+    
+    @if (Model.AvailableTimeSlots.Any())
+    {
+        <form asp-action="Reserve" method="post">
+            <input type="hidden" asp-for="ServiceId" />
+            
+            <div class="form-group mb-3">
+                <label asp-for="CustomerName" class="form-label">Customer Name</label>
+                <input asp-for="CustomerName" class="form-control" required />
+                <span asp-validation-for="CustomerName" class="text-danger"></span>
+            </div>
+
+            <div class="form-group mb-3">
+                <label asp-for="ReservationTime" class="form-label">Select Time</label>
+                <select asp-for="ReservationTime" class="form-control">
+                    @foreach (var slot in Model.AvailableTimeSlots)
+                    {
+                        <option value="@slot.StartTime.ToString("yyyy-MM-ddTHH:mm:ss")"
+                                disabled="@(!slot.IsAvailable)">
+                            @slot.StartTime.ToString("HH:mm")
+                        </option>
+                    }
+                </select>
+                <span asp-validation-for="ReservationTime" class="text-danger"></span>
+            </div>
+
+            <div class="form-group mb-3">
+                <label asp-for="CustomerPhone" class="form-label">Phone Number</label>
+                <input asp-for="CustomerPhone" class="form-control" required />
+                <span asp-validation-for="CustomerPhone" class="text-danger"></span>
+            </div>
+
+            <div class="form-group">
+                <button type="submit" class="btn btn-primary">Submit Reservation</button>
+                <a asp-controller="Service" asp-action="Index" class="btn btn-secondary">Back to Services</a>
+            </div>
+        </form>
+    }
+    else
+    {
+        <div class="alert alert-info">
+            No available time slots for today. Please try another day.
+        </div>
+    }
 </div>

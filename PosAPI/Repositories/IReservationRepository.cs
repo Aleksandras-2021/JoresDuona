@@ -19,6 +19,6 @@ namespace PosAPI.Repositories
         Task<bool> CheckAvailability(int serviceId, DateTime requestedTime);
         //method to check if employee is available
         Task<bool> IsEmployeeAvailable(int employeeId, DateTime requestedTime, int duration);
-
+       Task<bool> HasOverlappingReservationsAsync(DateTime startTime, DateTime endTime, int? employeeId = null); 
     }
 }

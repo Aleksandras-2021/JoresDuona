@@ -7,6 +7,7 @@ namespace PosAPI.Repositories
     public class UserRepository : IUserRepository
     {
         private readonly ApplicationDbContext _context;
+
         public UserRepository(ApplicationDbContext context)
         {
             _context = context;
@@ -127,6 +128,28 @@ namespace PosAPI.Repositories
             {
                 throw new Exception($"An error occurred while updating the user: {user.Id}.", e);
             }
+        }
+
+        public async Task<List<TimeOff>> GetTimeOffForUserAsync(int userId)
+        {
+            var user = await _context.Users.Include(u => u.TimeOffs).FirstOrDefaultAsync(u => u.Id == userId);
+            if (user == null)
+            {
+                throw new KeyNotFoundException($"User with ID {userId} not found.");
+            }
+
+            return user.TimeOffs.ToList();
+        }
+
+        //Yet to implement
+        public Task<bool> HasOverlappingReservationsAsync(DateTime requestedTime, DateTime serviceEndTime, int? employeeId)
+        {
+            throw new NotImplementedException();
+        }
+
+        public Task<bool> HasTimeOffAsync(int userId, DateTime date)
+        {
+            throw new NotImplementedException();
         }
     }
 }

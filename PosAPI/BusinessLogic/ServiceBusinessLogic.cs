@@ -8,15 +8,18 @@ public class ServiceBusinessLogic : IServiceBusinessLogic
 {
     private readonly IServiceRepository _serviceRepository;
     private readonly IUserRepository _userRepository;
+    private readonly IReservationRepository _reservationRepository;
     private readonly ILogger<ServiceBusinessLogic> _logger;
 
     public ServiceBusinessLogic(
         IServiceRepository serviceRepository,
         IUserRepository userRepository,
+        IReservationRepository reservationRepository,
         ILogger<ServiceBusinessLogic> logger)
     {
         _serviceRepository = serviceRepository;
         _userRepository = userRepository;
+        _reservationRepository = reservationRepository;
         _logger = logger;
     }
 
@@ -75,24 +78,14 @@ public class ServiceBusinessLogic : IServiceBusinessLogic
         try
         {
             DateTime serviceEndTime = requestedTime.AddMinutes(duration);
+            
+            // Use the repository method instead of direct query
+            bool hasOverlapping = await _userRepository.HasOverlappingReservationsAsync(
+                requestedTime, 
+                serviceEndTime, 
+                employeeId);
 
-            // Build the base query for overlapping appointments
-            var query = _context.Reservations
-                .Where(r => r.Status != ReservationStatus.Cancelled &&
-                        ((r.ReservationTime <= requestedTime && 
-                            r.ReservationTime.AddMinutes(r.Service.DurationInMinutes) > requestedTime) ||
-                            (r.ReservationTime < serviceEndTime && 
-                            r.ReservationTime >= requestedTime)));
-
-            // If employee is specified, check only their appointments
-            if (employeeId.HasValue)
-            {
-                query = query.Where(r => r.EmployeeId == employeeId.Value);
-            }
-
-            var hasOverlappingAppointment = await query.AnyAsync();
-
-            if (hasOverlappingAppointment)
+            if (hasOverlapping)
             {
                 _logger.LogInformation($"Found overlapping appointment at {requestedTime}");
                 return false;
@@ -120,15 +113,10 @@ public class ServiceBusinessLogic : IServiceBusinessLogic
             }
 
             // Check for time off requests
-            var timeOffs = await _context.TimeOffs
-                .Where(t => t.UserId == employeeId &&
-                        t.StartDate <= requestedTime &&
-                        t.EndDate >= requestedTime)
-                .AnyAsync();
-
-            if (timeOffs)
+            var hasTimeOff = await _userRepository.HasTimeOffAsync(employeeId, time);
+            if (hasTimeOff)
             {
-                _logger.LogInformation($"Employee {employeeId} has time off during {requestedTime}");
+                _logger.LogInformation($"Employee {employeeId} has time off during {time}");
                 return false;
             }
 
@@ -155,8 +143,27 @@ public class ServiceBusinessLogic : IServiceBusinessLogic
         throw new NotImplementedException();
     }
 
-    public Task<List<DateTime>> GetAvailableTimeSlots(int serviceId, DateTime date)
+    public async Task<List<TimeSlot>> GetAvailableTimeSlots(int serviceId, DateTime date)
     {
-        throw new NotImplementedException();
+        var availableSlots = new List<TimeSlot>();
+        
+        // Get business hours (for now hardcoded, later from configuration)
+        var startHour = 9; 
+        var endHour = 17;  
+        var intervalMinutes = 30; 
+
+        for (int hour = startHour; hour < endHour; hour++)
+        {
+            for (int minute = 0; minute < 60; minute += intervalMinutes)
+            {
+                var timeSlot = new DateTime(date.Year, date.Month, date.Day, hour, minute, 0);
+                if (await IsTimeSlotFree(serviceId, timeSlot, intervalMinutes, null))
+                {
+                    availableSlots.Add(new TimeSlot(0, timeSlot, timeSlot.AddMinutes(intervalMinutes), true));
+                }
+            }
+        }
+
+        return availableSlots;
     }
 }

@@ -14,4 +14,8 @@ public interface IUserRepository
     Task AddUserAsync(User user);
     Task UpdateUserAsync(User user);
     Task DeleteUserAsync(int userId);
+    // time off
+    Task<List<TimeOff>> GetTimeOffForUserAsync(int userId);
+    Task<bool> HasOverlappingReservationsAsync(DateTime requestedTime, DateTime serviceEndTime, int? employeeId);
+    Task<bool> HasTimeOffAsync(int userId, DateTime date);
 }

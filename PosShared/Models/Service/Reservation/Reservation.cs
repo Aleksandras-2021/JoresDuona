@@ -36,4 +36,6 @@ public class Reservation
     public ReservationStatus Status { get; set; }
 
     public ICollection<Notification> Notifications { get; set; }
+    public ICollection<TimeSlot> TimeSlots { get; set; }
+    public List<TimeSlot> AvailableTimeSlots { get; set; }
 }

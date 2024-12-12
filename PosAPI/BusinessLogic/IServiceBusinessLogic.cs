@@ -1,3 +1,5 @@
+using PosShared.Models;
+
 public interface IServiceBusinessLogic
 {
     Task<bool> CheckAvailability(int serviceId, DateTime requestedTime, int? employeeId = null);
@@ -8,5 +10,5 @@ public interface IServiceBusinessLogic
 
     Task<bool> CancelReservation(int reservationId);
 
-    Task<List<DateTime>> GetAvailableTimeSlots(int serviceId, DateTime date);
+    Task<List<TimeSlot>> GetAvailableTimeSlots(int serviceId, DateTime date);
 }
