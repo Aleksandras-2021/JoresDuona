@@ -56,6 +56,7 @@ builder.Services.AddScoped<ITaxRepository, TaxRepository>();
 builder.Services.AddScoped<IPaymentRepository, PaymentRepository>();
 builder.Services.AddScoped<IServiceRepository, ServiceRepository>();
 
+//Add Services here
 builder.Services.AddScoped<IOrderService, PosAPI.Services.OrderService>();
 builder.Services.AddScoped<IItemService, PosAPI.Services.ItemService>();
 builder.Services.AddScoped<IBusinessService, BusinessService>();

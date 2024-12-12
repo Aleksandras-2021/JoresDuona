@@ -9,6 +9,7 @@ using PosShared;
 using PosShared.ViewModels;
 using Microsoft.EntityFrameworkCore.Query.Internal;
 using System.Net.Http.Headers;
+using PosShared.DTOs;
 
 namespace PosClient.Controllers;
 
@@ -89,12 +90,27 @@ public class UserController : Controller
         if(response.IsSuccessStatusCode)
         {
             string userData = await response.Content.ReadAsStringAsync();
-            User? user = JsonSerializer.Deserialize<User>(userData,new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+            UserDTO? user = JsonSerializer.Deserialize<UserDTO>(userData,new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
 
+
+            Console.WriteLine(response);
+            
             if (user != null)
             {
-                user.PasswordHash = string.Empty;
-                return View(user);
+                UserViewModel model = new UserViewModel()
+                {
+                    Id = user.Id,
+                    BusinessId = user.BusinessId,
+                    Username = user.Username,
+                    Name = user.Name,
+                    Email = user.Email,
+                    Phone = user.Phone,
+                    Address = user.Address,
+                    Role = user.Role,
+                    EmploymentStatus = user.EmploymentStatus
+                };
+
+                return View(model);
             }
         }
 
@@ -103,7 +119,7 @@ public class UserController : Controller
 
     // POST: User/Edit/
     [HttpPost]
-    public async Task<IActionResult> Edit(int id, User user)
+    public async Task<IActionResult> Edit(int id, UserViewModel user)
     {
 
         string? token = Request.Cookies["authToken"];
@@ -112,7 +128,19 @@ public class UserController : Controller
         if (ModelState.IsValid)
         {
             var apiUrl = ApiRoutes.User.Update(id);
-            var content = new StringContent(JsonSerializer.Serialize(user), Encoding.UTF8, "application/json");
+            
+            UserDTO dto = new UserDTO();
+            dto.Id = user.Id;
+            dto.BusinessId = user.BusinessId;
+            dto.Username = user.Username;
+            dto.Name = user.Name;
+            dto.Email = user.Email;
+            dto.Phone = user.Email;
+            dto.Address = user.Address;
+            dto.Role = user.Role;
+            dto.EmploymentStatus = user.EmploymentStatus;
+            
+            var content = new StringContent(JsonSerializer.Serialize(dto), Encoding.UTF8, "application/json");
 
             var response = await _httpClient.PutAsync(apiUrl, content);
 

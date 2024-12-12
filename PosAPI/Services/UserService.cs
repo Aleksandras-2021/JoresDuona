@@ -1,6 +1,7 @@
 using PosAPI.Repositories;
 using PosAPI.Services.Interfaces;
 using PosShared;
+using PosShared.DTOs;
 using PosShared.Models;
 
 namespace PosAPI.Services;
@@ -83,7 +84,7 @@ public class UserService : IUserService
         return user;
     }
     
-    public async Task UpdateAuthorizedUser(int userId, User updatedUser, User? sender)
+    public async Task UpdateAuthorizedUser(int userId, UserDTO updatedUser, User? sender)
     {
         if (sender is null || sender.Role == UserRole.Worker)
             throw new UnauthorizedAccessException();
@@ -95,20 +96,19 @@ public class UserService : IUserService
 
         if (existingUser.BusinessId != sender.BusinessId && sender.Role != UserRole.SuperAdmin)
             throw new UnauthorizedAccessException();
-
-        existingUser.Name = updatedUser.Name;
-        existingUser.Address = updatedUser.Address;
-        existingUser.Email = updatedUser.Email;
-        existingUser.Phone = updatedUser.Phone;
-        existingUser.PasswordHash = BCrypt.Net.BCrypt.HashPassword(updatedUser.PasswordHash);
+        
+        existingUser.BusinessId = updatedUser.BusinessId;
         existingUser.Username = updatedUser.Username;
+        existingUser.Name = updatedUser.Name;
+        existingUser.Email = updatedUser.Email;
+        existingUser.Phone = updatedUser.Email;
+        existingUser.Address = updatedUser.Address;
+        existingUser.Role = updatedUser.Role;
         existingUser.EmploymentStatus = updatedUser.EmploymentStatus;
 
         // Role and Business ID logic
         if (sender.Role != UserRole.SuperAdmin && updatedUser.Role == UserRole.SuperAdmin)
             existingUser.Role = UserRole.Worker;
-        else
-            existingUser.Role = updatedUser.Role;
 
         existingUser.BusinessId = sender.Role == UserRole.SuperAdmin ? updatedUser.BusinessId : sender.BusinessId;
 

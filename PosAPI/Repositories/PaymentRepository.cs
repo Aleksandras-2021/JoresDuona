@@ -30,16 +30,12 @@ namespace PosAPI.Repositories
 
             try
             {
-                // Associate the payment with the order
                 payment.Order = order;
 
-                // Add the payment to the database
                 await _context.Payments.AddAsync(payment);
 
-                // Add the payment to the order's collection
                 order.Payments.Add(payment);
 
-                // Save changes to the database
                 await _context.SaveChangesAsync();
             }
             catch (DbUpdateException ex)

@@ -9,9 +9,11 @@ using PosShared.ViewModels;
 using System;
 using System.Collections.Generic;
 using System.Reflection;
+using System.Text.Json;
 using System.Threading.Tasks;
 using PosAPI.Services;
 using PosAPI.Services.Interfaces;
+using PosShared.DTOs;
 
 namespace PosAPI.Controllers;
 
@@ -65,8 +67,20 @@ public class UsersController : ControllerBase
         try
         {
             User? user = await _userService.GetAuthorizedUserById(id,sender);
+            var dto = new UserDTO
+            {
+                Id = user.Id,
+                BusinessId = user.BusinessId,
+                Username = user.Username,
+                Name = user.Name,
+                Email = user.Email,
+                Phone = user.Phone,
+                Address = user.Address,
+                Role = user.Role,
+                EmploymentStatus = user.EmploymentStatus
+            };
 
-            return Ok(user);
+            return Ok(dto);
         }
         catch (UnauthorizedAccessException ex)
         {
@@ -113,7 +127,7 @@ public class UsersController : ControllerBase
 
     // PUT: api/Users/{id}
     [HttpPut("{id}")]
-    public async Task<IActionResult> UpdateUser(int id, [FromBody] User user)
+    public async Task<IActionResult> UpdateUser(int id, [FromBody] UserDTO user)
     {
         User? sender = await GetUserFromToken();
 
