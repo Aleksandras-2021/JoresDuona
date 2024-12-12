@@ -197,7 +197,7 @@ public class OrderService : IOrderService
 
         List<OrderItem> orderItems = await _orderRepository.GetOrderItemsByOrderIdAsync(orderId);
         List<OrderItemVariation> orderItemVariations = await _orderRepository.GetOrderItemVariationsByOrderIdAsync(orderId);
-        Tax tax;
+        Tax? tax;
 
         order.ChargeAmount = 0;
         order.TaxAmount = 0;
@@ -210,10 +210,17 @@ public class OrderService : IOrderService
 
             tax = await _taxRepository.GetTaxByItemIdAsync(item.ItemId);
 
-            if (tax.IsPercentage)
-                order.TaxAmount += item.Price * item.Quantity * tax.Amount / 100;
+            if (tax != null)
+            {
+                if (tax.IsPercentage)
+                    order.TaxAmount += item.Price * item.Quantity * tax.Amount / 100;
+                else
+                    order.TaxAmount += tax.Amount;
+            }
             else
-                order.TaxAmount += tax.Amount;
+            {
+                order.TaxAmount = 0;
+            }
         }
 
         foreach (var variation in orderItemVariations)
@@ -222,11 +229,17 @@ public class OrderService : IOrderService
             OrderItem orderItemForVar = await _orderRepository.GetOrderItemById(variation.OrderItemId);
 
             tax = await _taxRepository.GetTaxByItemIdAsync(orderItemForVar.ItemId);
-
-            if (tax.IsPercentage)
-                order.TaxAmount += variation.AdditionalPrice * variation.Quantity * tax.Amount / 100;
+            if (tax != null)
+            {
+                if (tax.IsPercentage)
+                    order.TaxAmount += variation.AdditionalPrice * variation.Quantity * tax.Amount / 100;
+                else
+                    order.TaxAmount += tax.Amount;
+            }
             else
-                order.TaxAmount += tax.Amount;
+            {
+                order.TaxAmount = 0;
+            }
         }
         await _orderRepository.UpdateOrderAsync(order);
     }

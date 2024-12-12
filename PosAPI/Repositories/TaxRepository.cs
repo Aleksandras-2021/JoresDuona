@@ -49,21 +49,15 @@ namespace PosAPI.Repositories
 
         }
 
-        public async Task<Tax> GetTaxByItemIdAsync(int itemId)
+        public async Task<Tax?> GetTaxByItemIdAsync(int itemId)
         {
             Item? item = await _context.Items.FindAsync(itemId);
             if (item == null)
                 throw new KeyNotFoundException($"Tax for item with ID {itemId} not found, because Item could not be found.");
 
-            var tax = GetTaxByCategoryAsync(item.Category, item.BusinessId);
+            Tax? tax = await GetTaxByCategoryAsync(item.Category, item.BusinessId);
 
-            if (tax == null)
-            {
-                throw new KeyNotFoundException($"Tax with for category {item.Category} not found.");
-            }
-
-            return await tax;
-
+            return  tax;
         }
 
         public async Task<List<Tax>> GetAllTaxesAsync()
@@ -79,13 +73,9 @@ namespace PosAPI.Repositories
                      .OrderBy(tax => tax.Id)
                      .ToListAsync();
         }
-        public async Task<Tax> GetTaxByIdAsync(int id)
+        public async Task<Tax?> GetTaxByIdAsync(int id)
         {
-            var tax = await _context.Set<Tax>().FindAsync(id);
-            if (tax == null)
-            {
-                throw new KeyNotFoundException($"Tax with ID {id} not found.");
-            }
+            Tax? tax = await _context.Set<Tax>().FindAsync(id);
 
             return tax;
         }
