@@ -55,6 +55,7 @@ builder.Services.AddScoped<IOrderRepository, OrderRepository>();
 builder.Services.AddScoped<ITaxRepository, TaxRepository>();
 builder.Services.AddScoped<IPaymentRepository, PaymentRepository>();
 builder.Services.AddScoped<IServiceRepository, ServiceRepository>();
+builder.Services.AddScoped<IScheduleRepository, ScheduleRepository>();
 
 //Add Services here
 builder.Services.AddScoped<IOrderService, PosAPI.Services.OrderService>();
