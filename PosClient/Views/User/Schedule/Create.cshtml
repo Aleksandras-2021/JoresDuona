@@ -19,18 +19,20 @@
     <div class="row justify-content-center">
         <div class="col-md-6">
             <form asp-action="Create" method="post">
+                <input type="hidden" name="userId" value="@Model.UserId" />
+                <input type="hidden" asp-for="UserId" value="@Model.UserId" />
 
                 <div class="form-group mb-3">
                     <label asp-for="StartTime" class="control-label">Start Time</label>
-                    <input asp-for="StartTime" class="form-control" type="datetime-local" 
-                           value="@roundedStartTime.ToString("yyyy-MM-ddTHH:mm")" />
+                    <input asp-for="StartTime" class="form-control" type="datetime-local"
+                            value="@roundedStartTime.ToString("yyyy-MM-ddTHH:mm")" />
                     <span asp-validation-for="StartTime" class="text-danger"></span>
                 </div>
 
                 <div class="form-group mb-3">
                     <label asp-for="EndTime" class="control-label">End Time</label>
-                    <input asp-for="EndTime" class="form-control" type="datetime-local" 
-                           value="@roundedEndTime.ToString("yyyy-MM-ddTHH:mm")" />
+                    <input asp-for="EndTime" class="form-control" type="datetime-local"
+                            value="@roundedEndTime.ToString("yyyy-MM-ddTHH:mm")" />
                     <span asp-validation-for="EndTime" class="text-danger"></span>
                 </div>
 
@@ -38,7 +40,7 @@
                     <button type="submit" class="btn btn-primary">
                         <i class="bi bi-plus-circle"></i> Create
                     </button>
-                    <a href="@Url.Action("Schedules", "Schedule", new { user = Model.User })" class="btn btn-secondary">
+                    <a href="@Url.Action("Schedules", "Schedule", new { userId = Model.UserId })" class="btn btn-secondary">
                         <i class="bi bi-arrow-left"></i> Back to List
                     </a>
                 </div>

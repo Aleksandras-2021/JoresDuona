@@ -4,7 +4,7 @@ namespace PosShared.ViewModels
 {
     public class ScheduleCreateViewModel
     {
-        public User User { get; set; }
+        public int UserId { get; set; }
         public DateTime StartTime { get; set; }
         public DateTime EndTime { get; set; }
     }

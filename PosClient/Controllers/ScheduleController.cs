@@ -21,54 +21,37 @@ namespace PosClient.Controllers
             _userSessionService = userSessionService;
         }
 
-        // GET: Schedule/Schedules
         public async Task<IActionResult> Schedules(int userId)
         {
             string? token = Request.Cookies["authToken"];
             _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
             Console.WriteLine($"Getting schedules for user {userId}");
-            // First, get the user details
-            var userApiUrl = $"{_apiUrl}/api/Users/{userId}";
-            var userResponse = await _httpClient.GetAsync(userApiUrl);
 
-            if (!userResponse.IsSuccessStatusCode)
-            {
-                TempData["Error"] = "Could not find user";
-                return RedirectToAction("Index", "User");
-            }
-
-            var userJson = await userResponse.Content.ReadAsStringAsync();
-            var user = JsonSerializer.Deserialize<User>(userJson, 
-                new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
-
-            // Now get the schedules
+            // Get the schedules
             var schedulesApiUrl = $"{_apiUrl}/api/Schedule/{userId}/User";
             var schedulesResponse = await _httpClient.GetAsync(schedulesApiUrl);
-
-            var model = new ScheduleViewModel
-            {
-                User = user
-            };
 
             if (schedulesResponse.IsSuccessStatusCode)
             {
                 var schedulesJson = await schedulesResponse.Content.ReadAsStringAsync();
                 var schedules = JsonSerializer.Deserialize<List<Schedule>>(schedulesJson,
                     new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
-                // Add schedules to viewmodel however it's structured in your existing ScheduleViewModel
-                return View("~/Views/User/Schedule/Schedules.cshtml", model);
+                ViewBag.UserId = userId;
+                return View("~/Views/User/Schedule/Schedules.cshtml", schedules ?? new List<Schedule>()); 
             }
 
-            return View("~/Views/User/Schedule/Schedules.cshtml", model);
+            ViewBag.UserId = userId;
+            return View("~/Views/User/Schedule/Schedules.cshtml", new List<Schedule>());
         }
 
         // GET: Schedule/Create
-        public IActionResult Create(User user)
+        public IActionResult Create(int userId)
         {
+            Console.WriteLine("Creating schedule for user: " + userId);
             var model = new ScheduleCreateViewModel
             {
-                User = user,
+                UserId = userId,
                 StartTime = DateTime.Now,
                 EndTime = DateTime.Now.AddHours(1)
             };
@@ -79,8 +62,10 @@ namespace PosClient.Controllers
         [HttpPost]
         public async Task<IActionResult> Create(ScheduleCreateViewModel model)
         {
+            Console.WriteLine("Creating schedule: " + JsonSerializer.Serialize(model));
             if (!ModelState.IsValid)
             {
+                Console.WriteLine("Model state is invalid");
                 return View("~/Views/User/Schedule/Create.cshtml", model);
             }
 
@@ -89,8 +74,7 @@ namespace PosClient.Controllers
 
             Schedule schedule = new Schedule
             {
-                UserId = model.User.Id,
-                User = model.User,
+                UserId = model.UserId,
                 StartTime = model.StartTime,
                 EndTime = model.EndTime,
                 LastUpdate = DateTime.UtcNow
@@ -101,11 +85,12 @@ namespace PosClient.Controllers
                 JsonSerializer.Serialize(schedule), 
                 Encoding.UTF8, 
                 "application/json");
+            
 
             var response = await _httpClient.PostAsync(apiUrl, content);
             if (response.IsSuccessStatusCode)
             {
-                return RedirectToAction("Schedules", new { userId = model.User.Id });
+                return RedirectToAction("Schedules", new { userId = model.UserId });
             }
 
             var errorMessage = await response.Content.ReadAsStringAsync();
@@ -134,7 +119,7 @@ namespace PosClient.Controllers
                 {
                     var viewModel = new ScheduleCreateViewModel
                     {
-                        User = schedule.User,
+                        UserId = schedule.UserId,
                         StartTime = schedule.StartTime,
                         EndTime = schedule.EndTime
                     };
@@ -157,8 +142,7 @@ namespace PosClient.Controllers
                 var schedule = new Schedule
                 {
                     Id = id,
-                    UserId = viewModel.User.Id,
-                    User = viewModel.User,
+                    UserId = viewModel.UserId,
                     StartTime = viewModel.StartTime,
                     EndTime = viewModel.EndTime,
                     LastUpdate = DateTime.UtcNow
@@ -210,7 +194,7 @@ namespace PosClient.Controllers
 
         // POST: Schedule/Delete/5
         [HttpPost, ActionName("Delete")]
-        public async Task<IActionResult> DeleteConfirmed(int id)
+        public async Task<IActionResult> DeleteConfirmed(int id, int userId)
         {
             string? token = Request.Cookies["authToken"];
             _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
@@ -220,11 +204,11 @@ namespace PosClient.Controllers
 
             if (response.IsSuccessStatusCode)
             {
-                return RedirectToAction("Schedules");
+                return RedirectToAction("Schedules", new { userId });
             }
 
             TempData["Error"] = "Failed to delete schedule.";
-            return RedirectToAction("Schedules");
+            return RedirectToAction("Schedules", new { userId });
         }
 
         // GET: Schedule/WeekView
@@ -259,7 +243,6 @@ namespace PosClient.Controllers
                                 .Select(s => new ScheduleViewModel
                                 {
                                     User = s.User
-                                    // Do not include StartTime and EndTime as they don't exist in ScheduleViewModel
                                 })
                                 .ToList() ?? new List<ScheduleViewModel>()
                         })
