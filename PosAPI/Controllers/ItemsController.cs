@@ -1,15 +1,12 @@
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Metadata.Internal;
-using PosAPI.Migrations;
 using PosAPI.Repositories;
+using PosAPI.Services;
 using PosShared.DTOs;
 using PosShared.Models;
 using PosShared.Ultilities;
 using PosShared.ViewModels;
-using static Microsoft.EntityFrameworkCore.DbLoggerCategory.Model;
 
 namespace PosAPI.Controllers;
 
@@ -21,49 +18,33 @@ public class ItemsController : ControllerBase
     private readonly ILogger<ItemsController> _logger;
     private readonly IItemRepository _itemRepository;
     private readonly IUserRepository _userRepository;
-    public ItemsController(ILogger<ItemsController> logger, IItemRepository itemRepository, IUserRepository userRepository)
+    private readonly IItemService _itemService;
+    public ItemsController(ILogger<ItemsController> logger, IItemRepository itemRepository, 
+        IUserRepository userRepository,IItemService itemService)
     {
         _logger = logger;
         _itemRepository = itemRepository;
         _userRepository = userRepository;
+        _itemService = itemService;
     }
 
 
     // GET: api/Items
     [HttpGet]
-    public async Task<IActionResult> GetAllItems()
+    public async Task<IActionResult> GetAllItems(int pageNumber = 1, int pageSize = 10)
     {
         User? sender = await GetUserFromToken();
 
         if (sender == null)
             return Unauthorized();
 
-        try
-        {
-            List<Item> items;
-            if (sender.Role == UserRole.SuperAdmin)
-            {
-                items = await _itemRepository.GetAllItemsAsync();
-            }
-            else
-            {
-                items = await _itemRepository.GetAllBusinessItemsAsync(sender.BusinessId);
-            }
-
-
-            if (items == null || items.Count == 0)
-            {
-                return NotFound("No items found.");
-            }
-
-
-            return Ok(items);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError($"Error retrieving all items: {ex.Message}");
-            return StatusCode(500, "Internal server error");
-        }
+       
+        var paginatedItems = await _itemService.GetAuthorizedItemsAsync(sender, pageNumber, pageSize);
+              
+        if (paginatedItems.Items.Count > 0)
+            return Ok(paginatedItems);
+        else
+            return NotFound("No Items found.");
     }
 
 
@@ -72,39 +53,24 @@ public class ItemsController : ControllerBase
     [HttpGet("{id}")]
     public async Task<IActionResult> GetItemById(int id)
     {
-        User? senderUser = await GetUserFromToken();
+        User? sender = await GetUserFromToken();
 
-        if (senderUser == null)
+        if (sender == null)
             return Unauthorized();
 
         try
         {
-            Item? item;
-
-            if (senderUser.Role == UserRole.SuperAdmin)
-            {
-                item = await _itemRepository.GetItemByIdAsync(id);
-            }
-            else if (senderUser.Role == UserRole.Manager || senderUser.Role == UserRole.Owner || senderUser.Role == UserRole.Worker)
-            {
-                item = await _itemRepository.GetItemByIdAsync(id);
-
-                if (item.BusinessId != senderUser.BusinessId)
-                {
-                    return Unauthorized();
-                }
-            }
-            else
-            {
-                return Unauthorized();
-            }
-
-            if (item == null)
-            {
-                return NotFound($"Item with ID {id} not found.");
-            }
-
+            Item? item = await _itemService.GetAuthorizedItemByIdAsync(id, sender);
+            
             return Ok(item);
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            return Unauthorized(ex.Message);
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(ex.Message);
         }
         catch (Exception ex)
         {
@@ -118,15 +84,12 @@ public class ItemsController : ControllerBase
     public async Task<IActionResult> CreateItem([FromBody] ItemViewModel item)
     {
         User? sender = await GetUserFromToken();
-
-        _logger.LogInformation($"{sender.Name} is sending an item {item.Name}");
-
-        if (item == null)
-            return BadRequest("Item data is null.");
-
+        
         if (sender == null || sender.Role == UserRole.Worker)
             return Unauthorized();
-
+        
+        _logger.LogInformation($"{sender.Name} is sending an item {item.Name}");
+        
         if (sender.BusinessId <= 0)
             return BadRequest("Invalid BusinessId associated with the user.");
 
@@ -138,10 +101,8 @@ public class ItemsController : ControllerBase
         newItem.Price = item.Price;
         newItem.BasePrice = item.BasePrice;
         newItem.Category = item.Category;
-
         newItem.Quantity = item.Quantity;
-
-
+        
         try
         {
             await _itemRepository.AddItemAsync(newItem);
@@ -159,23 +120,19 @@ public class ItemsController : ControllerBase
     [HttpPut("{id}")]
     public async Task<IActionResult> UpdateItem(int id, [FromBody] ItemViewModel item)
     {
-        if (item == null)
-        {
-            return BadRequest("Invalid item data.");
-        }
-
+        User? sender = await GetUserFromToken();
+        if (sender == null)
+            return Unauthorized();
+        
         try
         {
-            User? sender = await GetUserFromToken();
 
-            Item? existingItem = await _itemRepository.GetItemByIdAsync(id);
+            Item? existingItem = await _itemService.GetAuthorizedItemForModificationByIdAsync(id,sender);
 
             if (existingItem == null)
             {
                 return NotFound($"Item with ID {id} not found.");
             }
-            if (sender == null || sender.Role == UserRole.Worker)
-                return Unauthorized();
 
             existingItem.Price = item.Price;
             existingItem.Name = item.Name;
@@ -184,14 +141,48 @@ public class ItemsController : ControllerBase
             existingItem.Category = item.Category;
             existingItem.Quantity = item.Quantity;
 
-
             await _itemRepository.UpdateItemAsync(existingItem);
 
             return NoContent();
         }
+        catch (UnauthorizedAccessException ex)
+        {
+            return Unauthorized(ex.Message);
+        }
         catch (KeyNotFoundException ex)
         {
-            _logger.LogWarning($"Item with ID {id} not found: {ex.Message}");
+            return NotFound(ex.Message);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError($"Error updating Item with ID {id}: {ex.Message}");
+            return StatusCode(500, "Internal server error");
+        }
+    }
+    
+    // DELETE: api/Items/{id}
+    [HttpDelete("{id}")]
+    public async Task<IActionResult> DeleteItem(int id)
+    {
+        User? sender = await GetUserFromToken();
+        if (sender == null)
+            return Unauthorized();
+
+        try
+        {
+            Item? item = await _itemService.GetAuthorizedItemForModificationByIdAsync(id,sender);
+            
+            await _itemRepository.DeleteItemAsync(id);
+            _logger.LogInformation($"User with id {sender.Id} deleted item with id {item.Id} at {DateTime.Now}");
+
+            return NoContent();
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            return Unauthorized(ex.Message);
+        }
+        catch (KeyNotFoundException ex)
+        {
             return NotFound(ex.Message);
         }
         catch (Exception ex)
@@ -201,73 +192,27 @@ public class ItemsController : ControllerBase
         }
     }
 
-
-
-    // DELETE: api/Items/{id}
-    [HttpDelete("{id}")]
-    public async Task<IActionResult> DeleteItem(int id)
-    {
-        User? sender = await GetUserFromToken();
-
-        if (sender == null || sender.Role == UserRole.Worker)
-            return Unauthorized();
-
-        try
-        {
-            Item? item = await _itemRepository.GetItemByIdAsync(id);
-
-            if (item == null)
-            {
-                return NotFound($"Item with ID {id} not found.");
-            }
-
-            if (sender.Role == UserRole.SuperAdmin)
-            {
-                await _itemRepository.DeleteItemAsync(id);
-            }
-            else if ((sender.Role == UserRole.Owner || sender.Role == UserRole.Manager) && item.BusinessId == sender.BusinessId)
-            {
-                await _itemRepository.DeleteItemAsync(id);
-            }
-            else
-            {
-                return Unauthorized();
-            }
-
-            _logger.LogInformation($"User with id {sender.Id} deleted item with id {item.Id} at {DateTime.Now}");
-
-            return NoContent();
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError($"Error deleting item with ID {id}: {ex.Message}");
-            return StatusCode(500, "Internal server error");
-        }
-    }
-
     // GET: api/Items/{id}/Variations
     [HttpGet("{id}/Variations")]
     public async Task<IActionResult> GetAllItemVariations(int id)
     {
         User? sender = await GetUserFromToken();
-
         if (sender == null)
             return Unauthorized();
-
         try
         {
-            List<ItemVariation> variations = await _itemRepository.GetItemVariationsAsync(id);
-            Item item = await _itemRepository.GetItemByIdAsync(id);
-            if (variations == null || variations.Count == 0)
-            {
-                return NotFound("No variations found.");
-            }
-
-            if (item.BusinessId != sender.BusinessId)
-                return Unauthorized();
-
-
+            Item? item = await _itemService.GetAuthorizedItemByIdAsync(id,sender);
+            List<ItemVariation> variations = await _itemService.GetAuthorizedItemVariationsAsync(id, sender);
+            
             return Ok(variations);
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            return Unauthorized(ex.Message);
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(ex.Message);
         }
         catch (Exception ex)
         {
@@ -280,19 +225,13 @@ public class ItemsController : ControllerBase
     [HttpGet("Variations/{varId}")]
     public async Task<IActionResult> GetItemVariationById(int varId)
     {
-        User? senderUser = await GetUserFromToken();
-
-        if (senderUser == null)
+        User? sender = await GetUserFromToken();
+        if (sender == null)
             return Unauthorized();
 
         try
         {
-            ItemVariation variation = await _itemRepository.GetItemVariationByIdAsync(varId);
-
-            if (variation == null)
-            {
-                return NotFound("No variation found.");
-            }
+            ItemVariation? variation = await _itemService.GetAuthorizedItemVariationByIdAsync(varId,sender);
 
             VariationsDTO variationDTO = new VariationsDTO
             {
@@ -303,6 +242,14 @@ public class ItemsController : ControllerBase
             };
 
             return Ok(variationDTO);
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            return Unauthorized(ex.Message);
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(ex.Message);
         }
         catch (Exception ex)
         {
@@ -315,24 +262,17 @@ public class ItemsController : ControllerBase
     [HttpPost("{id}/Variations")]
     public async Task<IActionResult> CreateVariation([FromBody] ItemVariation variation)
     {
-        if (variation == null)
-            return BadRequest("Variation data is null.");
-
         User? sender = await GetUserFromToken();
-
-        var item = await _itemRepository.GetItemByIdAsync(variation.ItemId);
-        if (item == null)
-            return NotFound($"Item with ID {variation.ItemId} not found.\n");
-
-        if (sender == null || (item.BusinessId != sender.BusinessId && sender.Role != UserRole.SuperAdmin) || sender.Role == UserRole.Worker)
+        if (sender == null)
             return Unauthorized();
+
+        var item = await _itemService.GetAuthorizedItemForModificationByIdAsync(variation.ItemId,sender);
 
         var newVariation = new ItemVariation
         {
             ItemId = item.Id,
             Name = variation.Name,
             AdditionalPrice = variation.AdditionalPrice,
-
         };
 
         try
@@ -344,6 +284,14 @@ public class ItemsController : ControllerBase
                 new { id = newVariation.ItemId, varId = newVariation.Id },
                 newVariation
             );
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            return Unauthorized(ex.Message);
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(ex.Message);
         }
         catch (DbUpdateException e)
         {
@@ -357,35 +305,23 @@ public class ItemsController : ControllerBase
     public async Task<IActionResult> DeleteVariation(int varId)
     {
         User? sender = await GetUserFromToken();
-
-        if (sender == null || sender.Role == UserRole.Worker)
+        if (sender == null)
             return Unauthorized();
-
         try
         {
-            ItemVariation? variation = await _itemRepository.GetItemVariationByIdAsync(varId);
+            ItemVariation? variation = await _itemService.GetAuthorizedItemVariationForModificationByIdAsync(varId,sender);
+            await _itemRepository.DeleteItemVariationAsync(varId);
 
-            if (variation == null)
-            {
-                return NotFound($"Variation with ID {varId} not found.");
-            }
-
-            if (sender.Role == UserRole.SuperAdmin)
-            {
-                await _itemRepository.DeleteItemVariationAsync(varId);
-            }
-            else if ((sender.Role == UserRole.Owner || sender.Role == UserRole.Manager) && variation.Item.BusinessId == sender.BusinessId)
-            {
-                await _itemRepository.DeleteItemVariationAsync(varId);
-            }
-            else
-            {
-                return Unauthorized();
-            }
-
-            _logger.LogInformation($"Variation with id {varId} deleted at {DateTime.Now}");
-
+            _logger.LogInformation($"Variation with id {varId} deleted at {DateTime.Now} by userId:{sender.Id}");
             return NoContent();
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            return Unauthorized(ex.Message);
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(ex.Message);
         }
         catch (Exception ex)
         {
@@ -398,29 +334,18 @@ public class ItemsController : ControllerBase
     [HttpPut("Variations/{id}")]
     public async Task<IActionResult> UpdateVariation(int id, VariationsDTO variation)
     {
-        if (variation == null)
-        {
-            return BadRequest("Invalid variation data.");
-        }
-
         try
         {
             User? sender = await GetUserFromToken();
-
-            ItemVariation? existingVariation = await _itemRepository.GetItemVariationByIdAsync(id);
-
-            if (existingVariation == null)
-            {
-                return NotFound($"Variation with ID {id} not found.");
-            }
-            if (sender == null || sender.Role == UserRole.Worker)
+            if (sender == null)
                 return Unauthorized();
+
+            ItemVariation? existingVariation = await _itemService.GetAuthorizedItemVariationForModificationByIdAsync(id,sender);
 
             existingVariation.AdditionalPrice = variation.AdditionalPrice;
             existingVariation.Name = variation.Name;
             existingVariation.ItemId = variation.ItemId;
             existingVariation.Id = variation.Id;
-
 
             await _itemRepository.UpdateItemVariationAsync(existingVariation);
 
@@ -430,6 +355,10 @@ public class ItemsController : ControllerBase
         {
             _logger.LogWarning($"Variation with ID {id} not found: {ex.Message}");
             return NotFound(ex.Message);
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            return Unauthorized(ex.Message);
         }
         catch (Exception ex)
         {
@@ -453,7 +382,7 @@ public class ItemsController : ControllerBase
         int? userId = Ultilities.ExtractUserIdFromToken(token);
         User? user = await _userRepository.GetUserByIdAsync(userId);
 
-        if (user == null)
+        if(user == null)
         {
             _logger.LogWarning($"Failed to find user with {userId} in DB");
             return null;

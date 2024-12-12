@@ -29,25 +29,24 @@ public class ItemsController : Controller
 
 
     // GET: Items/Index
-    public async Task<IActionResult> Index()
+    public async Task<IActionResult> Index(int pageNumber = 1, int pageSize = 20)
     {
 
         string? token = Request.Cookies["authToken"];
         _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
-        var apiUrl = ApiRoutes.Items.GetAllItems;
+        var apiUrl = ApiRoutes.Items.GetItemsPaginated(pageNumber,pageSize);
         var response = await _httpClient.GetAsync(apiUrl);
-        Console.WriteLine(HttpContext.Session.GetInt32("UserId"));
 
         if (response.IsSuccessStatusCode)
         {
             var jsonData = await response.Content.ReadAsStringAsync();
-            var items = JsonSerializer.Deserialize<List<Item>>(jsonData, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+            var items = JsonSerializer.Deserialize<PaginatedResult<Item>>(jsonData, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
             return View(items);
         }
 
-        TempData["Error"] = "Could not retrieve users.";
-        return View(new List<Item>());
+        TempData["Error"] = "Could not retrieve items.";
+        return View(new PaginatedResult<Item>());
     }
 
 

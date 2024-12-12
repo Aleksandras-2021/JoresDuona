@@ -43,46 +43,74 @@
         </div>
     }
 
-        @if (Model.Items != null && Model.Items.Any() && Model.Order.Status != PosShared.Models.OrderStatus.Closed && Model.Order.Status != PosShared.Models.OrderStatus.Paid)
+        @if (Model.Items != null && Model.Items.Items.Any() && Model.Order.Status != PosShared.Models.OrderStatus.Closed && Model.Order.Status != PosShared.Models.OrderStatus.Paid)
     {
         <h3 class="mb-3">Available Items</h3>
         <div class="table-responsive">
             <table class="table table-striped table-hover align-middle">
                 <thead class="table-dark">
-                    <tr>
-                        <th>Item ID</th>
-                        <th>Name</th>
-                        <th>Description</th>
-                        <th>Price</th>
-                        <th>Quantity</th>
-                        <th>Action</th>
-                    </tr>
+                <tr>
+                    <th>Item ID</th>
+                    <th>Name</th>
+                    <th>Description</th>
+                    <th>Price</th>
+                    <th>Quantity</th>
+                    <th>Action</th>
+                </tr>
                 </thead>
                 <tbody>
-                    @foreach (var item in Model.Items)
-                    {
-                        <tr>
-                            <td>@item.Id</td>
-                            <td>@item.Name</td>
-                            <td>@item.Description</td>
-                            <td>@item.Price.ToString("C")</td>
-                            <td>@item.Quantity</td>
-                            <td>
-                                <form asp-action="AddItemToOrder" method="post" class="m-0">
-                                    <input type="hidden" name="orderId" value="@Model.OrderId" />
-                                    <input type="hidden" name="itemId" value="@item.Id" />
-                                    <button type="submit" class="btn btn-success btn-sm">
-                                        <i class="bi bi-cart-plus"></i> Add to Order
-                                    </button>
-                                </form>
-                            </td>
-                        </tr>
-                    }
+                @foreach (var item in Model.Items.Items)
+                {
+                    <tr>
+                        <td>@item.Id</td>
+                        <td>@item.Name</td>
+                        <td>@item.Description</td>
+                        <td>@item.Price.ToString("C")</td>
+                        <td>@item.Quantity</td>
+                        <td>
+                            <form asp-action="AddItemToOrder" method="post" class="m-0">
+                                <input type="hidden" name="orderId" value="@Model.OrderId" />
+                                <input type="hidden" name="itemId" value="@item.Id" />
+                                <button type="submit" class="btn btn-success btn-sm">
+                                    <i class="bi bi-cart-plus"></i> Add to Order
+                                </button>
+                            </form>
+                        </td>
+                    </tr>
+                }
                 </tbody>
             </table>
         </div>
-    }
-    else
+        <!-- Pagination -->
+        <nav aria-label="Order pagination">
+            <ul class="pagination justify-content-center">
+                @if (Model.Items.HasPreviousPage)
+                {
+                    <li class="page-item">
+                        <a class="page-link" href="@Model.OrderId&pageNumber=@(Model.Items.PageNumber - 1)&pageSize=@Model.Items.PageSize" aria-label="Previous">
+                            <span aria-hidden="true">&laquo;</span>
+                        </a>
+                    </li>
+                }
+
+                @for (int i = 1; i <= Model.Items.TotalPages; i++)
+                {
+                    <li class="page-item @(i == Model.Items.PageNumber ? "active" : "")">
+                        <a class="page-link" href="?orderId=@Model.OrderId&pageNumber=@i&pageSize=@Model.Items.PageSize">@i</a>
+                    </li>
+                }
+
+                @if (Model.Items.HasNextPage)
+                {
+                    <li class="page-item">
+                        <a class="page-link" href="@Model.OrderId&pageNumber=@(Model.Items.PageNumber + 1)&pageSize=@Model.Items.PageSize" aria-label="Next">
+                            <span aria-hidden="true">&raquo;</span>
+                        </a>
+                    </li>
+                }
+            </ul>
+        </nav>
+    }else
     {
         <div class="alert alert-info text-center" role="alert">
             <i class="bi bi-info-circle"></i> No items available for selection.
@@ -101,7 +129,7 @@
                         <th>Price</th>
                         <th>Tax</th>
                         <th>Total</th>
-                        <th colspan="3">Actions</th>
+                        <th colspan="4">Actions</th>
                     </tr>
                 </thead>
                 <tbody>

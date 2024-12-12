@@ -1,7 +1,4 @@
-﻿using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
-using PosAPI.Controllers;
-using PosAPI.Repositories;
+﻿using PosAPI.Repositories;
 using PosShared;
 using PosShared.Models;
 
