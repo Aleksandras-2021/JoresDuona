@@ -2,13 +2,6 @@
 
 <h1>Items</h1>
 
-<p>
-    <a href="@Url.Action("Create", "Items")">Create new item</a>
-</p>
-
-@if (Model.Items.Any())
-{
-
 
 @if (TempData["Error"] != null)
 {
@@ -27,7 +20,7 @@
         </a>
     </div>
 
-    @if (Model != null && Model.Count > 0)
+    @if (Model != null && Model.Items.Any())
     {
         <div class="table-responsive">
             <table class="table table-striped table-hover align-middle">
