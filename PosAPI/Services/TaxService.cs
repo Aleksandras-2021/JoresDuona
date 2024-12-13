@@ -1,7 +1,5 @@
 using PosAPI.Repositories;
 using PosAPI.Services.Interfaces;
-using PosShared;
-using PosShared.DTOs;
 using PosShared.Models;
 
 namespace PosAPI.Services;
@@ -10,10 +8,7 @@ public class TaxService: ITaxService
 {
     private readonly ITaxRepository _taxRepository;
     
-    public TaxService(ITaxRepository taxRepository)
-    {
-        _taxRepository = taxRepository;
-    }
+    public TaxService(ITaxRepository taxRepository) =>_taxRepository = taxRepository;
     
     public async Task<List<Tax>> GetAuthorizedTaxesAsync(User? sender)
     {

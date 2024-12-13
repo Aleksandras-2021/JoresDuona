@@ -17,9 +17,6 @@ namespace PosAPI.Repositories
         // Add a new item
         public async Task AddItemAsync(Item item)
         {
-            if (item == null)
-                throw new ArgumentNullException(nameof(item));
-
             var businessExists = await _context.Businesses.AnyAsync(b => b.Id == item.BusinessId);
 
             if (!businessExists)
@@ -79,9 +76,6 @@ namespace PosAPI.Repositories
         // Update an item
         public async Task UpdateItemAsync(Item item)
         {
-            if (item == null)
-                throw new ArgumentNullException(nameof(item));
-
             var existingItem = await _context.Items.FindAsync(item.Id);
 
             if (existingItem == null)
@@ -129,9 +123,6 @@ namespace PosAPI.Repositories
         // Add a new variation
         public async Task AddItemVariationAsync(ItemVariation itemVariation)
         {
-            if (itemVariation == null)
-                throw new ArgumentNullException(nameof(itemVariation));
-
             var itemExists = await _context.Items.AnyAsync(item => item.Id == itemVariation.ItemId);
 
             if (!itemExists)
@@ -144,9 +135,6 @@ namespace PosAPI.Repositories
         // Update an existing variation
         public async Task UpdateItemVariationAsync(ItemVariation itemVariation)
         {
-            if (itemVariation == null)
-                throw new ArgumentNullException(nameof(itemVariation));
-
             var existingVariation = await _context.ItemVariations.FindAsync(itemVariation.Id);
 
             if (existingVariation == null)

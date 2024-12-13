@@ -2,31 +2,15 @@
 using PosAPI.Data.DbContext;
 using PosShared.Models;
 
-namespace PosAPI.Repositories
-{
+namespace PosAPI.Repositories;
+
     public class UserRepository : IUserRepository
     {
         private readonly ApplicationDbContext _context;
-        public UserRepository(ApplicationDbContext context)
-        {
-            _context = context;
-        }
+        public UserRepository(ApplicationDbContext context) =>_context = context;
 
         public async Task AddUserAsync(User user)
         {
-            if (user == null)
-            {
-                throw new ArgumentNullException(nameof(user));
-            }
-
-            // Check if BusinessId exists in the table
-            var businessExists = await _context.Businesses.AnyAsync(b => b.Id == user.BusinessId);
-
-            if (!businessExists)
-            {
-                throw new Exception($"Business with ID {user.BusinessId} does not exist.");
-            }
-
             try
             {
                 await _context.Users.AddAsync(user);
@@ -58,10 +42,7 @@ namespace PosAPI.Repositories
             List<User> users = await _context.Set<User>()
                 .OrderBy(user => user.Id)
                 .ToListAsync();
-
-            if (users == null)
-                users = new List<User>();
-
+            
             return users;
         }
 
@@ -71,10 +52,7 @@ namespace PosAPI.Repositories
                 .Where(u => u.BusinessId == businessId)
                 .OrderBy(user => user.Id)
                 .ToListAsync();
-
-            if (users == null)
-                users = new List<User>();
-
+            
             return users;
         }
 
@@ -82,8 +60,7 @@ namespace PosAPI.Repositories
         {
             User? user = await _context.Users
                 .FindAsync(userId);
-
-
+            
             return user;
         }
 
@@ -104,23 +81,6 @@ namespace PosAPI.Repositories
                     throw new ArgumentNullException(nameof(user));
                 }
 
-                var existingUser = await _context.Users.FindAsync(user.Id);
-                if (existingUser == null)
-                {
-                    throw new KeyNotFoundException($"User with ID {user.Id} not found.");
-                }
-                existingUser.Name = user.Name;
-                existingUser.Address = user.Address;
-                existingUser.Email = user.Email;
-                existingUser.Phone = user.Phone;
-                existingUser.PasswordHash = user.PasswordHash;
-                existingUser.BusinessId = user.BusinessId;
-                existingUser.EmploymentStatus = user.EmploymentStatus;
-                existingUser.Role = user.Role;
-                existingUser.Username = user.Username;
-                _context.Users.Update(existingUser);
-
-
                 await _context.SaveChangesAsync();
             }
             catch (DbUpdateException e)
@@ -129,4 +89,3 @@ namespace PosAPI.Repositories
             }
         }
     }
-}

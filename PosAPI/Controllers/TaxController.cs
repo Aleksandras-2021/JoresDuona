@@ -88,22 +88,22 @@ public class TaxController : ControllerBase
     public async Task<IActionResult> CreateTax([FromBody] TaxDTO tax)
     {
         User? sender = await GetUserFromToken();
-        Tax newTax = new Tax()
-        {
-            BusinessId = sender.BusinessId,
-            Name = tax.Name,
-            IsPercentage = tax.IsPercentage,
-            Amount = tax.Amount,
-            Category = tax.Category,
-        };
 
         try
         {
+            Tax newTax = new Tax()
+            {
+                BusinessId = sender.BusinessId,
+                Name = tax.Name,
+                IsPercentage = tax.IsPercentage,
+                Amount = tax.Amount,
+                Category = tax.Category,
+            };
+            
             await _taxRepository.AddTaxAsync(newTax);
 
             return CreatedAtAction(nameof(GetTaxById), new { id = newTax.Id }, newTax);
         }
-        
         catch (UnauthorizedAccessException ex)
         {
             _logger.LogError($"Unauthorized access to tax creation from sender with ID {sender.Id}. {ex.Message}");
@@ -207,5 +207,4 @@ public class TaxController : ControllerBase
 
     }
     #endregion
-
 }

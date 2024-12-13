@@ -17,8 +17,6 @@ public class OrderRepository : IOrderRepository
     // Order Management
     public async Task AddOrderAsync(Order order)
     {
-        if (order == null) throw new ArgumentNullException(nameof(order));
-
         var user = await _context.Users.FindAsync(order.UserId) 
                     ?? throw new Exception($"User with ID {order.UserId} does not exist for order creation.");
 
@@ -98,8 +96,6 @@ public class OrderRepository : IOrderRepository
     // Order Item Management
     public async Task AddOrderItemAsync(OrderItem orderItem)
     {
-        if (orderItem == null) throw new ArgumentNullException(nameof(orderItem));
-
         var order = await _context.Orders.FindAsync(orderItem.OrderId)
                    ?? throw new Exception($"Order with ID {orderItem.OrderId} not found.");
 
@@ -161,10 +157,8 @@ public class OrderRepository : IOrderRepository
     // Order Item Variation Management
     public async Task AddOrderItemVariationAsync(OrderItemVariation variation)
     {
-        if (variation == null) throw new ArgumentNullException(nameof(variation));
-
         var orderItem = await _context.OrderItems.FindAsync(variation.OrderItemId)
-                        ?? throw new ArgumentNullException($"Order item with ID {variation.OrderItemId} not found.");
+                        ?? throw new KeyNotFoundException($"Order item with ID {variation.OrderItemId} not found.");
 
         var existingVariation = await _context.OrderItemVariations
             .FirstOrDefaultAsync(v => v.OrderItemId == variation.OrderItemId && v.ItemVariationId == variation.ItemVariationId);
@@ -230,7 +224,7 @@ public class OrderRepository : IOrderRepository
             .ToListAsync();
     }
     
-        public async Task<ItemVariation?> GetItemVariationByIdAsync(int variationId)
+    public async Task<ItemVariation?> GetItemVariationByIdAsync(int variationId)
     {
         return await _context.ItemVariations.FirstOrDefaultAsync(v => v.Id == variationId);
     }
