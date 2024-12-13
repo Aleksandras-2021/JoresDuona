@@ -73,7 +73,7 @@ namespace PosClient.Controllers
                     return RedirectToAction("Index");
                 }
 
-                TempData["Error"] = "Failed to create business." + response.Content;
+                TempData["Error"] = "Failed to create business. " + response.StatusCode;
             }
 
             return View(business);
@@ -100,7 +100,7 @@ namespace PosClient.Controllers
                 }
             }
 
-            TempData["Error"] = $"Failed to create business: {response.Content}";
+            TempData["Error"] = $"Failed to create business: {response.StatusCode}";
 
             return NotFound();
         }
@@ -175,7 +175,7 @@ namespace PosClient.Controllers
                 return RedirectToAction("Index");
             }
 
-            TempData["Error"] = $"Failed to delete business. {response.Content}";
+            TempData["Error"] = $"Failed to delete business. {response.StatusCode}";
             return RedirectToAction("Index");
         }
     }

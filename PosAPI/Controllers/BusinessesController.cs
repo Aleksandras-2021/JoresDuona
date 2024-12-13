@@ -133,10 +133,14 @@ public class BusinessesController : ControllerBase
         }
         catch (UnauthorizedAccessException ex)
         {
+            _logger.LogError($"{ex.Message}");
+
             return Unauthorized(ex.Message);
         }
         catch (ArgumentNullException ex)
         {
+            _logger.LogError($"{ex.Message}");
+
             return BadRequest(ex.Message);
         }
         catch (Exception ex)

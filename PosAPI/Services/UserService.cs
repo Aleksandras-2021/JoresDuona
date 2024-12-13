@@ -1,3 +1,4 @@
+using PosAPI.Middlewares;
 using PosAPI.Repositories;
 using PosAPI.Services.Interfaces;
 using PosShared;
@@ -18,9 +19,7 @@ public class UserService : IUserService
     
     public async Task<PaginatedResult<User>> GetAuthorizedUsers(User? sender, int pageNumber = 1, int pageSize = 10)
     {
-        if (sender is null || sender.Role is UserRole.Worker)
-            throw new UnauthorizedAccessException();
-        
+        AuthorizationHelper.Authorize("User", "List", sender);
         PaginatedResult<User> users = null;
         
         if (sender.Role == UserRole.SuperAdmin)
@@ -35,14 +34,12 @@ public class UserService : IUserService
     
     public async Task<User> GetAuthorizedUserById(int userId, User? sender)
     {
-        if (sender is null || sender.Role is UserRole.Worker)
-            throw new UnauthorizedAccessException();
-
+        AuthorizationHelper.Authorize("User", "Read", sender);
         var user = await _userRepository.GetUserByIdAsync(userId);
+        AuthorizationHelper.ValidateOwnershipOrRole(sender,user.BusinessId ,sender.BusinessId, "Update");
+
         
-        if (user == null)
-            throw new KeyNotFoundException($"User with ID {userId} not found.");
-        
+
         if(user.BusinessId != sender.BusinessId && sender.Role != UserRole.SuperAdmin)
             throw new UnauthorizedAccessException();
 
@@ -51,8 +48,8 @@ public class UserService : IUserService
     
     public async Task<User> CreateAuthorizedUser(User? user, User? sender)
     {
-        if (sender is null || sender.Role is UserRole.Worker or UserRole.Manager)
-            throw new UnauthorizedAccessException();
+        AuthorizationHelper.Authorize("User", "Create", sender);
+
         if (user == null)
             throw new MissingFieldException();
         if( string.IsNullOrEmpty(user.PasswordHash) ||  string.IsNullOrEmpty(user.Email))
@@ -86,16 +83,10 @@ public class UserService : IUserService
     
     public async Task UpdateAuthorizedUser(int userId, UserDTO updatedUser, User? sender)
     {
-        if (sender is null || sender.Role == UserRole.Worker)
-            throw new UnauthorizedAccessException();
-
+        AuthorizationHelper.Authorize("User", "Update", sender);
         var existingUser = await _userRepository.GetUserByIdAsync(userId);
+        AuthorizationHelper.ValidateOwnershipOrRole(sender,existingUser.BusinessId ,sender.BusinessId, "Update");
 
-        if (existingUser == null)
-            throw new KeyNotFoundException($"User with ID {userId} not found.");
-
-        if (existingUser.BusinessId != sender.BusinessId && sender.Role != UserRole.SuperAdmin)
-            throw new UnauthorizedAccessException();
         
         existingUser.BusinessId = updatedUser.BusinessId;
         existingUser.Username = updatedUser.Username;
@@ -117,16 +108,9 @@ public class UserService : IUserService
     
     public async Task DeleteAuthorizedUser(int userId,User? sender)
     {
-        if (sender is null || sender.Role is not  UserRole.SuperAdmin or UserRole.Owner)
-            throw new UnauthorizedAccessException();
-
+        AuthorizationHelper.Authorize("User", "Delete", sender);
         var existingUser = await _userRepository.GetUserByIdAsync(userId);
-
-        if (existingUser == null)
-            throw new KeyNotFoundException($"User with ID {userId} not found.");
-
-        if (existingUser.BusinessId != sender.BusinessId && sender.Role != UserRole.SuperAdmin)
-            throw new UnauthorizedAccessException();
+        AuthorizationHelper.ValidateOwnershipOrRole(sender,existingUser.BusinessId ,sender.BusinessId, "Delete");
         
         await _userRepository.DeleteUserAsync(userId);
     }
