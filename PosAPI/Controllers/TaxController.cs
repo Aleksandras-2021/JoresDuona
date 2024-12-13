@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using PosAPI.Repositories;
+using PosAPI.Services.Interfaces;
 using PosShared.DTOs;
 using PosShared.Models;
 using PosShared.Ultilities;
@@ -15,14 +16,16 @@ namespace PosAPI.Controllers;
 [ApiController]
 public class TaxController : ControllerBase
 {
-    private readonly ILogger<ItemsController> _logger;
+    private readonly ILogger<TaxController> _logger;
     private readonly ITaxRepository _taxRepository;
     private readonly IUserRepository _userRepository;
-    public TaxController(ILogger<ItemsController> logger, ITaxRepository taxRepository, IUserRepository userRepository)
+    private readonly ITaxService _taxService;
+    public TaxController(ILogger<TaxController> logger, ITaxRepository taxRepository, IUserRepository userRepository, ITaxService taxService)
     {
         _logger = logger;
         _taxRepository = taxRepository;
         _userRepository = userRepository;
+        _taxService = taxService;
     }
 
 
@@ -32,29 +35,16 @@ public class TaxController : ControllerBase
     {
         User? sender = await GetUserFromToken();
 
-        if (sender == null)
-            return Unauthorized();
-
         try
         {
-            List<Tax> taxes;
-            if (sender.Role == UserRole.SuperAdmin)
-            {
-                taxes = await _taxRepository.GetAllTaxesAsync();
-            }
-            else
-            {
-                taxes = await _taxRepository.GetAllBusinessTaxesAsync(sender.BusinessId);
-            }
-
-
-            if (taxes == null || taxes.Count == 0)
-            {
-                return NotFound("No items found.");
-            }
-
+            List<Tax> taxes = await _taxService.GetAuthorizedTaxesAsync(sender);
 
             return Ok(taxes);
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            _logger.LogError($"Unauthorized access taxes: {ex.Message}");
+            return Unauthorized(ex.Message);
         }
         catch (Exception ex)
         {
@@ -69,39 +59,23 @@ public class TaxController : ControllerBase
     [HttpGet("{id}")]
     public async Task<IActionResult> GetTaxById(int id)
     {
-        User? senderUser = await GetUserFromToken();
-
-        if (senderUser == null)
-            return Unauthorized();
-
+        User? sender = await GetUserFromToken();
+        
         try
         {
-            Tax? tax;
-
-            if (senderUser.Role == UserRole.SuperAdmin)
-            {
-                tax = await _taxRepository.GetTaxByIdAsync(id);
-            }
-            else if (senderUser.Role == UserRole.Manager || senderUser.Role == UserRole.Owner || senderUser.Role == UserRole.Worker)
-            {
-                tax = await _taxRepository.GetTaxByIdAsync(id);
-
-                if (tax.BusinessId != senderUser.BusinessId)
-                {
-                    return Unauthorized();
-                }
-            }
-            else
-            {
-                return Unauthorized();
-            }
-
-            if (tax == null)
-            {
-                return NotFound($"Tax with ID {id} not found.");
-            }
+            Tax? tax =  await _taxService.GetAuthorizedTaxByIdAsync(id,sender);
 
             return Ok(tax);
+        }
+        catch (KeyNotFoundException ex)
+        {
+            _logger.LogError($"Tax with id  {id} not found. {ex.Message}");
+            return NotFound(ex.Message);
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            _logger.LogError($"Unauthorized access to tax with ID {id}. {ex.Message}");
+            return Unauthorized(ex.Message);
         }
         catch (Exception ex)
         {
@@ -115,26 +89,14 @@ public class TaxController : ControllerBase
     public async Task<IActionResult> CreateTax([FromBody] TaxDTO tax)
     {
         User? sender = await GetUserFromToken();
-
-        _logger.LogInformation($"{sender.Name} is creating a tax {tax.Name}");
-
-        if (tax == null)
-            return BadRequest("Tax data is null.");
-
-        if (sender == null || sender.Role == UserRole.Worker)
-            return Unauthorized();
-
-        if (sender.BusinessId <= 0)
-            return BadRequest("Invalid BusinessId associated with the user.");
-
-        Tax newTax = new Tax();
-
-        newTax.BusinessId = sender.BusinessId;
-        newTax.Name = tax.Name;
-        newTax.IsPercentage = tax.IsPercentage;
-        newTax.Amount = tax.Amount;
-        newTax.Category = tax.Category;
-
+        Tax newTax = new Tax()
+        {
+            BusinessId = sender.BusinessId,
+            Name = tax.Name,
+            IsPercentage = tax.IsPercentage,
+            Amount = tax.Amount,
+            Category = tax.Category,
+        };
 
         try
         {
@@ -142,7 +104,18 @@ public class TaxController : ControllerBase
 
             return CreatedAtAction(nameof(GetTaxById), new { id = newTax.Id }, newTax);
         }
-        catch (DbUpdateException e)
+        
+        catch (UnauthorizedAccessException ex)
+        {
+            _logger.LogError($"Unauthorized access to tax creation from sender with ID {sender.Id}. {ex.Message}");
+            return Unauthorized(ex.Message);
+        }
+        catch (ArgumentNullException ex)
+        {
+            _logger.LogError($"{ex.Message}");
+            return Unauthorized(ex.Message);
+        }
+        catch (Exception e)
         {
             return StatusCode(500, $"Internal server error: {e.Message}");
         }
@@ -153,35 +126,23 @@ public class TaxController : ControllerBase
     [HttpPut("{id}")]
     public async Task<IActionResult> UpdateTax(int id, [FromBody] TaxDTO tax)
     {
-        if (tax == null)
-        {
-            return BadRequest("Invalid tax data.");
-        }
+        User? sender = await GetUserFromToken();
 
         try
         {
-            User? sender = await GetUserFromToken();
-
-            Tax? existingTax = await _taxRepository.GetTaxByIdAsync(id);
-
-            if (existingTax == null)
-            {
-                return NotFound($"Tax with ID {id} not found.");
-            }
-            if (sender == null || sender.Role == UserRole.Worker || existingTax.BusinessId != sender.BusinessId)
-                return Unauthorized();
-            
-            var existingTaxForcategory = await _taxRepository.GetTaxByCategoryAsync(tax.Category, sender.BusinessId);
-            
+            Tax? existingTax = await _taxService.GetAuthorizedTaxByIdAsync(id,sender);
             existingTax.Name = tax.Name;
             existingTax.IsPercentage = tax.IsPercentage;
             existingTax.Amount = tax.Amount;
             existingTax.Category = tax.Category;
 
-
-            await _taxRepository.UpdateTaxAsync(existingTax);
-
+            await _taxService.UpdateAuthorizedTaxAsync(existingTax, sender);
             return NoContent();
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            _logger.LogError($"Unauthorized access to tax update. {ex.Message}");
+            return Unauthorized(ex.Message);
         }
         catch (KeyNotFoundException ex)
         {
@@ -202,35 +163,22 @@ public class TaxController : ControllerBase
     public async Task<IActionResult> DeleteTax(int id)
     {
         User? sender = await GetUserFromToken();
-
-        if (sender == null || sender.Role == UserRole.Worker)
-            return Unauthorized();
-
+        
         try
         {
-            Tax? tax = await _taxRepository.GetTaxByIdAsync(id);
-
-            if (tax == null)
-            {
-                return NotFound($"Tax with ID {id} not found.");
-            }
-
-            if (sender.Role == UserRole.SuperAdmin)
-            {
-                await _taxRepository.DeleteTaxAsync(id);
-            }
-            else if ((sender.Role == UserRole.Owner || sender.Role == UserRole.Manager) && tax.BusinessId == sender.BusinessId)
-            {
-                await _taxRepository.DeleteTaxAsync(id);
-            }
-            else
-            {
-                return Unauthorized();
-            }
-
-            _logger.LogInformation($"User with id {sender.Id} deleted Tax with id {tax.Id} at {DateTime.Now}");
-
+            await _taxService.DeleteAuthorizedTaxAsync(id,sender);
+            
             return NoContent();
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            _logger.LogError($"Unauthorized access to tax delete from sender with ID {sender.Id}. {ex.Message}");
+            return Unauthorized(ex.Message);
+        }
+        catch (KeyNotFoundException ex)
+        {
+            _logger.LogWarning($"Tax with ID {id} not found: {ex.Message}");
+            return NotFound(ex.Message);
         }
         catch (Exception ex)
         {

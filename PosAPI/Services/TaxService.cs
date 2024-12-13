@@ -1,11 +1,12 @@
 using PosAPI.Repositories;
 using PosAPI.Services.Interfaces;
 using PosShared;
+using PosShared.DTOs;
 using PosShared.Models;
 
 namespace PosAPI.Services;
 
-public class TaxService:ITaxService
+public class TaxService: ITaxService
 {
     private readonly ITaxRepository _taxRepository;
     
@@ -37,6 +38,9 @@ public class TaxService:ITaxService
 
         Tax? tax = await _taxRepository.GetTaxByIdAsync(taxId);
 
+        if (tax == null)
+            throw new KeyNotFoundException();
+
         if (tax.BusinessId != sender.BusinessId && sender.Role != UserRole.SuperAdmin)
             throw new UnauthorizedAccessException();
 
@@ -44,18 +48,43 @@ public class TaxService:ITaxService
 
     }
 
-    public Task UpdateAuthorizedTaxAsync(Tax Tax, User? sender)
+    public async Task UpdateAuthorizedTaxAsync(Tax tax, User? sender)
     {
-        throw new NotImplementedException();
+        ArgumentNullException.ThrowIfNull(tax);
+        
+        if (sender is null || sender.Role is UserRole.Worker)
+            throw new UnauthorizedAccessException();
+                    
+        if(tax.BusinessId != sender.BusinessId && sender.Role != UserRole.SuperAdmin)
+            throw new UnauthorizedAccessException();
+        
+        await _taxRepository.UpdateTaxAsync(tax);
     }
 
-    public Task CreateAuthorizedTaxAsync(Tax Tax, User? sender)
+    public async Task CreateAuthorizedTaxAsync(Tax tax, User? sender)
     {
-        throw new NotImplementedException();
+        ArgumentNullException.ThrowIfNull(tax);
+        
+        if (sender is null || sender.Role is UserRole.Worker)
+            throw new UnauthorizedAccessException();
+                    
+        if(tax.BusinessId != sender.BusinessId && sender.Role != UserRole.SuperAdmin)
+            throw new UnauthorizedAccessException();
+
+        await _taxRepository.AddTaxAsync(tax);
     }
 
-    public Task DeleteAuthorizedTaxAsync(int taxId, User? sender)
+    public async Task DeleteAuthorizedTaxAsync(int taxId, User? sender)
     {
-        throw new NotImplementedException();
+        if (sender is null || sender.Role is UserRole.Worker)
+            throw new UnauthorizedAccessException();
+
+        Tax? tax = await _taxRepository.GetTaxByIdAsync(taxId);
+        if (tax == null)
+            throw new KeyNotFoundException();
+        if(tax.BusinessId != sender.BusinessId && sender.Role != UserRole.SuperAdmin)
+            throw new UnauthorizedAccessException();
+
+        await _taxRepository.DeleteTaxAsync(taxId);
     }
 }

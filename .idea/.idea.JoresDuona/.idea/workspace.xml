@@ -14,21 +14,12 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="fe899842-ea22-4e77-98e6-59d0bab7b320" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/.idea/.idea.JoresDuona/.idea/projectSettingsUpdater.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/.idea.JoresDuona/.idea/workspace.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/PosAPI/Services/Interfaces/ITaxService.cs" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/PosAPI/Services/TaxService.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/PosAPI/Controllers/BusinessesController.cs" beforeDir="false" afterPath="$PROJECT_DIR$/PosAPI/Controllers/BusinessesController.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/.idea.JoresDuona/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/.idea.JoresDuona/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/PosAPI/Controllers/TaxController.cs" beforeDir="false" afterPath="$PROJECT_DIR$/PosAPI/Controllers/TaxController.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/PosAPI/Repositories/BusinessRepository.cs" beforeDir="false" afterPath="$PROJECT_DIR$/PosAPI/Repositories/BusinessRepository.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/PosAPI/Repositories/TaxRepository.cs" beforeDir="false" afterPath="$PROJECT_DIR$/PosAPI/Repositories/TaxRepository.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/PosAPI/Program.cs" beforeDir="false" afterPath="$PROJECT_DIR$/PosAPI/Program.cs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/PosAPI/Services/BusinessService.cs" beforeDir="false" afterPath="$PROJECT_DIR$/PosAPI/Services/BusinessService.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/PosClient/Controllers/BusinessController.cs" beforeDir="false" afterPath="$PROJECT_DIR$/PosClient/Controllers/BusinessController.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/PosClient/Views/Business/Edit.cshtml" beforeDir="false" afterPath="$PROJECT_DIR$/PosClient/Views/Business/Edit.cshtml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/PosClient/Views/Business/Index.cshtml" beforeDir="false" afterPath="$PROJECT_DIR$/PosClient/Views/Business/Index.cshtml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/PosShared/ApiRoutes.cs" beforeDir="false" afterPath="$PROJECT_DIR$/PosShared/ApiRoutes.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/PosShared/DTOs/OrderDTO.cs" beforeDir="false" afterPath="$PROJECT_DIR$/PosShared/DTOs/OrderDTO.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/PosShared/Models/Items/ItemCategory.cs" beforeDir="false" afterPath="$PROJECT_DIR$/PosShared/Models/Items/ItemCategory.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/PosAPI/Services/Interfaces/ITaxService.cs" beforeDir="false" afterPath="$PROJECT_DIR$/PosAPI/Services/Interfaces/ITaxService.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/PosAPI/Services/TaxService.cs" beforeDir="false" afterPath="$PROJECT_DIR$/PosAPI/Services/TaxService.cs" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />

@@ -70,8 +70,11 @@ public class BusinessService : IBusinessService
 
     public async Task CreateAuthorizedBusinessAsync(Business business, User? sender)
     {
-        if (business == null) throw new ArgumentNullException(nameof(business));
-        if (sender == null) throw new ArgumentNullException(nameof(sender));
+        ArgumentNullException.ThrowIfNull(business);
+        
+        if (sender == null) 
+            throw new UnauthorizedAccessException();
+        
 
         if (sender is not { Role: UserRole.SuperAdmin })
             throw new UnauthorizedAccessException("You are not authorized to Create Business.");

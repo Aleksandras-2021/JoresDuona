@@ -110,6 +110,19 @@ public class OrderRepository : IOrderRepository
             throw new KeyNotFoundException($"Order with ID {orderId} not found.");
         }
 
+        //Increase item quantity if open order was deleted
+        if (order.Status == OrderStatus.Open)
+        {
+            foreach (var orderItem in order.OrderItems)
+            {
+                var item = await _context.Items.FindAsync(orderItem.ItemId);
+                if (item != null)
+                {
+                    item.Quantity += orderItem.Quantity;
+                }
+            }
+        }
+        
         // Remove associated variations
         foreach (var orderItem in order.OrderItems)
         {
