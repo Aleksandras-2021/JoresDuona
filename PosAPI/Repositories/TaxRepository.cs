@@ -37,7 +37,7 @@ namespace PosAPI.Repositories
 
 
             Tax? tax = await GetTaxByCategoryAsync(item.Category, item.BusinessId);
-
+            
             return  tax;
         }
 
@@ -57,7 +57,7 @@ namespace PosAPI.Repositories
         public async Task<Tax?> GetTaxByIdAsync(int id)
         {
             Tax? tax = await _context.Set<Tax>().FindAsync(id);
-
+            
             return tax;
         }
 

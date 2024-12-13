@@ -5,7 +5,7 @@ namespace PosAPI.Middlewares;
 public static class RolePermissions
 {
     
-    public static readonly List<UserRole> AllRoles = new()
+    private static readonly List<UserRole> AllRoles = new()
     {
         UserRole.SuperAdmin,
         UserRole.Worker,
@@ -34,7 +34,37 @@ public static class RolePermissions
                 { "Update", new List<UserRole> { UserRole.SuperAdmin, UserRole.Owner } },
                 { "Delete", new List<UserRole> { UserRole.SuperAdmin,UserRole.Owner } }
             }
-        }
+        },
+        // Permissions for "User" endpoints
+        { "User", new Dictionary<string, List<UserRole>>
+            {
+            { "List", new List<UserRole> { UserRole.SuperAdmin,UserRole.Owner,UserRole.Manager } },
+            { "Create", new List<UserRole> { UserRole.SuperAdmin,UserRole.Owner } },
+            { "Read", new List<UserRole> { UserRole.SuperAdmin,UserRole.Owner,UserRole.Manager }},
+            { "Update", new List<UserRole> { UserRole.SuperAdmin,UserRole.Owner,UserRole.Manager } },
+            { "Delete", new List<UserRole> { UserRole.SuperAdmin,UserRole.Owner} }
+            }
+        },
+        // Permissions for "Tax" endpoints
+        { "Tax", new Dictionary<string, List<UserRole>>
+            {
+                { "List", AllRoles },
+                { "Create", new List<UserRole> { UserRole.SuperAdmin,UserRole.Owner,UserRole.Manager } },
+                { "Read", AllRoles},
+                { "Update", new List<UserRole> { UserRole.SuperAdmin,UserRole.Owner,UserRole.Manager } },
+                { "Delete", new List<UserRole> { UserRole.SuperAdmin,UserRole.Owner,UserRole.Manager } }
+            }
+        },
+        // Permissions for "Order" endpoints
+        { "Order", new Dictionary<string, List<UserRole>>
+            {
+                { "List", AllRoles },
+                { "Create", AllRoles },
+                { "Read", AllRoles},
+                { "Update", AllRoles },
+                { "Delete", AllRoles }
+            }
+        },
     };
 
     public static bool CanAccess(string endpoint, string action, UserRole role)

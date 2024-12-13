@@ -1,4 +1,5 @@
-﻿using PosAPI.Repositories;
+﻿using PosAPI.Middlewares;
+using PosAPI.Repositories;
 using PosShared;
 using PosShared.Models;
 
@@ -23,13 +24,11 @@ public class OrderService : IOrderService
     {
         return await _orderRepository.GetOrderByIdAsync(orderId);
     }
-    public async Task<PaginatedResult<Order>> GetAuthorizedOrders(
-        User sender,
-        int pageNumber = 1,
-        int pageSize = 10)
+    public async Task<PaginatedResult<Order>> GetAuthorizedOrders(User sender, int pageNumber = 1, int pageSize = 10)
     {
-        PaginatedResult<Order>? orders = null;
+        AuthorizationHelper.Authorize("Order", "List", sender);
 
+        PaginatedResult<Order>? orders = null;
         if (sender.Role == UserRole.SuperAdmin)
             orders = await _orderRepository.GetAllOrdersAsync(pageNumber, pageSize);
         else if (sender.Role == UserRole.Manager ||
@@ -43,26 +42,19 @@ public class OrderService : IOrderService
     }
     public async Task<Order?> GetAuthorizedOrder(int orderId, User sender)
     {
+        AuthorizationHelper.Authorize("Order", "Read", sender);
+
         var order = await _orderRepository.GetOrderByIdAsync(orderId);
-
-        if (sender.Role != UserRole.SuperAdmin && order.BusinessId != sender.BusinessId)
-            throw new UnauthorizedAccessException();
-
-        if (order == null)
-            throw new KeyNotFoundException($"Order with ID {orderId} not found.");
+        AuthorizationHelper.ValidateOwnershipOrRole(sender,order.BusinessId ,sender.BusinessId, "Read");
 
         return order;
     }
 
     public async Task<Order?> GetAuthorizedOrderForModification(int orderId, User sender)
     {
+        AuthorizationHelper.Authorize("Order", "Update", sender);
         var order = await _orderRepository.GetOrderByIdAsync(orderId);
-
-        if (sender.Role != UserRole.SuperAdmin && order.BusinessId != sender.BusinessId)
-            throw new UnauthorizedAccessException();
-
-        if (order == null)
-            throw new KeyNotFoundException($"Order with ID {orderId} not found.");
+        AuthorizationHelper.ValidateOwnershipOrRole(sender,order.BusinessId ,sender.BusinessId, "Update");
 
         //Owner can modify orders & manager
         if ((order.Status == OrderStatus.Closed || order.Status == OrderStatus.Paid) && sender.Role != UserRole.SuperAdmin)
@@ -74,35 +66,26 @@ public class OrderService : IOrderService
 
     public async Task<OrderItem?> GetAuthorizedOrderItem(int orderItemId, User sender)
     {
+        AuthorizationHelper.Authorize("Order", "Read", sender);
+
         var orderItem = await _orderRepository.GetOrderItemById(orderItemId);
-
-        if (orderItem == null)
-            throw new KeyNotFoundException($"Order item with ID {orderItemId} not found.");
-
         var item = await _itemRepository.GetItemByIdAsync(orderItem.ItemId);
-
-        if (item == null)
-            throw new KeyNotFoundException($"Item with ID {orderItem.ItemId} not found.");
-
-        if (item.BusinessId != sender.BusinessId && sender.Role != UserRole.SuperAdmin)
-            throw new UnauthorizedAccessException("You are not authorized to access this order item.");
-
+        AuthorizationHelper.ValidateOwnershipOrRole(sender,item.BusinessId ,sender.BusinessId, "Read");
+        
         return orderItem;
     }
 
     public async Task<List<OrderItem>?> GetAuthorizedOrderItems(int orderId, User sender)
     {
+        AuthorizationHelper.Authorize("Order", "Read", sender);
+
         var order = await _orderRepository.GetOrderByIdAsync(orderId);
 
-        if (order == null)
-            throw new KeyNotFoundException($"Order with ID {orderId} not found.");
-
-        if (order.BusinessId != sender.BusinessId && sender.Role != UserRole.SuperAdmin)
-            throw new UnauthorizedAccessException("You are not authorized to access this order.");
-
+        AuthorizationHelper.ValidateOwnershipOrRole(sender,order.BusinessId ,sender.BusinessId, "Read");
+        
         var orderItems = await _orderRepository.GetOrderItemsByOrderIdAsync(orderId);
 
-        if (orderItems == null || !orderItems.Any())
+        if (!orderItems.Any())
             throw new KeyNotFoundException($"Order items for order with ID {orderId} not found.");
 
         return orderItems;
@@ -110,29 +93,26 @@ public class OrderService : IOrderService
 
     public async Task<OrderItemVariation?> GetAuthorizedOrderItemVariation(int variationId, int orderItemId, User sender)
     {
+        AuthorizationHelper.Authorize("Order", "Read", sender);
+
         var orderItemVariation = await _orderRepository.GetOrderItemVariationByIdAsync(variationId);
-
-        if (orderItemVariation == null)
-            throw new KeyNotFoundException($"Variation with ID {variationId} not found.");
-
+        
         if (orderItemVariation.OrderItemId != orderItemId)
             throw new KeyNotFoundException($"Variation with ID {variationId} does not belong to OrderItem {orderItemId}.");
 
-        // Fetch the associated OrderItem and Item for further validation
         var orderItem = await _orderRepository.GetOrderItemById(orderItemId);
         var item = await _itemRepository.GetItemByIdAsync(orderItem.ItemId);
 
-        if (item == null)
-            throw new KeyNotFoundException($"Item with ID {orderItem.ItemId} not found.");
+        AuthorizationHelper.ValidateOwnershipOrRole(sender,item.BusinessId ,sender.BusinessId, "Read");
 
-        if (item.BusinessId != sender.BusinessId && sender.Role != UserRole.SuperAdmin)
-            throw new UnauthorizedAccessException("You are not authorized to access this variation.");
 
         return orderItemVariation;
     }
 
     public async Task<ItemVariation?> GetAuthorizedItemVariation(int variationId, User sender)
     {
+        AuthorizationHelper.Authorize("Order", "Read", sender);
+
         var variation = await _itemRepository.GetItemVariationByIdAsync(variationId);
 
         if (variation == null)
@@ -140,49 +120,39 @@ public class OrderService : IOrderService
 
         var item = await _itemRepository.GetItemByIdAsync(variation.ItemId);
 
-        if (item == null)
-            throw new KeyNotFoundException($"Item with ID {variation.ItemId} not found.");
-
-        if (item.BusinessId != sender.BusinessId && sender.Role != UserRole.SuperAdmin)
-            throw new UnauthorizedAccessException("You are not authorized to access this item variation.");
+        AuthorizationHelper.ValidateOwnershipOrRole(sender,item.BusinessId ,sender.BusinessId, "Read");
 
         return variation;
     }
 
     public async Task<List<OrderItemVariation>?> GetAuthorizedOrderItemVariations(int orderItemId, User sender)
     {
+        AuthorizationHelper.Authorize("Order", "Read", sender);
+
         var orderItemVariations = await _orderRepository.GetOrderItemVariationsByOrderItemIdAsync(orderItemId);
 
-        if (orderItemVariations == null || !orderItemVariations.Any())
+        if (orderItemVariations.Any())
             throw new KeyNotFoundException($"No variations found for order item with ID {orderItemId}.");
 
         var orderItem = await _orderRepository.GetOrderItemById(orderItemId);
-        if (orderItem == null)
-            throw new KeyNotFoundException($"Order item with ID {orderItemId} not found.");
-
         var order = await _orderRepository.GetOrderByIdAsync(orderItem.OrderId);
-        if (order == null)
-            throw new KeyNotFoundException($"Order with ID {orderItem.OrderId} not found.");
-
-        if (order.BusinessId != sender.BusinessId && sender.Role != UserRole.SuperAdmin)
-            throw new UnauthorizedAccessException("You are not authorized to access variations for this order item.");
+        
+        AuthorizationHelper.ValidateOwnershipOrRole(sender,order.BusinessId ,sender.BusinessId, "Read");
 
         return orderItemVariations;
     }
 
     public async Task<List<OrderItemVariation>?> GetAuthorizedOrderVariations(int orderId, User sender)
     {
+        AuthorizationHelper.Authorize("Order", "Read", sender);
+
         List<OrderItemVariation> orderVariations = await _orderRepository.GetAllOrderItemVariationsAsync(orderId);
         Order order = await _orderRepository.GetOrderByIdAsync(orderId);
 
         if (orderVariations == null || !orderVariations.Any())
             throw new KeyNotFoundException($"No variations found for order with ID {order}.");
 
-        if (order == null)
-            throw new KeyNotFoundException($"Order with ID {orderId} not found.");
-
-        if (order.BusinessId != sender.BusinessId && sender.Role != UserRole.SuperAdmin)
-            throw new UnauthorizedAccessException("You are not authorized to access variations for this order.");
+        AuthorizationHelper.ValidateOwnershipOrRole(sender,order.BusinessId ,sender.BusinessId, "Read");
 
         return orderVariations;
     }
