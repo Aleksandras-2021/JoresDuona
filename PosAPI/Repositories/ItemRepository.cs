@@ -7,30 +7,25 @@ namespace PosAPI.Repositories
 {
     public class ItemRepository : IItemRepository
     {
-
         private readonly ApplicationDbContext _context;
+
         public ItemRepository(ApplicationDbContext context)
         {
             _context = context;
         }
 
+        // Add a new item
         public async Task AddItemAsync(Item item)
         {
             if (item == null)
-            {
                 throw new ArgumentNullException(nameof(item));
-            }
 
-            // Check if BusinessId exists in the table
             var businessExists = await _context.Businesses.AnyAsync(b => b.Id == item.BusinessId);
 
             if (!businessExists)
-            {
                 throw new Exception($"Business with ID {item.BusinessId} does not exist.");
-            }
 
-            if (item.Business == null)
-                item.Business = await _context.Businesses.FindAsync(item.BusinessId);
+            item.Business ??= await _context.Businesses.FindAsync(item.BusinessId);
 
             try
             {
@@ -43,110 +38,70 @@ namespace PosAPI.Repositories
             }
         }
 
-
+        // Get paginated list of all items
         public async Task<PaginatedResult<Item>> GetAllItemsAsync(int pageNumber, int pageSize)
         {
-            var totalCount = await _context.Set<Item>().CountAsync();
-            
-            var items = await _context.Set<Item>()
+            var totalCount = await _context.Items.CountAsync();
+            var items = await _context.Items
                 .OrderByDescending(item => item.Id)
                 .Skip((pageNumber - 1) * pageSize)
                 .Take(pageSize)
                 .ToListAsync();
-            
+
             return PaginatedResult<Item>.Create(items, totalCount, pageNumber, pageSize);
         }
 
-        public async Task<PaginatedResult<Item>> GetAllBusinessItemsAsync(int businessId,int pageNumber, int pageSize)
+        // Get paginated list of items for a specific business
+        public async Task<PaginatedResult<Item>> GetAllBusinessItemsAsync(int businessId, int pageNumber, int pageSize)
         {
-            var totalCount = await _context.Set<Item>().CountAsync();
-            
-            var items = await _context.Set<Item>()
+            var totalCount = await _context.Items.CountAsync(i => i.BusinessId == businessId);
+            var items = await _context.Items
                 .Where(item => item.BusinessId == businessId)
                 .OrderByDescending(item => item.Id)
                 .Skip((pageNumber - 1) * pageSize)
                 .Take(pageSize)
                 .ToListAsync();
-            
+
             return PaginatedResult<Item>.Create(items, totalCount, pageNumber, pageSize);
         }
 
+        // Get an item by ID
         public async Task<Item> GetItemByIdAsync(int id)
         {
-            var item = await _context.Set<Item>().FindAsync(id);
+            var item = await _context.Items.FindAsync(id);
+
             if (item == null)
-            {
                 throw new KeyNotFoundException($"Item with ID {id} not found.");
-            }
 
             return item;
         }
 
+        // Update an item
         public async Task UpdateItemAsync(Item item)
         {
             if (item == null)
-            {
                 throw new ArgumentNullException(nameof(item));
-            }
 
-            var existingItem = await _context.Set<Item>().FindAsync(item.Id);
+            var existingItem = await _context.Items.FindAsync(item.Id);
+
             if (existingItem == null)
-            {
                 throw new KeyNotFoundException($"Item with ID {item.Id} not found.");
-            }
 
-            existingItem.Name = item.Name;
-            existingItem.BusinessId = item.BusinessId;
-            existingItem.Description = item.Description;
-            existingItem.BasePrice = item.BasePrice;
-            existingItem.Price = item.Price;
-            existingItem.Category = item.Category;
-            existingItem.Quantity = item.Quantity;
-
-
-            _context.Set<Item>().Update(existingItem);
+            _context.Items.Update(existingItem);
             await _context.SaveChangesAsync();
         }
 
+        // Delete an item and its associated variations
         public async Task DeleteItemAsync(int id)
         {
-            // Find the item by ID
-            var item = await _context.Set<Item>().FindAsync(id);
+            var item = await _context.Items.FindAsync(id);
+
             if (item == null)
-            {
                 throw new KeyNotFoundException($"Item with ID {id} not found.");
-            }
 
-            // Fetch all associated variations
-            var variations = await _context.Set<ItemVariation>().Where(v => v.ItemId == id).ToListAsync();
-
-            // Remove all associated variations
-            _context.Set<ItemVariation>().RemoveRange(variations);
-
-            // Remove the item itself
-            _context.Set<Item>().Remove(item);
-
-            // Save changes to the database
-            await _context.SaveChangesAsync();
-        }
-
-
-        public async Task ChangeItemQuanityAsync(int? itemid, int newQuantity)
-        {
-            if (itemid == null)
-            {
-                throw new ArgumentException(nameof(itemid));
-            }
-            var item = await _context.Set<Item>().FindAsync(itemid);
-
-            if (item == null)
-            {
-                throw new KeyNotFoundException($"Item with ID {itemid} not found.");
-            }
-
-            item.Quantity = newQuantity;
-
-            _context.Set<Item>().Update(item);
+            var variations = await _context.ItemVariations.Where(v => v.ItemId == id).ToListAsync();
+            _context.ItemVariations.RemoveRange(variations);
+            _context.Items.Remove(item);
 
             await _context.SaveChangesAsync();
         }
@@ -154,7 +109,7 @@ namespace PosAPI.Repositories
         // Get all variations for a specific item
         public async Task<List<ItemVariation>> GetItemVariationsAsync(int itemId)
         {
-            return await _context.Set<ItemVariation>()
+            return await _context.ItemVariations
                 .Where(variation => variation.ItemId == itemId)
                 .OrderBy(variation => variation.Id)
                 .ToListAsync();
@@ -163,11 +118,10 @@ namespace PosAPI.Repositories
         // Get a specific variation by ID
         public async Task<ItemVariation> GetItemVariationByIdAsync(int variationId)
         {
-            var variation = await _context.Set<ItemVariation>().FindAsync(variationId);
+            var variation = await _context.ItemVariations.FindAsync(variationId);
+
             if (variation == null)
-            {
                 throw new KeyNotFoundException($"ItemVariation with ID {variationId} not found.");
-            }
 
             return variation;
         }
@@ -176,18 +130,14 @@ namespace PosAPI.Repositories
         public async Task AddItemVariationAsync(ItemVariation itemVariation)
         {
             if (itemVariation == null)
-            {
                 throw new ArgumentNullException(nameof(itemVariation));
-            }
 
-            // Ensure the related item exists
-            var itemExists = await _context.Set<Item>().AnyAsync(item => item.Id == itemVariation.ItemId);
+            var itemExists = await _context.Items.AnyAsync(item => item.Id == itemVariation.ItemId);
+
             if (!itemExists)
-            {
                 throw new KeyNotFoundException($"Item with ID {itemVariation.ItemId} not found.");
-            }
 
-            await _context.Set<ItemVariation>().AddAsync(itemVariation);
+            await _context.ItemVariations.AddAsync(itemVariation);
             await _context.SaveChangesAsync();
         }
 
@@ -195,37 +145,28 @@ namespace PosAPI.Repositories
         public async Task UpdateItemVariationAsync(ItemVariation itemVariation)
         {
             if (itemVariation == null)
-            {
                 throw new ArgumentNullException(nameof(itemVariation));
-            }
 
-            var existingVariation = await _context.Set<ItemVariation>().FindAsync(itemVariation.Id);
+            var existingVariation = await _context.ItemVariations.FindAsync(itemVariation.Id);
+
             if (existingVariation == null)
-            {
                 throw new KeyNotFoundException($"ItemVariation with ID {itemVariation.Id} not found.");
-            }
 
-            existingVariation.Name = itemVariation.Name;
-            existingVariation.AdditionalPrice = itemVariation.AdditionalPrice;
-            existingVariation.ItemId = itemVariation.ItemId;
-
-            _context.Set<ItemVariation>().Update(existingVariation);
+            _context.ItemVariations.Update(existingVariation);
             await _context.SaveChangesAsync();
         }
 
         // Delete a variation by ID
         public async Task DeleteItemVariationAsync(int variationId)
         {
-            var variation = await _context.Set<ItemVariation>().FindAsync(variationId);
-            if (variation == null)
-            {
-                throw new KeyNotFoundException($"ItemVariation with ID {variationId} not found.");
-            }
+            var variation = await _context.ItemVariations.FindAsync(variationId);
 
-            _context.Set<ItemVariation>().Remove(variation);
+            if (variation == null)
+                throw new KeyNotFoundException($"ItemVariation with ID {variationId} not found.");
+
+            _context.ItemVariations.Remove(variation);
             await _context.SaveChangesAsync();
         }
-
-
     }
 }
+
