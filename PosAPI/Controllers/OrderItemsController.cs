@@ -117,8 +117,6 @@ public class OrderItemsController : ControllerBase
             decimal taxedAmount;
             if (tax != null)
             {
-
-
                 if (tax.IsPercentage)
                 {
                     taxedAmount = item.Price * tax.Amount / 100;
@@ -131,9 +129,7 @@ public class OrderItemsController : ControllerBase
             else
             {
                 taxedAmount = 0; //No taxes if Item aint got a tax bracket
-
             }
-
 
             OrderItem orderItem = new OrderItem
             {

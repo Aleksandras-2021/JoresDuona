@@ -52,9 +52,7 @@ public class TaxController : ControllerBase
             return StatusCode(500, "Internal server error");
         }
     }
-
-
-
+    
     // GET: api/Items/{id}
     [HttpGet("{id}")]
     public async Task<IActionResult> GetTaxById(int id)
