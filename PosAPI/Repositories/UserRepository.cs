@@ -2,12 +2,12 @@
 using PosAPI.Data.DbContext;
 using PosShared.Models;
 
-namespace PosAPI.Repositories;
-
+namespace PosAPI.Repositories
+{
     public class UserRepository : IUserRepository
     {
         private readonly ApplicationDbContext _context;
-        public UserRepository(ApplicationDbContext context) =>_context = context;
+        public UserRepository(ApplicationDbContext context) => _context = context;
 
         public async Task AddUserAsync(User user)
         {
@@ -76,11 +76,8 @@ namespace PosAPI.Repositories;
         {
             try
             {
-                if (user == null)
-                {
-                    throw new ArgumentNullException(nameof(user));
-                }
-
+                _context.Users.Update(user);
+                
                 await _context.SaveChangesAsync();
             }
             catch (DbUpdateException e)
@@ -89,3 +86,4 @@ namespace PosAPI.Repositories;
             }
         }
     }
+}
