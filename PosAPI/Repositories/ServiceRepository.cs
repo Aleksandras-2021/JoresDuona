@@ -14,22 +14,6 @@ public class ServiceRepository : IServiceRepository
 
     public async Task AddServiceAsync(Service service)
     {
-        if (service == null)
-        {
-            throw new ArgumentNullException(nameof(service));
-        }
-
-        // Check if BusinessId exists in the table
-        var businessExists = await _context.Businesses.AnyAsync(b => b.Id == service.BusinessId);
-
-        if (!businessExists)
-        {
-            throw new Exception($"Business with ID {service.BusinessId} does not exist.");
-        }
-
-        if (service.Business == null)
-            service.Business = await _context.Businesses.FindAsync(service.BusinessId);
-
         try
         {
             await _context.Services.AddAsync(service);
@@ -61,18 +45,13 @@ public class ServiceRepository : IServiceRepository
         var service = await _context.Services.FindAsync(id);
         if (service == null)
         {
-            throw new Exception($"Service with ID {id} not found.");
+            throw new KeyNotFoundException($"Service with ID {id} not found.");
         }
         return service;
     }
 
     public async Task UpdateServiceAsync(Service service)
     {
-        if (service == null)
-        {
-            throw new ArgumentNullException(nameof(service));
-        }
-
         try
         {
             _context.Services.Update(service);
@@ -90,7 +69,7 @@ public class ServiceRepository : IServiceRepository
 
         if (service == null)
         {
-            throw new Exception($"Service with ID {id} not found.");
+            throw new KeyNotFoundException($"Service with ID {id} not found.");
         }
 
         try

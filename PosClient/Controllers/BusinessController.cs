@@ -86,13 +86,13 @@ namespace PosClient.Controllers
             string? token = Request.Cookies["authToken"];
             _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
-            var apiUrl = _apiUrl + $"/api/Businesses/{id}";
+            var apiUrl = ApiRoutes.Business.GetById(id);
             var response = await _httpClient.GetAsync(apiUrl);
 
             if (response.IsSuccessStatusCode)
             {
                 var businessData = await response.Content.ReadAsStringAsync();
-                var business = JsonSerializer.Deserialize<Business>(businessData);
+                var business = JsonSerializer.Deserialize<Business>(businessData, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
 
                 if (business != null)
                 {
@@ -105,7 +105,7 @@ namespace PosClient.Controllers
             return NotFound();
         }
 
-        // POST: Business/Edit/5
+        // POST: Business/Edit/
         [HttpPost]
         public async Task<IActionResult> Edit(int id, Business business)
         {
@@ -119,10 +119,12 @@ namespace PosClient.Controllers
                 string? token = Request.Cookies["authToken"];
                 _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
-                var apiUrl = _apiUrl + $"/api/Businesses/{id}";
+                var apiUrl = ApiRoutes.Business.Update(id);
                 var content = new StringContent(JsonSerializer.Serialize(business), Encoding.UTF8, "application/json");
 
                 var response = await _httpClient.PutAsync(apiUrl, content);
+
+                Console.WriteLine("Business Id : " + business.Id);
 
                 if (response.IsSuccessStatusCode)
                 {
@@ -141,7 +143,7 @@ namespace PosClient.Controllers
             string? token = Request.Cookies["authToken"];
             _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
-            var apiUrl = _apiUrl + $"/api/Businesses/{id}";
+            var apiUrl = ApiRoutes.Business.GetById(1);
             var response = await _httpClient.GetAsync(apiUrl);
 
             if (response.IsSuccessStatusCode)
@@ -165,12 +167,11 @@ namespace PosClient.Controllers
             string? token = Request.Cookies["authToken"];
             _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
-            var apiUrl = _apiUrl + $"/api/Businesses/{id}";
+            var apiUrl = ApiRoutes.Business.Delete(id);
             var response = await _httpClient.DeleteAsync(apiUrl);
 
             if (response.IsSuccessStatusCode)
             {
-                // Redirect to the Index action after successful deletion
                 return RedirectToAction("Index");
             }
 

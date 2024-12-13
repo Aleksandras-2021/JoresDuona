@@ -34,9 +34,9 @@ public class BusinessRepository : IBusinessRepository
         var totalCount = await _context.Set<Business>().CountAsync();
 
         var businesses = await _context.Set<Business>()
-            .OrderByDescending(business => business.Id)
             .Skip((pageNumber - 1) * pageSize)
             .Take(pageSize)
+            .OrderByDescending(business => business.Id)
             .ToListAsync();
         return PaginatedResult<Business>.Create(businesses, totalCount, pageNumber, pageSize);
     }

@@ -30,10 +30,7 @@ public class ItemService: IItemService
 
         return items;
     }
-
-
-
-
+    
     public async Task<Item?> GetAuthorizedItemByIdAsync(int id, User sender)
     {
         var item = await _itemRepository.GetItemByIdAsync(id);

@@ -45,7 +45,7 @@ public class BusinessService : IBusinessService
         if (businessId != sender.BusinessId && sender.Role != UserRole.SuperAdmin)
             throw new UnauthorizedAccessException("You are not authorized to access this business.");
 
-        var business = await _businessRepository.GetBusinessByIdAsync(sender.BusinessId);
+        Business? business = await _businessRepository.GetBusinessByIdAsync(businessId);
 
         if (business == null)
             throw new KeyNotFoundException($"Business with ID {businessId} not found.");
@@ -70,8 +70,11 @@ public class BusinessService : IBusinessService
 
     public async Task CreateAuthorizedBusinessAsync(Business business, User? sender)
     {
-        if (business == null) throw new ArgumentNullException(nameof(business));
-        if (sender == null) throw new ArgumentNullException(nameof(sender));
+        ArgumentNullException.ThrowIfNull(business);
+        
+        if (sender == null) 
+            throw new UnauthorizedAccessException();
+        
 
         if (sender is not { Role: UserRole.SuperAdmin })
             throw new UnauthorizedAccessException("You are not authorized to Create Business.");
