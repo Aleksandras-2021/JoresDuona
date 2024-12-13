@@ -60,7 +60,6 @@ namespace PosAPI.Repositories
                 .ToListAsync();
 
             return PaginatedResult<Item>.Create(items, totalCount, pageNumber, pageSize);
-            return PaginatedResult<Item>.Create(items, totalCount, pageNumber, pageSize);
         }
 
         // Get an item by ID
