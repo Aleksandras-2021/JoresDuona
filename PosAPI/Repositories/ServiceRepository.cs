@@ -19,17 +19,6 @@ public class ServiceRepository : IServiceRepository
             throw new ArgumentNullException(nameof(service));
         }
 
-        // Check if BusinessId exists in the table
-        var businessExists = await _context.Businesses.AnyAsync(b => b.Id == service.BusinessId);
-
-        if (!businessExists)
-        {
-            throw new Exception($"Business with ID {service.BusinessId} does not exist.");
-        }
-
-        if (service.Business == null)
-            service.Business = await _context.Businesses.FindAsync(service.BusinessId);
-
         try
         {
             await _context.Services.AddAsync(service);

@@ -78,12 +78,12 @@ namespace PosAPI.Repositories
             return payment;
         }
 
-        public Task UpdatePaymentAsync(Payment payment)
+        public async Task UpdatePaymentAsync(Payment payment)
         {
             throw new NotImplementedException();
         }
 
-        public Task DeletePaymentAsync(int id)
+        public async Task DeletePaymentAsync(int id)
         {
             throw new NotImplementedException();
         }

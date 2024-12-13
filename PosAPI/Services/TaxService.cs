@@ -28,7 +28,6 @@ public class TaxService: ITaxService
             taxes = await _taxRepository.GetAllBusinessTaxesAsync(sender.BusinessId);
 
         return taxes;
-
     }
 
     public async Task<Tax> GetAuthorizedTaxByIdAsync(int taxId, User? sender)
@@ -45,7 +44,6 @@ public class TaxService: ITaxService
             throw new UnauthorizedAccessException();
 
         return tax;
-
     }
 
     public async Task UpdateAuthorizedTaxAsync(Tax tax, User? sender)

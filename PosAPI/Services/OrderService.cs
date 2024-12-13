@@ -65,7 +65,7 @@ public class OrderService : IOrderService
             throw new KeyNotFoundException($"Order with ID {orderId} not found.");
 
         //Owner can modify orders & manager
-        if ((order.Status == OrderStatus.Closed || order.Status == OrderStatus.Paid) && sender.Role == UserRole.Worker)
+        if ((order.Status == OrderStatus.Closed || order.Status == OrderStatus.Paid) && sender.Role != UserRole.SuperAdmin)
             throw new UnauthorizedAccessException("You are not authorized to modify closed orders.");
 
         return order;

@@ -64,7 +64,6 @@ public class TaxController : ControllerBase
         try
         {
             Tax? tax =  await _taxService.GetAuthorizedTaxByIdAsync(id,sender);
-
             return Ok(tax);
         }
         catch (KeyNotFoundException ex)
@@ -155,9 +154,7 @@ public class TaxController : ControllerBase
             return StatusCode(500, "Internal server error");
         }
     }
-
-
-
+    
     // DELETE: api/Tax/{id}
     [HttpDelete("{id}")]
     public async Task<IActionResult> DeleteTax(int id)
