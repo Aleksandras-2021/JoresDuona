@@ -1,11 +1,13 @@
-﻿using PosShared.Models;
+﻿using PosShared;
+using PosShared.Models;
 using PosShared.ViewModels;
 
 namespace PosAPI.Repositories;
 
 public interface IUserRepository
 {
-    Task<List<User>> GetAllUsersAsync();
+    Task<PaginatedResult<User>> GetAllUsersAsync(int pageNumber,int pageSize);
+    Task<PaginatedResult<User>> GetAllUsersByBusinessIdAsync(int businessId,int pageNumber,int pageSize);
     Task<User?> GetUserByIdAsync(int? userId);
     Task<List<User>> GetAllUsersByBusinessIdAsync(int businessId);
     Task<User?> GetUserByEmailAsync(string email);
