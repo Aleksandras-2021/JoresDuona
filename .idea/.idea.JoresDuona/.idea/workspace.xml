@@ -14,31 +14,30 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="fe899842-ea22-4e77-98e6-59d0bab7b320" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/PosAPI/Services/Interfaces/IServiceService.cs" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/PosAPI/Services/ServiceService.cs" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/PosShared/DTOs/ReservationCreateDTO.cs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/.idea.JoresDuona/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/.idea.JoresDuona/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/PosAPI/BusinessLogic/IServiceBusinessLogic.cs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/PosAPI/BusinessLogic/ServiceBusinessLogic.cs" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/PosAPI/Controllers/OrderController.cs" beforeDir="false" afterPath="$PROJECT_DIR$/PosAPI/Controllers/OrderController.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/PosAPI/Controllers/OrderItemsVariationsController.cs" beforeDir="false" afterPath="$PROJECT_DIR$/PosAPI/Controllers/OrderItemsVariationsController.cs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/PosAPI/Controllers/ReservationController.cs" beforeDir="false" afterPath="$PROJECT_DIR$/PosAPI/Controllers/ReservationController.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/PosAPI/Controllers/ServiceController.cs" beforeDir="false" afterPath="$PROJECT_DIR$/PosAPI/Controllers/ServiceController.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/PosAPI/Middlewares/AuthorizationHelper.cs" beforeDir="false" afterPath="$PROJECT_DIR$/PosAPI/Middlewares/AuthorizationHelper.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/PosAPI/Middlewares/RolePermissions.cs" beforeDir="false" afterPath="$PROJECT_DIR$/PosAPI/Middlewares/RolePermissions.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/PosAPI/Migrations/ApplicationDbContextModelSnapshot.cs" beforeDir="false" afterPath="$PROJECT_DIR$/PosAPI/Migrations/ApplicationDbContextModelSnapshot.cs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/PosAPI/Program.cs" beforeDir="false" afterPath="$PROJECT_DIR$/PosAPI/Program.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/PosAPI/Repositories/IReservationRepository.cs" beforeDir="false" afterPath="$PROJECT_DIR$/PosAPI/Repositories/Interfaces/IReservationRepository.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/PosAPI/Repositories/Interfaces/IOrderRepository.cs" beforeDir="false" afterPath="$PROJECT_DIR$/PosAPI/Repositories/Interfaces/IOrderRepository.cs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/PosAPI/Repositories/OrderRepository.cs" beforeDir="false" afterPath="$PROJECT_DIR$/PosAPI/Repositories/OrderRepository.cs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/PosAPI/Repositories/ReservationRepository.cs" beforeDir="false" afterPath="$PROJECT_DIR$/PosAPI/Repositories/ReservationRepository.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/PosAPI/Repositories/ScheduleRepository.cs" beforeDir="false" afterPath="$PROJECT_DIR$/PosAPI/Repositories/ScheduleRepository.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/PosAPI/Repositories/TaxRepository.cs" beforeDir="false" afterPath="$PROJECT_DIR$/PosAPI/Repositories/TaxRepository.cs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/PosAPI/Services/Interfaces/IOrderService.cs" beforeDir="false" afterPath="$PROJECT_DIR$/PosAPI/Services/Interfaces/IOrderService.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/PosAPI/Services/Interfaces/IServiceService.cs" beforeDir="false" afterPath="$PROJECT_DIR$/PosAPI/Services/Interfaces/IServiceService.cs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/PosAPI/Services/OrderService.cs" beforeDir="false" afterPath="$PROJECT_DIR$/PosAPI/Services/OrderService.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/PosAPI/Services/ServiceService.cs" beforeDir="false" afterPath="$PROJECT_DIR$/PosAPI/Services/ServiceService.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/PosClient/Controllers/OrderController.cs" beforeDir="false" afterPath="$PROJECT_DIR$/PosClient/Controllers/OrderController.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/PosClient/Controllers/PaymentController.cs" beforeDir="false" afterPath="$PROJECT_DIR$/PosClient/Controllers/PaymentController.cs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/PosClient/Controllers/ReservationController.cs" beforeDir="false" afterPath="$PROJECT_DIR$/PosClient/Controllers/ReservationController.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/PosClient/Controllers/ServiceController.cs" beforeDir="false" afterPath="$PROJECT_DIR$/PosClient/Controllers/ServiceController.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/PosClient/Views/Order/SelectItems.cshtml" beforeDir="false" afterPath="$PROJECT_DIR$/PosClient/Views/Order/SelectItems.cshtml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/PosClient/Views/Reservation/Index.cshtml" beforeDir="false" afterPath="$PROJECT_DIR$/PosClient/Views/Reservation/Index.cshtml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/PosClient/Views/Service/Reserve.cshtml" beforeDir="false" afterPath="$PROJECT_DIR$/PosClient/Views/Service/Reserve.cshtml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/PosClient/Views/Shared/_Layout.cshtml" beforeDir="false" afterPath="$PROJECT_DIR$/PosClient/Views/Shared/_Layout.cshtml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/PosShared/ApiRoutes.cs" beforeDir="false" afterPath="$PROJECT_DIR$/PosShared/ApiRoutes.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/PosShared/Models/Service/OrderService.cs" beforeDir="false" afterPath="$PROJECT_DIR$/PosShared/Models/Service/OrderService.cs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/PosShared/Models/Service/Reservation/Reservation.cs" beforeDir="false" afterPath="$PROJECT_DIR$/PosShared/Models/Service/Reservation/Reservation.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/PosShared/ViewModels/ReservationViewModel.cs" beforeDir="false" afterPath="$PROJECT_DIR$/PosShared/ViewModels/ReservationViewModel.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/PosShared/ViewModels/SelectItemsViewModel.cs" beforeDir="false" afterPath="$PROJECT_DIR$/PosShared/ViewModels/SelectItemsViewModel.cs" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -114,7 +113,7 @@
       <workItem from="1734019440105" duration="3380000" />
       <workItem from="1734023136028" duration="76000" />
       <workItem from="1734030494081" duration="9657000" />
-      <workItem from="1734179569301" duration="15891000" />
+      <workItem from="1734179569301" duration="30951000" />
     </task>
     <servers />
   </component>
@@ -123,6 +122,25 @@
   </component>
   <component name="VcsManagerConfiguration">
     <option name="CLEAR_INITIAL_COMMIT_MESSAGE" value="true" />
+  </component>
+  <component name="XDebuggerManager">
+    <breakpoint-manager>
+      <breakpoints>
+        <line-breakpoint enabled="true" type="DotNet Breakpoints">
+          <url>file://$PROJECT_DIR$/PosShared/Models/Service/Reservation/TimeSlot.cs</url>
+          <line>18</line>
+          <properties documentPath="C:\Users\Lex\Desktop\repos\JoresDuona\PosShared\Models\Service\Reservation\TimeSlot.cs" initialLine="18" containingFunctionPresentation="Method 'OverlapsWith'">
+            <startOffsets>
+              <option value="530" />
+            </startOffsets>
+            <endOffsets>
+              <option value="531" />
+            </endOffsets>
+          </properties>
+          <option name="timeStamp" value="2" />
+        </line-breakpoint>
+      </breakpoints>
+    </breakpoint-manager>
   </component>
   <component name="XSLT-Support.FileAssociations.UIState">
     <expand />

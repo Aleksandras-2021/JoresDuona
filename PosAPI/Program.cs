@@ -60,11 +60,10 @@ builder.Services.AddScoped<IScheduleRepository, ScheduleRepository>();
 
 //Add Services here
 builder.Services.AddScoped<IOrderService, PosAPI.Services.OrderService>();
-builder.Services.AddScoped<IItemService, PosAPI.Services.ItemService>();
+builder.Services.AddScoped<IItemService, ItemService>();
 builder.Services.AddScoped<IBusinessService, BusinessService>();
 builder.Services.AddScoped<ITaxService, TaxService>();
 builder.Services.AddScoped<IUserService, UserService>();
-
 builder.Services.AddScoped<IServiceService, ServiceService>();
 
 

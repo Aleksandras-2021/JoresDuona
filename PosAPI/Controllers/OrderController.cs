@@ -265,6 +265,35 @@ public class OrderController : ControllerBase
             return StatusCode(500, "Internal server error.");
         }
     }
+    
+            [HttpGet("{orderId}/Services")]
+    public async Task<IActionResult> GetAllOrderServices(int orderId)
+    {
+        User? sender = await GetUserFromToken();
+
+        try
+        {
+            var orderServices = await _orderService.GetAuthorizedOrderServices(orderId, sender);
+
+            return Ok(orderServices);
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            _logger.LogError($"{ex.Message}");
+            return Unauthorized(ex.Message);
+        }
+        catch (KeyNotFoundException ex)
+        {
+            _logger.LogError($"{ex.Message}");
+
+            return NotFound(ex.Message);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError($"Error retrieving order item variations: {ex.Message}");
+            return StatusCode(500, "Internal server error.");
+        }
+    }
 
 
     #region HelperMethods

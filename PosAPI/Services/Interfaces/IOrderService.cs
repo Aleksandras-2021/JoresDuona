@@ -5,7 +5,6 @@ namespace PosAPI.Services;
 
 public interface IOrderService
 {
-    Task<Order?> GetOrderByIdAsync(int orderId);
     Task<PaginatedResult<Order>> GetAuthorizedOrders(User sender, int pageNumber, int pageSize);
     Task<int> CreateAuthorizedOrder(User? sender);
 
@@ -17,6 +16,7 @@ public interface IOrderService
     Task<ItemVariation?> GetAuthorizedItemVariation(int variationId, User sender);
     Task<List<OrderItemVariation>?> GetAuthorizedOrderItemVariations(int orderItemId, User sender);
     Task<List<OrderItemVariation>?> GetAuthorizedOrderVariations(int orderId, User sender);
+    Task<List<PosShared.Models.OrderService>?> GetAuthorizedOrderServices(int orderId, User? sender);
 
     Task RecalculateOrderCharge(int orderId);
 }

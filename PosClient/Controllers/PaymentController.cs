@@ -131,7 +131,7 @@ public class PaymentController : Controller
             }
 
             // Get Order Item Variations
-            var orderItemVariationsApiUrl = ApiRoutes.Orders.GetOrderVariations(orderId);
+            var orderItemVariationsApiUrl = ApiRoutes.Order.GetOrderVariations(orderId);
             var orderItemVariationsResponse = await _httpClient.GetAsync(orderItemVariationsApiUrl);
 
             List<OrderItemVariation>? orderItemVariations = null;

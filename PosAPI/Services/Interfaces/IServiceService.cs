@@ -6,6 +6,7 @@ namespace PosAPI.Services.Interfaces;
 public interface IServiceService
 {
      Task<List<DateTime>> GetAvailableTimeSlots(int serviceId);
-     Task CreateReservation(ReservationCreateDTO reservation, User? sender);
+     Task CreateAuthorizedReservation(ReservationCreateDTO reservation, User? sender);
+     Task DeleteAuthorizedReservationAsync(int reservationId, User? sender);
 
 }

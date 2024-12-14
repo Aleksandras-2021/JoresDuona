@@ -19,11 +19,7 @@ public class OrderService : IOrderService
         _itemRepository = itemRepository;
         _taxRepository = taxRepository;
     }
-
-    public async Task<Order?> GetOrderByIdAsync(int orderId)
-    {
-        return await _orderRepository.GetOrderByIdAsync(orderId);
-    }
+    
     public async Task<PaginatedResult<Order>> GetAuthorizedOrders(User sender, int pageNumber = 1, int pageSize = 10)
     {
         AuthorizationHelper.Authorize("Order", "List", sender);
@@ -178,6 +174,18 @@ public class OrderService : IOrderService
 
         return orderVariations;
     }
+    
+    public async Task<List<PosShared.Models.OrderService>?> GetAuthorizedOrderServices(int orderId, User? sender)
+    {
+        AuthorizationHelper.Authorize("Service", "Read", sender);
+
+        List<PosShared.Models.OrderService> orderVariations = await _orderRepository.GetAllOrderServices(orderId);
+        Order order = await _orderRepository.GetOrderByIdAsync(orderId);
+        AuthorizationHelper.ValidateOwnershipOrRole(sender,order.BusinessId ,sender.BusinessId, "Read");
+
+        return orderVariations;
+    }
+
 
 
     public async Task RecalculateOrderCharge(int orderId)
@@ -189,6 +197,7 @@ public class OrderService : IOrderService
 
         List<OrderItem> orderItems = await _orderRepository.GetOrderItemsByOrderIdAsync(orderId);
         List<OrderItemVariation> orderItemVariations = await _orderRepository.GetOrderItemVariationsByOrderIdAsync(orderId);
+        List<PosShared.Models.OrderService> orderServices = await _orderRepository.GetAllOrderServices(orderId);
         Tax? tax;
 
         order.ChargeAmount = 0;
@@ -233,6 +242,13 @@ public class OrderService : IOrderService
                 order.TaxAmount = 0;
             }
         }
+
+        foreach (var service in orderServices)
+        {
+            order.TaxAmount += service.Tax;
+            order.ChargeAmount += service.Tax + service.Charge;
+        }
+        
         await _orderRepository.UpdateOrderAsync(order);
     }
 

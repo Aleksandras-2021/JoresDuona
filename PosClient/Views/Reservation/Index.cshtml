@@ -38,10 +38,14 @@
                         <td>@reservation.CustomerPhone</td>
                         <td>@reservation.ReservationTime.ToString("dd/MM/yyyy HH:mm")</td>
                         <td>@reservation.Status</td>
-                        <td>
-                            <a asp-action="Edit" asp-route-id="@reservation.Id" class="btn btn-sm btn-primary">Edit</a>
-                            <a asp-action="Cancel" asp-route-id="@reservation.Id" class="btn btn-sm btn-danger">Cancel</a>
-                        </td>
+              <td>
+                                    <form asp-action="Cancel" method="post" class="m-0">
+                                        <input type="hidden" name="reservationId" value="@reservation.Id" />
+                                        <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('Are you sure you want to delete this reservation?');">
+                                            <i class="bi bi-trash"></i> Delete
+                                        </button>
+                                    </form>
+                                </td>
                     </tr>
                 }
             </tbody>

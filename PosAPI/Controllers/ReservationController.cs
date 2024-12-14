@@ -81,7 +81,7 @@ public class ReservationController : ControllerBase
 
         try
         {
-            await _serviceService.CreateReservation(dto, sender);
+            await _serviceService.CreateAuthorizedReservation(dto, sender);
             return Ok();
         }
         catch (Exception ex)
@@ -90,6 +90,35 @@ public class ReservationController : ControllerBase
             return StatusCode(500, "Internal server error");
         }
     }
+    
+    
+    [HttpDelete("{reservationId}")]
+    public async Task<IActionResult> Delete(int reservationId)
+    {
+        User? sender = await GetUserFromToken();
+
+        try
+        {
+            await _serviceService.DeleteAuthorizedReservationAsync(reservationId,sender);
+            return Ok();
+        }
+        catch (KeyNotFoundException ex)
+        {
+            _logger.LogError($"{ex.Message}");
+            return NotFound(ex.Message);
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            _logger.LogError($"{ex.Message}");
+            return Unauthorized(ex.Message);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError($"Error deleting reservation: {ex.Message}");
+            return StatusCode(500, "Internal server error");
+        }
+    }
+
 
     // Add other reservation-related endpoints: modify, cancel, etc.
 

@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.ChangeTracking;
 using PosAPI.Data.DbContext;
 using PosShared.Models;
 
@@ -15,6 +16,9 @@ namespace PosAPI.Repositories
             _logger = logger;
         }
 
+        
+        
+        //Deprecated method, but leave here for now
         public async Task<bool> CheckAvailability(int serviceId, DateTime requestedTime)
         {
             try
@@ -56,12 +60,13 @@ namespace PosAPI.Repositories
                 r.ReservationTime.AddMinutes(r.Service.DurationInMinutes) > startTime);
         }
 
-        // Implement these with NotImplementedException for now as they're not immediately needed
         public async Task AddReservationAsync(Reservation reservation)
         {
             try
             {
+                reservation.BookedAt = DateTime.SpecifyKind(reservation.BookedAt, DateTimeKind.Utc);
                 reservation.ReservationTime = DateTime.SpecifyKind(reservation.ReservationTime, DateTimeKind.Utc);
+                reservation.ReservationEndTime = DateTime.SpecifyKind(reservation.ReservationEndTime, DateTimeKind.Utc);
                 await _context.Reservations.AddAsync(reservation);
                 await _context.SaveChangesAsync();
             }
@@ -106,8 +111,29 @@ namespace PosAPI.Repositories
             return customer;
         }
         
+        public async Task<bool> IsReservationOverlappingAsync(int serviceId, DateTime startTime, DateTime endTime)
+        {
+            startTime = DateTime.SpecifyKind(startTime, DateTimeKind.Utc);
+            endTime = DateTime.SpecifyKind(endTime, DateTimeKind.Utc);
+            
+            return await _context.Reservations
+                .AnyAsync(r =>
+                        r.ServiceId == serviceId &&  // Match the service
+                        r.ReservationTime < endTime &&     // Check if existing reservation starts before the new one ends
+                        r.ReservationEndTime > startTime        // Check if existing reservation ends after the new one starts
+                );
+        }
+        
         public Task<List<Reservation>> GetAllBusinessReservationsAsync(int businessId) => throw new NotImplementedException();
-        public Task<Reservation> GetReservationByIdAsync(int id) => throw new NotImplementedException();
+
+        public async Task<Reservation> GetReservationByIdAsync(int id)
+        {
+            var reservation = await _context.Reservations.FindAsync(id);
+            if (reservation == null)
+                throw new KeyNotFoundException($"Reservation with id {id} not be deleted");
+            
+            return reservation;
+        }
         public Task<bool> IsEmployeeAvailable(int employeeId, DateTime requestedTime, int duration) => throw new NotImplementedException();
         public Task UpdateReservationAsync(Reservation reservation) => throw new NotImplementedException();
     }

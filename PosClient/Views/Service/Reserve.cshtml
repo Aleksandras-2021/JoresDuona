@@ -1,10 +1,9 @@
 @model PosShared.ViewModels.ReservationViewModel
 
-
 <div class="container mt-4">
     <h2>Make a Reservation</h2>
     
-        <form asp-action="Reserve" method="post">
+<form asp-controller="Reservation" asp-action="Reserve" method="post">
                 <input asp-for="ServiceId" class="form-control" required hidden />
             
             <div class="form-group mb-3">

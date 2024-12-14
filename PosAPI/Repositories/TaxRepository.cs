@@ -1,6 +1,5 @@
 using Microsoft.EntityFrameworkCore;
 using PosAPI.Data.DbContext;
-using PosAPI.Migrations;
 using PosShared.Models;
 
 namespace PosAPI.Repositories
@@ -92,8 +91,7 @@ namespace PosAPI.Repositories
 
             await _context.SaveChangesAsync();
         }
-
-
+        
         public async Task<Tax?> GetTaxByCategoryAsync(PosShared.Models.Items.ItemCategory category, int businessId)
         {
             var tax = await _context.Taxes

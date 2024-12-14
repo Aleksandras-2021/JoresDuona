@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using PosAPI.Data.DbContext;
@@ -11,9 +12,11 @@ using PosAPI.Data.DbContext;
 namespace PosAPI.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20241214184313_ReservationEndTimeAdded")]
+    partial class ReservationEndTimeAdded
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -234,7 +237,7 @@ namespace PosAPI.Migrations
                     b.Property<DateTime>("SentAt")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("timestamp with time zone")
-                        .HasDefaultValue(new DateTime(2024, 12, 14, 21, 20, 8, 163, DateTimeKind.Utc).AddTicks(7179));
+                        .HasDefaultValue(new DateTime(2024, 12, 14, 18, 43, 12, 711, DateTimeKind.Utc).AddTicks(6239));
 
                     b.Property<string>("Type")
                         .IsRequired()
@@ -271,7 +274,7 @@ namespace PosAPI.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("timestamp with time zone")
-                        .HasDefaultValue(new DateTime(2024, 12, 14, 21, 20, 8, 161, DateTimeKind.Utc).AddTicks(4323));
+                        .HasDefaultValue(new DateTime(2024, 12, 14, 18, 43, 12, 709, DateTimeKind.Utc).AddTicks(3435));
 
                     b.Property<decimal>("DiscountAmount")
                         .HasColumnType("numeric");
@@ -447,9 +450,6 @@ namespace PosAPI.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
-                    b.Property<decimal>("Charge")
-                        .HasColumnType("numeric");
-
                     b.Property<int>("DurationInMinutes")
                         .HasColumnType("integer");
 
@@ -459,10 +459,7 @@ namespace PosAPI.Migrations
                     b.Property<int>("ServiceId")
                         .HasColumnType("integer");
 
-                    b.Property<decimal>("Tax")
-                        .HasColumnType("numeric");
-
-                    b.Property<decimal>("Total")
+                    b.Property<decimal>("TotalPrice")
                         .HasColumnType("numeric");
 
                     b.HasKey("Id");
@@ -491,7 +488,7 @@ namespace PosAPI.Migrations
                     b.Property<DateTime>("PaymentDate")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("timestamp with time zone")
-                        .HasDefaultValue(new DateTime(2024, 12, 14, 21, 20, 8, 162, DateTimeKind.Utc).AddTicks(776));
+                        .HasDefaultValue(new DateTime(2024, 12, 14, 18, 43, 12, 709, DateTimeKind.Utc).AddTicks(9856));
 
                     b.Property<string>("PaymentGateway")
                         .IsRequired()
@@ -531,7 +528,7 @@ namespace PosAPI.Migrations
                     b.Property<DateTime>("RefundDate")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("timestamp with time zone")
-                        .HasDefaultValue(new DateTime(2024, 12, 14, 21, 20, 8, 162, DateTimeKind.Utc).AddTicks(3275));
+                        .HasDefaultValue(new DateTime(2024, 12, 14, 18, 43, 12, 710, DateTimeKind.Utc).AddTicks(2233));
 
                     b.HasKey("Id");
 
@@ -551,7 +548,7 @@ namespace PosAPI.Migrations
                     b.Property<DateTime>("BookedAt")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("timestamp with time zone")
-                        .HasDefaultValue(new DateTime(2024, 12, 14, 21, 20, 8, 163, DateTimeKind.Utc).AddTicks(2261));
+                        .HasDefaultValue(new DateTime(2024, 12, 14, 18, 43, 12, 711, DateTimeKind.Utc).AddTicks(1371));
 
                     b.Property<string>("CustomerEmail")
                         .HasColumnType("text");
@@ -615,7 +612,7 @@ namespace PosAPI.Migrations
                     b.Property<DateTime>("LastUpdate")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("timestamp with time zone")
-                        .HasDefaultValue(new DateTime(2024, 12, 14, 21, 20, 8, 161, DateTimeKind.Utc).AddTicks(2045));
+                        .HasDefaultValue(new DateTime(2024, 12, 14, 18, 43, 12, 709, DateTimeKind.Utc).AddTicks(1184));
 
                     b.Property<DateTime>("StartTime")
                         .HasColumnType("timestamp with time zone");

@@ -14,7 +14,6 @@ namespace PosClient.Controllers
     public class ReservationController : Controller
     {
         private readonly HttpClient _httpClient;
-        private readonly string _apiUrl = ApiRoutes.ApiBaseUrl;
 
         public ReservationController(HttpClient httpClient)
         {
@@ -43,7 +42,7 @@ namespace PosClient.Controllers
 
         // GET: Reservation/Reserve/5
         [HttpGet]
-        public async Task<IActionResult> Reserve(int serviceId)
+        public IActionResult Reserve(int serviceId)
         {
             string? token = Request.Cookies["authToken"];
             _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
@@ -53,7 +52,7 @@ namespace PosClient.Controllers
                 ServiceId = serviceId,
                 CustomerName = string.Empty,
                 CustomerPhone = string.Empty,
-                ReservationTime = DateTime.Today.AddHours(2),
+                ReservationTime = DateTime.Now
             };
             
             return View("~/Views/Service/Reserve.cshtml", model);
@@ -82,11 +81,33 @@ namespace PosClient.Controllers
 
             if (response.IsSuccessStatusCode)
             {
-                RedirectToAction("Index");
+               return RedirectToAction("Index");
             }
+
+            TempData["Error"] = $"Could not Create reservation. {response.StatusCode}";
 
             return View("~/Views/Service/Reserve.cshtml", model);
         }
+        
+        
+        [HttpPost]
+        public async Task<IActionResult> Cancel(int reservationId)
+        {
+            string? token = Request.Cookies["authToken"];
+            _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+    
+            var apiUrl = ApiRoutes.Reservation.Delete(reservationId);
+            var response = await _httpClient.DeleteAsync(apiUrl);
+
+            if (response.IsSuccessStatusCode)
+            {
+                return RedirectToAction("Index");
+            }
+            TempData["Error"] = $"Could not delete reservation. {response.StatusCode}";
+
+            return RedirectToAction("Index");
+        }
+
 
     }
 }

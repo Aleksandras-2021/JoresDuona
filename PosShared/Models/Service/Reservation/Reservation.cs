@@ -15,6 +15,7 @@ public class Reservation
     public string? CustomerPhone { get; set; }
     public DateTime BookedAt { get; set; }
     public DateTime ReservationTime { get; set; }
+    public DateTime ReservationEndTime { get; set; }
     public ReservationStatus Status { get; set; }
 
     [JsonIgnore]
