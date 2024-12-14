@@ -7,7 +7,7 @@
 }
 
 <div class="container my-4">
-    <h2 class="text-center mb-4">Create Schedule</h2>
+    <h2 class="text-center mb-4">Create a new Timeslot</h2>
 
     @if (TempData["Error"] != null)
     {
@@ -24,15 +24,21 @@
 
                 <div class="form-group mb-3">
                     <label asp-for="StartTime" class="control-label">Start Time</label>
-                    <input asp-for="StartTime" class="form-control" type="datetime-local"
-                            value="@roundedStartTime.ToString("yyyy-MM-ddTHH:mm")" />
+                    <input asp-for="StartTime" 
+                           class="form-control" 
+                           type="datetime-local" 
+                           value="@roundedStartTime.ToString("yyyy-MM-ddTHH:00")"
+                           step="3600" />
                     <span asp-validation-for="StartTime" class="text-danger"></span>
                 </div>
 
                 <div class="form-group mb-3">
                     <label asp-for="EndTime" class="control-label">End Time</label>
-                    <input asp-for="EndTime" class="form-control" type="datetime-local"
-                            value="@roundedEndTime.ToString("yyyy-MM-ddTHH:mm")" />
+                    <input asp-for="EndTime" 
+                           class="form-control" 
+                           type="datetime-local" 
+                           value="@roundedEndTime.ToString("yyyy-MM-ddTHH:00")"
+                           step="3600" />
                     <span asp-validation-for="EndTime" class="text-danger"></span>
                 </div>
 
@@ -53,4 +59,14 @@
     @{
         await Html.RenderPartialAsync("_ValidationScriptsPartial");
     }
+
+    <script>
+        document.querySelectorAll('input[type="datetime-local"]').forEach(input => {
+            input.addEventListener('change', function() {
+                let date = new Date(this.value);
+                date.setMinutes(0);
+                this.value = date.toISOString().slice(0, -8);
+            });
+        });
+    </script>
 }

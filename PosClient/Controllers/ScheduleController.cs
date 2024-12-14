@@ -26,14 +26,20 @@ namespace PosClient.Controllers
             string? token = Request.Cookies["authToken"];
             _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
-            // Calculate the week dates
+            var userResponse = await _httpClient.GetAsync($"{_apiUrl}/api/Users/{userId}");
+            string? userName = null;
+            if (userResponse.IsSuccessStatusCode)
+            {
+                var userJson = await userResponse.Content.ReadAsStringAsync();
+                var user = JsonSerializer.Deserialize<User>(userJson, 
+                    new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+                userName = user?.Name;
+            }
+
             var currentDate = date ?? DateTime.Today;
             var weekStart = currentDate.AddDays(-(int)currentDate.DayOfWeek);
             var weekEnd = weekStart.AddDays(7);
 
-            Console.WriteLine($"Getting schedules for week: {weekStart:yyyy-MM-dd} to {weekEnd:yyyy-MM-dd}");
-
-            // Get the schedules for the specific week
             var schedulesApiUrl = $"{_apiUrl}/api/Schedule/{userId}/User?startDate={weekStart:yyyy-MM-dd}&endDate={weekEnd:yyyy-MM-dd}";
             var schedulesResponse = await _httpClient.GetAsync(schedulesApiUrl);
 
@@ -49,8 +55,8 @@ namespace PosClient.Controllers
                 schedules = new List<Schedule>();
             }
 
-            // Set ViewBag data for the view
             ViewBag.UserId = userId;
+            ViewBag.UserName = userName;
             ViewBag.CurrentDate = currentDate;
             ViewBag.WeekStart = weekStart;
             ViewBag.WeekEnd = weekEnd;
@@ -62,7 +68,6 @@ namespace PosClient.Controllers
         // GET: Schedule/Create
         public IActionResult Create(int userId)
         {
-            Console.WriteLine("Creating schedule for user: " + userId);
             var model = new ScheduleCreateViewModel
             {
                 UserId = userId,
@@ -72,14 +77,17 @@ namespace PosClient.Controllers
             return View("~/Views/User/Schedule/Create.cshtml", model);
         }
 
-        // POST: Schedule/Create
         [HttpPost]
         public async Task<IActionResult> Create(ScheduleCreateViewModel model)
         {
-            Console.WriteLine("Creating schedule: " + JsonSerializer.Serialize(model));
             if (!ModelState.IsValid)
             {
-                Console.WriteLine("Model state is invalid");
+                return View("~/Views/User/Schedule/Create.cshtml", model);
+            }
+
+            if (model.EndTime <= model.StartTime)
+            {
+                TempData["Error"] = "End time must be after start time.";
                 return View("~/Views/User/Schedule/Create.cshtml", model);
             }
 
@@ -99,7 +107,6 @@ namespace PosClient.Controllers
                 JsonSerializer.Serialize(schedule), 
                 Encoding.UTF8, 
                 "application/json");
-            
 
             var response = await _httpClient.PostAsync(apiUrl, content);
             if (response.IsSuccessStatusCode)
@@ -107,9 +114,8 @@ namespace PosClient.Controllers
                 return RedirectToAction("Schedules", new { userId = model.UserId });
             }
 
-            var errorMessage = await response.Content.ReadAsStringAsync();
-            ModelState.AddModelError(string.Empty, $"Error creating schedule: {errorMessage}");
-            TempData["Error"] = errorMessage;
+            var errorContent = await response.Content.ReadAsStringAsync();
+            TempData["Error"] = "Failed to create schedule. Please try again.";
             return View("~/Views/User/Schedule/Create.cshtml", model);
         }
 
