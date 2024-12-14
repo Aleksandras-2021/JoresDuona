@@ -7,7 +7,12 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using PosShared.Models;
 using PosAPI.Repositories;
 using Microsoft.OpenApi.Models;
+using PosAPI.Repositories;
+using PosAPI.Repositories.Interfaces;
 using PosAPI.Services;
+using PosAPI.Services;
+using PosAPI.Services.Interfaces;
+using PosShared.Models;
 
 
 var builder = WebApplication.CreateBuilder(args);
@@ -43,6 +48,7 @@ builder.Services.AddSwaggerGen(options =>
 });
 
 //Add repositories here
+builder.Services.AddScoped<IBusinessRepository, BusinessRepository>();
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IItemRepository, ItemRepository>();
 builder.Services.AddScoped<IOrderRepository, OrderRepository>();
@@ -50,8 +56,14 @@ builder.Services.AddScoped<ITaxRepository, TaxRepository>();
 builder.Services.AddScoped<IPaymentRepository, PaymentRepository>();
 builder.Services.AddScoped<IServiceRepository, ServiceRepository>();
 builder.Services.AddScoped<IReservationRepository, ReservationRepository>();
+builder.Services.AddScoped<IScheduleRepository, ScheduleRepository>();
 
+//Add Services here
 builder.Services.AddScoped<IOrderService, PosAPI.Services.OrderService>();
+builder.Services.AddScoped<IItemService, PosAPI.Services.ItemService>();
+builder.Services.AddScoped<IBusinessService, BusinessService>();
+builder.Services.AddScoped<ITaxService, TaxService>();
+builder.Services.AddScoped<IUserService, UserService>();
 
 builder.Services.AddScoped<IServiceBusinessLogic, ServiceBusinessLogic>();
 

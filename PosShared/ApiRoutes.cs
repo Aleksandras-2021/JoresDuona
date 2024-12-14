@@ -1,9 +1,5 @@
 ﻿using PosShared.Models;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+
 
 namespace PosShared;
 
@@ -37,7 +33,7 @@ public static class ApiRoutes
     }
     public static class Items
     {
-        public static string GetAllItems => $"{ApiBaseUrl}/api/Items";
+        public static string GetItemsPaginated(int pageNumber, int pageSize) => $"{ApiBaseUrl}/api/Items?pageNumber={pageNumber}&pageSize={pageSize}";
         public static string GetItemById(int itemId) => $"{ApiBaseUrl}/api/Items/{itemId}";
         public static string CreateItem => $"{ApiBaseUrl}/api/Items";
         public static string UpdateItem(int itemId) => $"{ApiBaseUrl}/api/Items/{itemId}";
@@ -48,6 +44,25 @@ public static class ApiRoutes
         public static string CreateVariation(int itemId) => $"{ApiBaseUrl}/api/Items/{itemId}/Variations";
         public static string UpdateVariation(int variationId) => $"{ApiBaseUrl}/api/Items/Variations{variationId}";
         public static string DeleteVariations(int variationId) => $"{ApiBaseUrl}/api/Items/Variations{variationId}";
+    }
+
+    public static class Business
+    {
+        public static string GetPaginated(int pageNumber,int pageSize) =>  $"{ApiBaseUrl}/api/Businesses?pageNumber={pageNumber}&pageSize={pageSize}";
+        public static string Create =>  $"{ApiBaseUrl}/api/Businesses";
+        public static string GetById(int businessId) =>  $"{ApiBaseUrl}/api/Businesses/{businessId}";
+        public static string Update(int businessId) =>  $"{ApiBaseUrl}/api/Businesses/{businessId}";
+        public static string Delete(int businessId) =>  $"{ApiBaseUrl}/api/Businesses/{businessId}";
+    }
+
+    public static class User
+    {
+        public static string GetPaginated(int pageNumber,int pageSize) =>  $"{ApiBaseUrl}/api/Users?pageNumber={pageNumber}&pageSize={pageSize}";
+        public static string Create =>  $"{ApiBaseUrl}/api/Users";
+        public static string GetById(int id) =>  $"{ApiBaseUrl}/api/Users/{id}";
+        public static string Update(int id) =>  $"{ApiBaseUrl}/api/Users/{id}";
+        public static string Delete(int id) =>  $"{ApiBaseUrl}/api/Users/{id}";
+        
     }
 
 

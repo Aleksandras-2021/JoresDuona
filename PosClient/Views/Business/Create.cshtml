@@ -1,4 +1,13 @@
-﻿@model PosShared.Models.Business
+﻿@using PosShared.Models
+@model PosShared.Models.Business
+
+
+@if (TempData["Error"] != null)
+{
+    <div class="alert alert-danger" role="alert">
+        <i class="bi bi-exclamation-circle"></i> @TempData["Error"]
+    </div>
+}
 
 <h1>Create New Business</h1>
 <form asp-action="Create" method="post">
@@ -31,7 +40,7 @@
     <div class="form-group">
         <label asp-for="Type">Type</label>
         <select asp-for="Type" class="form-control">
-            @foreach (var type in Enum.GetValues(typeof(PosShared.Models.BusinessType)))
+            @foreach (var type in Enum.GetValues(typeof(BusinessType)))
             {
                 <option value="@type">@type</option>
             }

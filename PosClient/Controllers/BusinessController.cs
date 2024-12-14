@@ -25,25 +25,28 @@ namespace PosClient.Controllers
         }
 
         // GET: Business/Index (retrieves all businesses)
-        public async Task<IActionResult> Index()
+        public async Task<IActionResult> Index(int pageNumber = 1, int pageSize = 20)
         {
             string? token = Request.Cookies["authToken"]; // Retrieve the token from cookies
 
             _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token); // Put the token into authroization header
 
-            var apiUrl = _apiUrl + "/api/Businesses";
+            var apiUrl = ApiRoutes.Business.GetPaginated(pageNumber, pageSize);
             var response = await _httpClient.GetAsync(apiUrl);
 
             if (response.IsSuccessStatusCode)
             {
                 var jsonData = await response.Content.ReadAsStringAsync();
-                List<Business> businesses = JsonSerializer.Deserialize<List<Business>>(jsonData, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
-                return View(businesses);
+                var paginatedResult = JsonSerializer.Deserialize<PaginatedResult<Business>>(jsonData, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+                
+                
+                return View(paginatedResult);
             }
 
-            // Handle errors or empty results
-            ViewBag.ErrorMessage = "Could not retrieve businesses.";
-            return View(new List<Business>());
+            var errorContent = await response.Content.ReadAsStringAsync();
+            TempData["Error"] = $"Error: {errorContent}";
+            
+            return View(new PaginatedResult<Business>());
         }
 
         // GET: Business/Create
@@ -61,7 +64,7 @@ namespace PosClient.Controllers
 
             if (ModelState.IsValid)
             {
-                var apiUrl = _apiUrl + "/api/Businesses";
+                var apiUrl = ApiRoutes.Business.Create;
                 var content = new StringContent(JsonSerializer.Serialize(business), Encoding.UTF8, "application/json");
 
                 var response = await _httpClient.PostAsync(apiUrl, content);
@@ -70,27 +73,26 @@ namespace PosClient.Controllers
                     return RedirectToAction("Index");
                 }
 
-                // Handle error response
-                ViewBag.ErrorMessage = "Failed to create business.";
+                TempData["Error"] = "Failed to create business. " + response.StatusCode;
             }
 
             return View(business);
         }
 
-        // GET: Business/Edit/5
+        // GET: Business/Edit/
         [HttpGet]
         public async Task<IActionResult> Edit(int id)
         {
             string? token = Request.Cookies["authToken"];
             _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
-            var apiUrl = _apiUrl + $"/api/Businesses/{id}";
+            var apiUrl = ApiRoutes.Business.GetById(id);
             var response = await _httpClient.GetAsync(apiUrl);
 
             if (response.IsSuccessStatusCode)
             {
                 var businessData = await response.Content.ReadAsStringAsync();
-                var business = JsonSerializer.Deserialize<Business>(businessData);
+                var business = JsonSerializer.Deserialize<Business>(businessData, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
 
                 if (business != null)
                 {
@@ -98,10 +100,12 @@ namespace PosClient.Controllers
                 }
             }
 
-            return NotFound(); // Return a 404 if the business was not found or request failed
+            TempData["Error"] = $"Failed to create business: {response.StatusCode}";
+
+            return NotFound();
         }
 
-        // POST: Business/Edit/5
+        // POST: Business/Edit/
         [HttpPost]
         public async Task<IActionResult> Edit(int id, Business business)
         {
@@ -115,21 +119,21 @@ namespace PosClient.Controllers
                 string? token = Request.Cookies["authToken"];
                 _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
-                var apiUrl = _apiUrl + $"/api/Businesses/{id}";
+                var apiUrl = ApiRoutes.Business.Update(id);
                 var content = new StringContent(JsonSerializer.Serialize(business), Encoding.UTF8, "application/json");
 
                 var response = await _httpClient.PutAsync(apiUrl, content);
 
+                Console.WriteLine("Business Id : " + business.Id);
+
                 if (response.IsSuccessStatusCode)
                 {
-                    // Redirect to the Index action after successful edit
                     return RedirectToAction("Index");
                 }
-
-                ViewBag.ErrorMessage = "Failed to update business.";
             }
+            TempData["Error"] = "Failed to update business.";
 
-            return View(business); // Return to the edit view if validation fails or update fails
+            return View(business); 
         }
 
         // GET: Business/Delete/5
@@ -139,7 +143,7 @@ namespace PosClient.Controllers
             string? token = Request.Cookies["authToken"];
             _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
-            var apiUrl = _apiUrl + $"/api/Businesses/{id}";
+            var apiUrl = ApiRoutes.Business.GetById(1);
             var response = await _httpClient.GetAsync(apiUrl);
 
             if (response.IsSuccessStatusCode)
@@ -153,7 +157,7 @@ namespace PosClient.Controllers
                 }
             }
 
-            return NotFound(); // Return a 404 if the business was not found or request failed
+            return NotFound();
         }
 
         // POST: Business/Delete/5
@@ -163,22 +167,16 @@ namespace PosClient.Controllers
             string? token = Request.Cookies["authToken"];
             _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
-            var apiUrl = _apiUrl + $"/api/Businesses/{id}";
+            var apiUrl = ApiRoutes.Business.Delete(id);
             var response = await _httpClient.DeleteAsync(apiUrl);
 
             if (response.IsSuccessStatusCode)
             {
-                // Redirect to the Index action after successful deletion
                 return RedirectToAction("Index");
             }
 
-            ViewBag.ErrorMessage = "Failed to delete business.";
+            TempData["Error"] = $"Failed to delete business. {response.StatusCode}";
             return RedirectToAction("Index");
         }
-
-
     }
-
-
-
 }
