@@ -36,9 +36,7 @@ public class OrderItemsVariationsController : ControllerBase
     public async Task<IActionResult> GetOrderItemVariations(int orderItemId)
     {
         User? sender = await GetUserFromToken();
-
-        if (sender == null)
-            return Unauthorized();
+        
 
         try
         {
@@ -53,6 +51,8 @@ public class OrderItemsVariationsController : ControllerBase
         }
         catch (KeyNotFoundException ex)
         {
+            _logger.LogError($" {ex.Message}");
+
             return NotFound(ex.Message);
         }
         catch (Exception ex)
@@ -67,10 +67,7 @@ public class OrderItemsVariationsController : ControllerBase
     public async Task<IActionResult> GetOrderItemVariationById(int orderId, int orderItemId, int variationId)
     {
         User? sender = await GetUserFromToken();
-
-        if (sender == null)
-            return Unauthorized();
-
+        
         try
         {
             var orderItemVariation = await _orderService.GetAuthorizedOrderItemVariation(variationId, orderItemId, sender);

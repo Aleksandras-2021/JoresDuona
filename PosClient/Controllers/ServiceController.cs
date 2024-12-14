@@ -41,8 +41,7 @@ public class ServiceController : Controller
 
             if (response.IsSuccessStatusCode)
             {
-                var services = JsonSerializer.Deserialize<List<Service>>(responseContent, 
-                    new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+                var services = JsonSerializer.Deserialize<List<Service>>(responseContent,JsonOptions.Default);
                 Console.WriteLine($"Deserialized services count: {services?.Count ?? 0}");
                 return View(services ?? new List<Service>());
             }
@@ -161,17 +160,8 @@ public class ServiceController : Controller
             users = new PaginatedResult<User>();
         }
 
-        // Populate the view model
         if (service != null)
         {
-            // Debugging: Log the service fields to the console
-            Console.WriteLine("Service Details:");
-            Console.WriteLine($"Id: {id}");
-            Console.WriteLine($"Name: {service.Name}");
-            Console.WriteLine($"Description: {service.Description}");
-            Console.WriteLine($"DurationInMinutes: {service.DurationInMinutes}");
-            Console.WriteLine($"BasePrice: {service.BasePrice}");
-            Console.WriteLine($"EmployeeId: {service.EmployeeId}");
             var model = new ServiceCreateViewModel()
             {
                 Id = id,

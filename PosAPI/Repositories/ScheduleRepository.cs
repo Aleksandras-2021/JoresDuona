@@ -15,7 +15,7 @@ namespace PosAPI.Repositories
             _context = context;
         }
 
-        public async Task<List<Schedule>> GetSchedulesByUserIdAsync(int userId, DateTime startDate, DateTime endDate)
+        public async Task<List<Schedule>> GetSchedulesByUserIdAsync(int userId, DateTime startDate , DateTime endDate)
         {
             return await _context.Set<Schedule>()
                 .Where(s => s.UserId == userId && 

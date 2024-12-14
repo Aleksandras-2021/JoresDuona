@@ -32,7 +32,7 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
 
     public DbSet<OrderService> OrderServices { get; set; }
     public DbSet<Reservation> Reservations { get; set; }
-    public DbSet<Customer> Customers { get; set; }
+    public DbSet<Customer?> Customers { get; set; }
     public DbSet<Notification> Notifications { get; set; }
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

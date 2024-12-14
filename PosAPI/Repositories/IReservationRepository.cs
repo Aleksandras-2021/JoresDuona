@@ -14,6 +14,9 @@ namespace PosAPI.Repositories
         Task<List<Reservation>> GetAllReservationsAsync();
         Task<List<Reservation>> GetAllBusinessReservationsAsync(int businessId);
         Task UpdateReservationAsync(Reservation reservation);
+        Task AddCustomer(Customer customer);
+        Task<Customer?> FindCustomerByPhone(string phone);
+        
         Task DeleteReservationAsync(int id);
         //method to check if the reservation is available
         Task<bool> CheckAvailability(int serviceId, DateTime requestedTime);

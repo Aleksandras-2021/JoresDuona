@@ -30,18 +30,30 @@ public class OrderController : ControllerBase
     [HttpGet("")]
     public async Task<IActionResult> GetAllOrders(int pageNumber = 1, int pageSize = 10)
     {
-        User? senderUser = await GetUserFromToken();
-        if (senderUser == null)
+        User? sender = await GetUserFromToken();
+
+        try
         {
-            return Unauthorized();
+            var paginatedOrders = await _orderService.GetAuthorizedOrders(sender, pageNumber, pageSize);
+
+            if (paginatedOrders.Items.Count > 0)
+                return Ok(paginatedOrders);
+            else
+                return NotFound("No Orders found.");
         }
-
-        var paginatedOrders = await _orderService.GetAuthorizedOrders(senderUser, pageNumber, pageSize);
-
-        if (paginatedOrders.Items.Count > 0)
-            return Ok(paginatedOrders);
-        else
-            return NotFound("No Orders found.");
+        catch (UnauthorizedAccessException ex)
+        {
+            return Unauthorized(ex.Message);
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(ex.Message);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError($"Error retrieving orders: {ex.Message}");
+            return StatusCode(500, "Internal server error");
+        }
     }
 
 
@@ -82,38 +94,25 @@ public class OrderController : ControllerBase
     public async Task<IActionResult> CreateOrder()
     {
         User? sender = await GetUserFromToken();
-        if (sender == null)
-            return Unauthorized();
-
-        _logger.LogInformation($"User with id: {sender.Id} is creating an order at {DateTime.Now}");
         
-        if (sender.BusinessId <= 0)
-            return BadRequest("Invalid BusinessId associated with the user.");
-
-        Order newOrder = new Order();
-
-        newOrder.BusinessId = sender.BusinessId;
-        newOrder.CreatedAt = DateTime.UtcNow.AddHours(2); ;
-        newOrder.ClosedAt = null;
-        newOrder.UserId = sender.Id;
-        newOrder.Status = OrderStatus.Open;
-        newOrder.ChargeAmount = 0;
-        newOrder.DiscountAmount = 0;
-        newOrder.TaxAmount = 0;
-        newOrder.TipAmount = 0;
-        newOrder.Payments = new List<Payment>();
-        newOrder.OrderDiscounts = new List<OrderDiscount>();
-
-
         try
         {
-            await _orderRepository.AddOrderAsync(newOrder);
+            int orderId = await _orderService.CreateAuthorizedOrder(sender);
 
-            return CreatedAtAction(nameof(GetOrderById), new { id = newOrder.Id }, newOrder);
+            return CreatedAtAction(nameof(GetOrderById), new { id = orderId }, new { Id = orderId });
         }
-        catch (DbUpdateException e)
+        catch (UnauthorizedAccessException ex)
         {
-            return StatusCode(500, $"Internal server error: {e.Message}");
+            return Unauthorized(ex.Message);
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(ex.Message);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError($"Error creating order: {ex.Message}");
+            return StatusCode(500, "Internal server error.");
         }
     }
     // /api/Order/{id}/UpdateStatus
@@ -248,9 +247,9 @@ public class OrderController : ControllerBase
 
         try
         {
-            var OrderVariations = await _orderService.GetAuthorizedOrderVariations(orderId, sender);
+            var orderVariations = await _orderService.GetAuthorizedOrderVariations(orderId, sender);
 
-            return Ok(OrderVariations);
+            return Ok(orderVariations);
         }
         catch (UnauthorizedAccessException ex)
         {

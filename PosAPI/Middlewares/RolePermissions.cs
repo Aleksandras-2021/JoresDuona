@@ -75,6 +75,17 @@ public static class RolePermissions
                 { "Delete", new List<UserRole> { UserRole.SuperAdmin,UserRole.Owner,UserRole.Manager }  }
             }
         },
+        
+        // Permissions for "Reservation" endpoints
+        { "Reservation", new Dictionary<string, List<UserRole>>
+            {
+                { "List", AllRoles },
+                { "Create", AllRoles },
+                { "Read", AllRoles},
+                { "Update", AllRoles },
+                { "Delete", AllRoles }
+            }
+        },
     };
 
     public static bool CanAccess(string endpoint, string action, UserRole role)

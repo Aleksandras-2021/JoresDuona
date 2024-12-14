@@ -57,8 +57,55 @@ namespace PosAPI.Repositories
         }
 
         // Implement these with NotImplementedException for now as they're not immediately needed
-        public Task AddReservationAsync(Reservation reservation) => throw new NotImplementedException();
-        public Task DeleteReservationAsync(int id) => throw new NotImplementedException();
+        public async Task AddReservationAsync(Reservation reservation)
+        {
+            try
+            {
+                reservation.ReservationTime = DateTime.SpecifyKind(reservation.ReservationTime, DateTimeKind.Utc);
+                await _context.Reservations.AddAsync(reservation);
+                await _context.SaveChangesAsync();
+            }
+            catch (DbUpdateException ex)
+            {
+                throw new Exception("An error occurred while adding the new reservation to the database.", ex);
+            }
+            
+        }
+
+        public async Task DeleteReservationAsync(int id)
+        {
+            var reservation = await _context.Reservations.FindAsync(id);
+
+            if (reservation == null)
+            {
+                throw new KeyNotFoundException($"reservation with ID {id} not found.");
+            }
+
+            try
+            {
+                _context.Reservations.Remove(reservation);
+                await _context.SaveChangesAsync();
+            }
+            catch (DbUpdateException ex)
+            {
+                throw new Exception("An error occurred while deleting the reservation from the database.", ex);
+            }
+        }
+
+        public async Task AddCustomer(Customer customer)
+        {
+            await _context.Customers.AddAsync(customer);
+            await _context.SaveChangesAsync();
+        }
+        
+        public async Task<Customer?> FindCustomerByPhone(string phone)
+        {
+            Customer? customer = await _context.Customers
+                .Where(c => c.Phone == phone)
+                .FirstOrDefaultAsync();
+            return customer;
+        }
+        
         public Task<List<Reservation>> GetAllBusinessReservationsAsync(int businessId) => throw new NotImplementedException();
         public Task<Reservation> GetReservationByIdAsync(int id) => throw new NotImplementedException();
         public Task<bool> IsEmployeeAvailable(int employeeId, DateTime requestedTime, int duration) => throw new NotImplementedException();

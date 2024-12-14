@@ -174,7 +174,7 @@ namespace PosAPI.Controllers
 
                 await _serviceRepository.UpdateServiceAsync(existingService);
 
-                return NoContent();
+                return Ok();
                 
             }
             catch (KeyNotFoundException ex)

@@ -65,7 +65,7 @@ builder.Services.AddScoped<IBusinessService, BusinessService>();
 builder.Services.AddScoped<ITaxService, TaxService>();
 builder.Services.AddScoped<IUserService, UserService>();
 
-builder.Services.AddScoped<IServiceBusinessLogic, ServiceBusinessLogic>();
+builder.Services.AddScoped<IServiceService, ServiceService>();
 
 
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");

@@ -1,6 +1,8 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using PosAPI.Repositories;
+using PosAPI.Services.Interfaces;
+using PosShared.DTOs;
 using PosShared.Models;
 using PosShared.Utilities;
 using PosShared.ViewModels;
@@ -9,20 +11,20 @@ using PosShared.ViewModels;
 [ApiController]
 public class ReservationController : ControllerBase
 {
-    private readonly IServiceBusinessLogic _serviceBusinessLogic;
+    private readonly IServiceService _serviceService;
     private readonly IReservationRepository _reservationRepository;
     private readonly IServiceRepository _serviceRepository;
     private readonly IUserRepository _userRepository;
     private readonly ILogger<ReservationController> _logger;
 
     public ReservationController(
-        IServiceBusinessLogic serviceBusinessLogic,
+        IServiceService serviceService,
         IReservationRepository reservationRepository,
         IServiceRepository serviceRepository,
         IUserRepository userRepository,
         ILogger<ReservationController> logger)
     {
-        _serviceBusinessLogic = serviceBusinessLogic;
+        _serviceService = serviceService;
         _reservationRepository = reservationRepository;
         _serviceRepository = serviceRepository;
         _userRepository = userRepository;
@@ -51,13 +53,18 @@ public class ReservationController : ControllerBase
     [HttpGet("services/{serviceId}/available-slots")]
     public async Task<IActionResult> GetAvailableSlots(int serviceId, DateTime date)
     {
+        //Get service employee
+        
+        //Get already taken timeslots(
+        
+        
         User? sender = await GetUserFromToken();
         if (sender == null)
             return Unauthorized();
 
-        try 
+        try
         {
-            var slots = await _serviceBusinessLogic.GetAvailableTimeSlots(serviceId, date);
+            var slots = await _serviceService.GetAvailableTimeSlots(serviceId);
             return Ok(slots);
         }
         catch (Exception ex)
@@ -68,16 +75,13 @@ public class ReservationController : ControllerBase
     }
 
     [HttpPost]
-    public async Task<IActionResult> Create([FromBody] ReservationViewModel model)
+    public async Task<IActionResult> Create([FromBody] ReservationCreateDTO dto)
     {
         User? sender = await GetUserFromToken();
-        if (sender == null)
-            return Unauthorized();
 
         try
         {
-            // reservation logic
-
+            await _serviceService.CreateReservation(dto, sender);
             return Ok();
         }
         catch (Exception ex)

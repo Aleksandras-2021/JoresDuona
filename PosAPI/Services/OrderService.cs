@@ -49,6 +49,28 @@ public class OrderService : IOrderService
 
         return order;
     }
+    
+    public async Task<int> CreateAuthorizedOrder(User? sender)
+    {
+        AuthorizationHelper.Authorize("Order", "Create", sender);
+        Order newOrder = new Order()
+        {
+            BusinessId = sender.BusinessId,
+            CreatedAt = DateTime.UtcNow.AddHours(2),
+            ClosedAt = null,
+            UserId = sender.Id,
+            Status = OrderStatus.Open,
+            ChargeAmount = 0,
+            DiscountAmount = 0,
+            TaxAmount = 0,
+            TipAmount = 0,
+            Payments = new List<Payment>(),
+            OrderDiscounts = new List<OrderDiscount>()
+        };        
+        await _orderRepository.AddOrderAsync(newOrder);
+
+        return newOrder.Id;
+    }
 
     public async Task<Order?> GetAuthorizedOrderForModification(int orderId, User sender)
     {
@@ -131,7 +153,7 @@ public class OrderService : IOrderService
 
         var orderItemVariations = await _orderRepository.GetOrderItemVariationsByOrderItemIdAsync(orderItemId);
 
-        if (orderItemVariations.Any())
+        if (!orderItemVariations.Any())
             throw new KeyNotFoundException($"No variations found for order item with ID {orderItemId}.");
 
         var orderItem = await _orderRepository.GetOrderItemById(orderItemId);

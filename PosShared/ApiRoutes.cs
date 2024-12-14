@@ -64,6 +64,16 @@ public static class ApiRoutes
         public static string Delete(int id) =>  $"{ApiBaseUrl}/api/Users/{id}";
         
     }
+    
+    public static class Reservation
+    {
+        public static string Get =>  $"{ApiBaseUrl}/api/Reservation";
+        public static string Create =>  $"{ApiBaseUrl}/api/Reservation";
+        public static string GetById(int id) =>  $"{ApiBaseUrl}/api/Reservation/{id}";
+        public static string Update(int id) =>  $"{ApiBaseUrl}/api/Reservation/{id}";
+        public static string Delete(int id) =>  $"{ApiBaseUrl}/api/Reservation/{id}";
+        
+    }
 
 
 }

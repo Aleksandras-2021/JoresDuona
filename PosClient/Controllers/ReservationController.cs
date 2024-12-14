@@ -1,15 +1,13 @@
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Logging;
-using PosClient.Models;
 using PosShared;
 using PosShared.Models;
 using PosShared.ViewModels;
-using System;
-using System.Collections.Generic;
-using System.Net.Http;
 using System.Net.Http.Headers;
-using System.Net.Http.Json;
-using System.Threading.Tasks;
+using System.Text;
+using System.Text.Json;
+using Microsoft.AspNetCore.Mvc.ModelBinding;
+using Microsoft.EntityFrameworkCore.Metadata.Internal;
+using PosShared.DTOs;
 
 namespace PosClient.Controllers
 {
@@ -23,15 +21,16 @@ namespace PosClient.Controllers
             _httpClient = httpClient;
         }
 
-            // GET: Reservation
+        // GET: Reservation
         [HttpGet]
         public async Task<IActionResult> Index()
         {
             string? token = Request.Cookies["authToken"];
             _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
-            var response = await _httpClient.GetAsync($"{_apiUrl}/api/Reservation");
-            
+            var apiUrl = ApiRoutes.Reservation.Get;
+            var response = await _httpClient.GetAsync(apiUrl);
+        
             if (response.IsSuccessStatusCode)
             {
                 var reservations = await response.Content.ReadFromJsonAsync<List<Reservation>>();
@@ -41,35 +40,53 @@ namespace PosClient.Controllers
             TempData["Error"] = "Could not load reservations.";
             return View(new List<Reservation>());
         }
-        
+
         // GET: Reservation/Reserve/5
         [HttpGet]
         public async Task<IActionResult> Reserve(int serviceId)
         {
-            Console.WriteLine($"Attempting to reserve service {serviceId}");
             string? token = Request.Cookies["authToken"];
-            Console.WriteLine($"Token: {token}");
             _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
+            ReservationViewModel model = new ReservationViewModel()
+            {
+                ServiceId = serviceId,
+                CustomerName = string.Empty,
+                CustomerPhone = string.Empty,
+                ReservationTime = DateTime.Today.AddHours(2),
+            };
+            
+            return View("~/Views/Service/Reserve.cshtml", model);
+        }
 
-            var response = await _httpClient.GetAsync(
-                $"{_apiUrl}/api/Reservation/services/{serviceId}/available-slots?date={DateTime.Today:yyyy-MM-dd}");
+        
+        // Post: Reservation/Reserve/5
+        [HttpPost]
+        public async Task<IActionResult> Reserve(ReservationViewModel model)
+        {
+            string? token = Request.Cookies["authToken"];
+            _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+            
+            var dto = new ReservationCreateDTO()
+            {
+                ServiceId = model.ServiceId,
+                CustomerName = model.CustomerName,
+                CustomerPhone = model.CustomerPhone,
+                ReservationTime = model.ReservationTime,
+            };
+            
+            
+            var apiUrl = ApiRoutes.Reservation.Create;
+            var content = new StringContent(JsonSerializer.Serialize(dto), Encoding.UTF8, "application/json");
+            var response = await _httpClient.PostAsync(apiUrl,content);
 
             if (response.IsSuccessStatusCode)
             {
-                var slots = await response.Content.ReadFromJsonAsync<List<TimeSlot>>();
-                
-                var viewModel = new ReservationViewModel
-                {
-                    ServiceId = serviceId,
-                    AvailableTimeSlots = slots ?? new List<TimeSlot>()
-                };
-                
-                return View("~/Views/Service/Reserve.cshtml", viewModel);
+                RedirectToAction("Index");
             }
 
-            TempData["Error"] = "Could not load available time slots.";
-            return RedirectToAction("Index", "Service");
+            return View("~/Views/Service/Reserve.cshtml", model);
         }
+
     }
 }

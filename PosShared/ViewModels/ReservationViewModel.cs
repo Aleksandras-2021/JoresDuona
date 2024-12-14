@@ -8,6 +8,5 @@ namespace PosShared.ViewModels
         public string CustomerName { get; set; }
         public string CustomerPhone { get; set; }
         public DateTime ReservationTime { get; set; }
-        public List<TimeSlot> AvailableTimeSlots { get; set; } = new List<TimeSlot>();
     }
 }
