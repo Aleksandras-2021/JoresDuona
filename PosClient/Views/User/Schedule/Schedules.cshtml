@@ -2,6 +2,8 @@
 
 @{
     ViewData["Title"] = "Schedule Page";
+    var displayDate = ViewBag.CurrentDate ?? DateTime.Now.Date;
+    var displayWeekStart = ViewBag.WeekStart ?? displayDate.AddDays(-(int)displayDate.DayOfWeek);
 }
 
 @if (TempData["Error"] != null)
@@ -19,13 +21,16 @@
             <p class="m-0">Below is the weekly schedule calendar.</p>
         </div>
         <div class="d-flex gap-2">
-            <button class="btn btn-outline-secondary btn-sm" onclick="previousWeek()">
+            <a href="@Url.Action("Schedules", "Schedule", new { userId = ViewBag.UserId, date = displayWeekStart.AddDays(-7).ToString("yyyy-MM-dd") })" 
+               class="btn btn-outline-secondary btn-sm">
                 <i class="bi bi-chevron-left"></i> Previous Week
-            </button>
-            <button class="btn btn-outline-secondary btn-sm" onclick="nextWeek()">
+            </a>
+            <a href="@Url.Action("Schedules", "Schedule", new { userId = ViewBag.UserId, date = displayWeekStart.AddDays(7).ToString("yyyy-MM-dd") })" 
+               class="btn btn-outline-secondary btn-sm">
                 Next Week <i class="bi bi-chevron-right"></i>
-            </button>
-            <a href="@Url.Action("Create", "Schedule", new { userId = ViewBag.UserId })" class="btn btn-outline-primary btn-sm">
+            </a>
+            <a href="@Url.Action("Create", "Schedule", new { userId = ViewBag.UserId })" 
+               class="btn btn-outline-primary btn-sm">
                 <i class="bi bi-plus-circle"></i> Create New Schedule
             </a>
         </div>
@@ -37,12 +42,9 @@
                 <tr>
                     <th class="text-center" style="width: 100px">Time</th>
                     @{
-                        var currentDate = DateTime.Now.Date;
-                        var weekStart = currentDate.AddDays(-(int)currentDate.DayOfWeek);
-                        
                         for (int i = 0; i < 7; i++)
                         {
-                            var day = weekStart.AddDays(i);
+                            var day = displayWeekStart.AddDays(i);
                             <th class="text-center @(day.Date == DateTime.Now.Date ? "table-primary" : "")">
                                 @day.ToString("dddd")
                                 <br />
@@ -62,7 +64,7 @@
                             </td>
                             @for (int day = 0; day < 7; day++)
                             {
-                                var currentSlotDate = weekStart.AddDays(day).AddHours(hour);
+                                var currentSlotDate = displayWeekStart.AddDays(day).AddHours(hour);
                                 var schedulesInSlot = Model?.Where(s => 
                                     s.StartTime.Date == currentSlotDate.Date && 
                                     s.StartTime.Hour <= hour && 
@@ -76,10 +78,14 @@
                                         {
                                             var isStartHour = schedule.StartTime.Hour == hour;
                                             var duration = (schedule.EndTime - schedule.StartTime).TotalHours;
-                                            var heightPercent = Math.Min(duration * 100, 100);
+                                            
+                                            // Calculate the position and height of the schedule block
+                                            var startOffset = isStartHour ? 0 : (schedule.StartTime.Minute / 60.0 * 100);
+                                            var endHourOffset = schedule.EndTime.Hour == hour ? (schedule.EndTime.Minute / 60.0) : 1;
+                                            var heightPercent = ((endHourOffset - (isStartHour ? schedule.StartTime.Minute / 60.0 : 0)) * 100);
                                             
                                             <div class="position-absolute rounded border border-primary"
-                                                 style="top: 0; left: 5px; right: 5px; height: @(heightPercent)%; background-color: rgba(13, 110, 253, 0.1);">
+                                                 style="top: @startOffset%; left: 5px; right: 5px; height: @heightPercent%; background-color: rgba(13, 110, 253, 0.1);">
                                                 @if (isStartHour)
                                                 {
                                                     <div class="p-2">
@@ -114,21 +120,3 @@
         </table>
     </div>
 </div>
-
-@section Scripts {
-    <script>
-        function previousWeek() {
-            const urlParams = new URLSearchParams(window.location.search);
-            let currentDate = new Date(urlParams.get('date') || Date.now());
-            currentDate.setDate(currentDate.getDate() - 7);
-            window.location.href = '@Url.Action("Schedules", "Schedule", new { userId = ViewBag.UserId })?date=' + currentDate.toISOString().split('T')[0];
-        }
-
-        function nextWeek() {
-            const urlParams = new URLSearchParams(window.location.search);
-            let currentDate = new Date(urlParams.get('date') || Date.now());
-            currentDate.setDate(currentDate.getDate() + 7);
-            window.location.href = '@Url.Action("Schedules", "Schedule", new { userId = ViewBag.UserId })?date=' + currentDate.toISOString().split('T')[0];
-        }
-    </script>
-}

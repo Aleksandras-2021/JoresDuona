@@ -21,29 +21,43 @@ namespace PosClient.Controllers
             _userSessionService = userSessionService;
         }
 
-        public async Task<IActionResult> Schedules(int userId)
+        public async Task<IActionResult> Schedules(int userId, DateTime? date = null)
         {
             string? token = Request.Cookies["authToken"];
             _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
-
-            Console.WriteLine($"Getting schedules for user {userId}");
-
-            // Get the schedules
-            var schedulesApiUrl = $"{_apiUrl}/api/Schedule/{userId}/User";
+        
+            // Calculate the week dates
+            var currentDate = date ?? DateTime.Today;
+            var weekStart = currentDate.AddDays(-(int)currentDate.DayOfWeek);
+            var weekEnd = weekStart.AddDays(7);
+        
+            Console.WriteLine($"Getting schedules for week: {weekStart:yyyy-MM-dd} to {weekEnd:yyyy-MM-dd}");
+        
+            // Get the schedules for the specific week
+            var schedulesApiUrl = $"{_apiUrl}/api/Schedule/{userId}/User?startDate={weekStart:yyyy-MM-dd}&endDate={weekEnd:yyyy-MM-dd}";
             var schedulesResponse = await _httpClient.GetAsync(schedulesApiUrl);
-
+        
+            List<Schedule> schedules;
             if (schedulesResponse.IsSuccessStatusCode)
             {
                 var schedulesJson = await schedulesResponse.Content.ReadAsStringAsync();
-                var schedules = JsonSerializer.Deserialize<List<Schedule>>(schedulesJson,
-                    new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
-                ViewBag.UserId = userId;
-                return View("~/Views/User/Schedule/Schedules.cshtml", schedules ?? new List<Schedule>()); 
+                schedules = JsonSerializer.Deserialize<List<Schedule>>(schedulesJson,
+                    new JsonSerializerOptions { PropertyNameCaseInsensitive = true }) ?? new List<Schedule>();
             }
-
+            else
+            {
+                schedules = new List<Schedule>();
+            }
+        
+            // Set ViewBag data for the view
             ViewBag.UserId = userId;
-            return View("~/Views/User/Schedule/Schedules.cshtml", new List<Schedule>());
+            ViewBag.CurrentDate = currentDate;
+            ViewBag.WeekStart = weekStart;
+            ViewBag.WeekEnd = weekEnd;
+        
+            return View("~/Views/User/Schedule/Schedules.cshtml", schedules);
         }
+
 
         // GET: Schedule/Create
         public IActionResult Create(int userId)

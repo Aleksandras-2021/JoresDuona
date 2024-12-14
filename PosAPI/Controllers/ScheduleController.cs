@@ -25,33 +25,32 @@ namespace PosAPI.Controllers
         }
 
         [HttpGet("{userId}/User")]
-        public async Task<IActionResult> GetUserSchedules(int userId)
+        public async Task<IActionResult> GetUserSchedules(int userId, DateTime? startDate = null, DateTime? endDate = null)
         {
             try
             {
-                Console.WriteLine("Getting user schedules");
                 var sender = await GetUserFromToken();
                 if (sender == null)
                     return Unauthorized();
-
-                var currentDate = DateTime.Today;
-                var weekStart = currentDate.AddDays(-(int)currentDate.DayOfWeek);
-                var weekEnd = weekStart.AddDays(7);
+        
+                var currentDate = startDate ?? DateTime.Today;
+                var weekStart = startDate ?? currentDate.AddDays(-(int)currentDate.DayOfWeek);
+                var weekEnd = endDate ?? weekStart.AddDays(7);
         
                 weekStart = DateTime.SpecifyKind(weekStart, DateTimeKind.Utc);
                 weekEnd = DateTime.SpecifyKind(weekEnd, DateTimeKind.Utc);
-
+        
                 var schedules = await _scheduleRepository.GetSchedulesByUserIdAsync(userId, weekStart, weekEnd);
-
+        
                 var user = await _userRepository.GetUserByIdAsync(userId);
                 if (sender.Role != UserRole.SuperAdmin && user.BusinessId != sender.BusinessId)
                     return Unauthorized();
-
+        
                 if (schedules == null || schedules.Count == 0)
                 {
-                    return NotFound("No schedules found.");
+                    return Ok(new List<Schedule>()); // Return empty list instead of 404
                 }
-
+        
                 return Ok(schedules);
             }
             catch (Exception ex)
