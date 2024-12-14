@@ -14,27 +14,9 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="fe899842-ea22-4e77-98e6-59d0bab7b320" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/PosShared/Ultilities/JsonOptions.cs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/.idea.JoresDuona/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/.idea.JoresDuona/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/PosAPI/Controllers/BusinessesController.cs" beforeDir="false" afterPath="$PROJECT_DIR$/PosAPI/Controllers/BusinessesController.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/PosAPI/Controllers/ItemsController.cs" beforeDir="false" afterPath="$PROJECT_DIR$/PosAPI/Controllers/ItemsController.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/PosAPI/Controllers/OrderController.cs" beforeDir="false" afterPath="$PROJECT_DIR$/PosAPI/Controllers/OrderController.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/PosAPI/Controllers/OrderItemsController.cs" beforeDir="false" afterPath="$PROJECT_DIR$/PosAPI/Controllers/OrderItemsController.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/PosAPI/Controllers/OrderItemsVariationsController.cs" beforeDir="false" afterPath="$PROJECT_DIR$/PosAPI/Controllers/OrderItemsVariationsController.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/PosAPI/Controllers/PaymentController.cs" beforeDir="false" afterPath="$PROJECT_DIR$/PosAPI/Controllers/PaymentController.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/PosAPI/Controllers/ReservationController.cs" beforeDir="false" afterPath="$PROJECT_DIR$/PosAPI/Controllers/ReservationController.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/PosAPI/Controllers/ScheduleController.cs" beforeDir="false" afterPath="$PROJECT_DIR$/PosAPI/Controllers/ScheduleController.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/PosAPI/Controllers/ServiceController.cs" beforeDir="false" afterPath="$PROJECT_DIR$/PosAPI/Controllers/ServiceController.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/PosAPI/Controllers/TaxController.cs" beforeDir="false" afterPath="$PROJECT_DIR$/PosAPI/Controllers/TaxController.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/PosAPI/Controllers/UserController.cs" beforeDir="false" afterPath="$PROJECT_DIR$/PosAPI/Controllers/UserController.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/PosClient/Controllers/BusinessController.cs" beforeDir="false" afterPath="$PROJECT_DIR$/PosClient/Controllers/BusinessController.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/PosClient/Controllers/HomeController.cs" beforeDir="false" afterPath="$PROJECT_DIR$/PosClient/Controllers/HomeController.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/PosClient/Controllers/ItemsController.cs" beforeDir="false" afterPath="$PROJECT_DIR$/PosClient/Controllers/ItemsController.cs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/PosClient/Controllers/ServiceController.cs" beforeDir="false" afterPath="$PROJECT_DIR$/PosClient/Controllers/ServiceController.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/PosClient/Views/Service/Edit.cshtml" beforeDir="false" afterPath="$PROJECT_DIR$/PosClient/Views/Service/Edit.cshtml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/PosShared/Models/Service/Service.cs" beforeDir="false" afterPath="$PROJECT_DIR$/PosShared/Models/Service/Service.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/PosShared/Ultilities/Ultilities.cs" beforeDir="false" afterPath="$PROJECT_DIR$/PosShared/Ultilities/Ultilities.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/PosShared/ViewModels/ServiceCreateViewModel.cs" beforeDir="false" afterPath="$PROJECT_DIR$/PosShared/ViewModels/ServiceCreateViewModel.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/PosClient/Views/User/Schedule/Schedules.cshtml" beforeDir="false" afterPath="$PROJECT_DIR$/PosClient/Views/User/Schedule/Schedules.cshtml" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -46,6 +28,9 @@
   </component>
   <component name="MarkdownSettingsMigration">
     <option name="stateVersion" value="1" />
+  </component>
+  <component name="ProblemsViewState">
+    <option name="selectedTabId" value="CurrentFile" />
   </component>
   <component name="ProjectColorInfo">{
   &quot;associatedIndex&quot;: 3

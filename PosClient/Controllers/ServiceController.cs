@@ -27,7 +27,7 @@ public class ServiceController : Controller
     // GET: Service/Index
     public async Task<IActionResult> Index()
     {
-            try 
+        try 
         {
             string? token = Request.Cookies["authToken"];
             Console.WriteLine($"Token: {token}");
