@@ -2,9 +2,11 @@ using Microsoft.AspNetCore.Mvc;
 using System.Net.Http.Headers;
 using PosClient.Services;
 using PosShared;
+using PosShared.Utilities;
 using PosShared.Models;
 using System.Text.Json;
 using System.Text;
+using Microsoft.EntityFrameworkCore.Metadata.Internal;
 using PosShared.DTOs;
 using PosShared.ViewModels;
 
@@ -32,13 +34,10 @@ public class ServiceController : Controller
             _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
             var apiUrl = _apiUrl + "/api/Service";
-            Console.WriteLine($"Calling API URL: {apiUrl}");
 
             var response = await _httpClient.GetAsync(apiUrl);
-            Console.WriteLine($"Response Status: {response.StatusCode}");
 
             var responseContent = await response.Content.ReadAsStringAsync();
-            Console.WriteLine($"Response Content: {responseContent}");
 
             if (response.IsSuccessStatusCode)
             {
@@ -74,8 +73,7 @@ public class ServiceController : Controller
         if (userResponse.IsSuccessStatusCode)
         {
             var usersJson = await userResponse.Content.ReadAsStringAsync();
-            users = JsonSerializer.Deserialize<PaginatedResult<User>>(usersJson,
-                new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+            users = JsonSerializer.Deserialize<PaginatedResult<User>>(usersJson,JsonOptions.Default);
         }
         else
         {
@@ -95,13 +93,13 @@ public class ServiceController : Controller
     {
         if (!ModelState.IsValid)
         {
-            return View(model); // Return the view with validation errors
+            return View(model);
         }
 
         string? token = Request.Cookies["authToken"];
         _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
-        // Prepare Service DTO
+        // Service DTO
         var service = new ServiceCreateDTO
         {
             Name = model.Name,
@@ -129,51 +127,117 @@ public class ServiceController : Controller
     }
 
 
-    // GET: Service/Edit/
-    public async Task<IActionResult> Edit(int id)
+// GET: Service/Edit/
+    public async Task<IActionResult> Edit(int id, int pageNumber = 1, int pageSize = 20)
     {
         string? token = Request.Cookies["authToken"];
         _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
-        
-        var apiUrl = _apiUrl + $"/api/Service/{id}";
-        var response = await _httpClient.GetAsync(apiUrl);
-        if (response.IsSuccessStatusCode)
+
+        // Fetch service details
+        var serviceApiUrl = _apiUrl + $"/api/Service/{id}";
+        var serviceResponse = await _httpClient.GetAsync(serviceApiUrl);
+
+        if (!serviceResponse.IsSuccessStatusCode)
         {
-            var serviceData = await response.Content.ReadAsStringAsync();
-            var service = JsonSerializer.Deserialize<Service>(serviceData);
-            if (service != null)
-            {
-                return View(service);
-            }
+            TempData["Error"] = "Unable to fetch service details. Please try again. " + serviceResponse.StatusCode;
+            return RedirectToAction("Index");
         }
 
-        TempData["Error"] = "Unable to fetch service details. Please try again.";
+        var serviceData = await serviceResponse.Content.ReadAsStringAsync();
+        var service = JsonSerializer.Deserialize<Service>(serviceData, JsonOptions.Default);
+
+        // Fetch users for selection
+        var usersApiUrl = ApiRoutes.User.GetPaginated(pageNumber, pageSize);
+        var usersResponse = await _httpClient.GetAsync(usersApiUrl);
+
+        PaginatedResult<User>? users = null;
+        if (usersResponse.IsSuccessStatusCode)
+        {
+            var usersJson = await usersResponse.Content.ReadAsStringAsync();
+            users = JsonSerializer.Deserialize<PaginatedResult<User>>(usersJson, JsonOptions.Default);
+        }
+        else
+        {
+            users = new PaginatedResult<User>();
+        }
+
+        // Populate the view model
+        if (service != null)
+        {
+            // Debugging: Log the service fields to the console
+            Console.WriteLine("Service Details:");
+            Console.WriteLine($"Id: {id}");
+            Console.WriteLine($"Name: {service.Name}");
+            Console.WriteLine($"Description: {service.Description}");
+            Console.WriteLine($"DurationInMinutes: {service.DurationInMinutes}");
+            Console.WriteLine($"BasePrice: {service.BasePrice}");
+            Console.WriteLine($"EmployeeId: {service.EmployeeId}");
+            var model = new ServiceCreateViewModel()
+            {
+                Id = id,
+                Name = service.Name,
+                Description = service.Description,
+                DurationInMinutes = service.DurationInMinutes,
+                BasePrice = service.BasePrice,
+                EmployeeId = service.EmployeeId,
+                Users = users
+            };
+
+            return View(model);
+        }
+
+        TempData["Error"] = "Service not found.";
         return RedirectToAction("Index");
     }
 
-    // POST: Service/Edit/
+// POST: Service/Edit/
     [HttpPost]
-    public async Task<IActionResult> Edit(Service service)
+    public async Task<IActionResult> Edit(ServiceCreateViewModel model)
     {
+        if (!ModelState.IsValid)
+        {
+            return View(model); // Return the view with validation errors
+        }
+
         string? token = Request.Cookies["authToken"];
         _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
-        if (ModelState.IsValid)
+        // Prepare Service DTO
+        var serviceDto = new ServiceCreateDTO
         {
-            var apiUrl = _apiUrl + $"/api/Service/{service.Id}";
-            var content = new StringContent(JsonSerializer.Serialize(service), Encoding.UTF8, "application/json");
-            var response = await _httpClient.PutAsync(apiUrl, content);
-            if (response.IsSuccessStatusCode)
-            {
-                return RedirectToAction("Index");
-            }
+            Name = model.Name,
+            Description = model.Description,
+            BasePrice = model.BasePrice,
+            DurationInMinutes = model.DurationInMinutes,
+            EmployeeId = model.EmployeeId // Include selected employee
+        };
 
-            ViewBag.ErrorMessage = "Failed to update service.";
+        var apiUrl = _apiUrl + $"/api/Service/{model.Id}";
+        var content = new StringContent(JsonSerializer.Serialize(serviceDto), Encoding.UTF8, "application/json");
+
+        var response = await _httpClient.PutAsync(apiUrl, content);
+
+        if (response.IsSuccessStatusCode)
+        {
+            return RedirectToAction("Index");
         }
 
-        TempData["Error"] = "Unable to edit service. Please try again.";
-        return View(service);
+        var errorMessage = await response.Content.ReadAsStringAsync();
+        ModelState.AddModelError(string.Empty, $"Error updating service: {errorMessage}");
+
+        // Re-fetch users to show in the dropdown if there's an error
+        var usersApiUrl = ApiRoutes.User.GetPaginated(1, 20);
+        var usersResponse = await _httpClient.GetAsync(usersApiUrl);
+        
+        if (usersResponse.IsSuccessStatusCode)
+        {
+            var usersJson = await usersResponse.Content.ReadAsStringAsync();
+            model.Users = JsonSerializer.Deserialize<PaginatedResult<User>>(usersJson,JsonOptions.Default);
+        }
+
+        return View(model);
     }
+
 
     // GET: Service/Delete/5
     [HttpGet]

@@ -4,7 +4,7 @@ using Microsoft.EntityFrameworkCore.Metadata.Conventions.Infrastructure;
 using Microsoft.Extensions.Logging;
 using PosAPI.Repositories;
 using PosShared.Models;
-using PosShared.Ultilities;
+using PosShared.Utilities;
 using PosShared.ViewModels;
 using System;
 using System.Collections.Generic;

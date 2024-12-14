@@ -4,7 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using PosAPI.Repositories;
 using PosAPI.Services;
 using PosShared.Models;
-using PosShared.Ultilities;
+using PosShared.Utilities;
 namespace PosAPI.Controllers;
 
 [Authorize]

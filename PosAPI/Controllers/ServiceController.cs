@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Metadata.Internal;
 using PosAPI.Repositories;
 using PosShared.DTOs;
 using PosShared.Models;
-using PosShared.Ultilities;
+using PosShared.Utilities;
 using PosShared.ViewModels;
 
 namespace PosAPI.Controllers
@@ -147,7 +147,7 @@ namespace PosAPI.Controllers
 
         // PUT: api/Service/{id}
         [HttpPut("{id}")]
-        public async Task<IActionResult> UpdateService(int id, [FromBody] Service service)
+        public async Task<IActionResult> UpdateService(int id, [FromBody] ServiceCreateDTO service)
         {
 
             if (service == null)
@@ -167,8 +167,10 @@ namespace PosAPI.Controllers
 
                 existingService.Name = service.Name;
                 existingService.Description = service.Description;
+                existingService.EmployeeId = service.EmployeeId;
                 existingService.BasePrice = service.BasePrice;
                 existingService.DurationInMinutes = service.DurationInMinutes;
+                existingService.Category = service.Category;
 
                 await _serviceRepository.UpdateServiceAsync(existingService);
 

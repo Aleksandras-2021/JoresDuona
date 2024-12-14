@@ -7,7 +7,7 @@ using PosAPI.Repositories;
 using PosAPI.Services;
 using PosShared.DTOs;
 using PosShared.Models;
-using PosShared.Ultilities;
+using PosShared.Utilities;
 
 namespace PosAPI.Controllers;
 

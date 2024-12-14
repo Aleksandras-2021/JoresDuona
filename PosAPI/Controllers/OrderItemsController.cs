@@ -6,7 +6,7 @@ using PosAPI.Repositories;
 using PosAPI.Services;
 using PosShared.DTOs;
 using PosShared.Models;
-using PosShared.Ultilities;
+using PosShared.Utilities;
 using System.Diagnostics.Eventing.Reader;
 
 namespace PosAPI.Controllers;

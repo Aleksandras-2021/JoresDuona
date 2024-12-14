@@ -7,7 +7,7 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 
 
-namespace PosShared.Ultilities;
+namespace PosShared.Utilities;
 
 public static class Ultilities
 {
