@@ -115,18 +115,15 @@ public class PaymentController : Controller
             var orderItemsApiUrl = ApiRoutes.OrderItems.GetOrderItems(orderId);
             var orderItemsResponse = await _httpClient.GetAsync(orderItemsApiUrl);
 
-            if (!orderItemsResponse.IsSuccessStatusCode)
+            List<OrderItem>? orderItems = null;
+
+            if (orderItemsResponse.IsSuccessStatusCode)
             {
-                TempData["Error"] = "Unable to fetch order items.";
-                return View("Receipt", new ReceiptViewModel() { OrderId = orderId });
+                var orderItemsData = await orderItemsResponse.Content.ReadAsStringAsync();
+                 orderItems = JsonSerializer.Deserialize<List<OrderItem>>(orderItemsData, JsonOptions.Default);
             }
-
-            var orderItemsData = await orderItemsResponse.Content.ReadAsStringAsync();
-            List<OrderItem>? orderItems = JsonSerializer.Deserialize<List<OrderItem>>(orderItemsData, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
-
-            if (orderItems == null || !orderItems.Any())
+            else
             {
-                TempData["Error"] = "No order items found.";
                 orderItems = new List<OrderItem>();
             }
 

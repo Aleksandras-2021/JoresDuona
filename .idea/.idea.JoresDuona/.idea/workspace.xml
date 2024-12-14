@@ -16,9 +16,6 @@
     <list default="true" id="fe899842-ea22-4e77-98e6-59d0bab7b320" name="Changes" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/.idea.JoresDuona/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/.idea.JoresDuona/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/PosClient/Controllers/PaymentController.cs" beforeDir="false" afterPath="$PROJECT_DIR$/PosClient/Controllers/PaymentController.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/PosClient/Views/Order/SelectItems.cshtml" beforeDir="false" afterPath="$PROJECT_DIR$/PosClient/Views/Order/SelectItems.cshtml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/PosClient/Views/Payment/Receipt.cshtml" beforeDir="false" afterPath="$PROJECT_DIR$/PosClient/Views/Payment/Receipt.cshtml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/PosShared/ViewModels/ReceiptViewModel.cs" beforeDir="false" afterPath="$PROJECT_DIR$/PosShared/ViewModels/ReceiptViewModel.cs" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -94,7 +91,9 @@
       <workItem from="1734019440105" duration="3380000" />
       <workItem from="1734023136028" duration="76000" />
       <workItem from="1734030494081" duration="9657000" />
-      <workItem from="1734179569301" duration="33787000" />
+      <workItem from="1734179569301" duration="34459000" />
+      <workItem from="1734217156837" duration="177000" />
+      <workItem from="1734217371523" duration="397000" />
     </task>
     <servers />
   </component>
