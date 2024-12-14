@@ -65,6 +65,16 @@ public static class RolePermissions
                 { "Delete", AllRoles }
             }
         },
+        // Permissions for "Service" endpoints
+        { "Service", new Dictionary<string, List<UserRole>>
+            {
+                { "List", AllRoles },
+                { "Create", new List<UserRole> { UserRole.SuperAdmin,UserRole.Owner,UserRole.Manager }  },
+                { "Read", AllRoles},
+                { "Update", new List<UserRole> { UserRole.SuperAdmin,UserRole.Owner,UserRole.Manager }  },
+                { "Delete", new List<UserRole> { UserRole.SuperAdmin,UserRole.Owner,UserRole.Manager }  }
+            }
+        },
     };
 
     public static bool CanAccess(string endpoint, string action, UserRole role)

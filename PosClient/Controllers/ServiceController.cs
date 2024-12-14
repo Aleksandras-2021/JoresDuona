@@ -5,6 +5,8 @@ using PosShared;
 using PosShared.Models;
 using System.Text.Json;
 using System.Text;
+using PosShared.DTOs;
+using PosShared.ViewModels;
 
 namespace PosClient.Controllers;
 
@@ -59,17 +61,56 @@ public class ServiceController : Controller
     }
 
     // GET: Service/Create
-    public IActionResult Create()
-    {
-        return View();
-    }
-
-    // POST: Service/Create
-    [HttpPost]
-    public async Task<IActionResult> Create(Service service)
+    public async Task<IActionResult> Create(int pageNumber = 1, int pageSize = 20)
     {
         string? token = Request.Cookies["authToken"];
         _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+
+        var usersApiUrl = ApiRoutes.User.GetPaginated(pageNumber, pageSize);
+        var userResponse = await _httpClient.GetAsync(usersApiUrl);
+
+        //Get all available users for service selection
+        PaginatedResult<User>? users = null;
+        if (userResponse.IsSuccessStatusCode)
+        {
+            var usersJson = await userResponse.Content.ReadAsStringAsync();
+            users = JsonSerializer.Deserialize<PaginatedResult<User>>(usersJson,
+                new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+        }
+        else
+        {
+            users = new PaginatedResult<User>();
+        }
+
+        ServiceCreateViewModel model = new ServiceCreateViewModel()
+        {
+            Users = users,
+        };
+
+    return View(model);
+    }
+
+    [HttpPost]
+    public async Task<IActionResult> Create(ServiceCreateViewModel model)
+    {
+        if (!ModelState.IsValid)
+        {
+            return View(model); // Return the view with validation errors
+        }
+
+        string? token = Request.Cookies["authToken"];
+        _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+
+        // Prepare Service DTO
+        var service = new ServiceCreateDTO
+        {
+            Name = model.Name,
+            Description = model.Description,
+            BasePrice = model.BasePrice,
+            DurationInMinutes = model.DurationInMinutes,
+            EmployeeId = model.EmployeeId,
+            Category = model.Category
+        };
 
         var apiUrl = _apiUrl + "/api/Service";
         var content = new StringContent(JsonSerializer.Serialize(service), Encoding.UTF8, "application/json");
@@ -84,16 +125,16 @@ public class ServiceController : Controller
         var errorMessage = await response.Content.ReadAsStringAsync();
         ModelState.AddModelError(string.Empty, $"Error creating service: {errorMessage}");
 
-        Console.WriteLine(errorMessage);
-        TempData["Error"] = errorMessage;
-        return View(service);
+        return RedirectToAction("Create");
     }
+
 
     // GET: Service/Edit/
     public async Task<IActionResult> Edit(int id)
     {
         string? token = Request.Cookies["authToken"];
         _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+        
         var apiUrl = _apiUrl + $"/api/Service/{id}";
         var response = await _httpClient.GetAsync(apiUrl);
         if (response.IsSuccessStatusCode)

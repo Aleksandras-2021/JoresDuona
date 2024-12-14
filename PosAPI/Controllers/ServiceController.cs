@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Internal;
 using PosAPI.Repositories;
+using PosShared.DTOs;
 using PosShared.Models;
 using PosShared.Ultilities;
 using PosShared.ViewModels;
@@ -106,7 +107,7 @@ namespace PosAPI.Controllers
 
         // POST: api/Service
         [HttpPost]
-        public async Task<IActionResult> CreateService([FromBody] Service service)
+        public async Task<IActionResult> CreateService([FromBody] ServiceCreateDTO service)
         {
             User? senderUser = await GetUserFromToken();
 
@@ -126,8 +127,10 @@ namespace PosAPI.Controllers
             newService.BusinessId = senderUser.BusinessId;
             newService.Name = service.Name;
             newService.Description = service.Description;
+            newService.EmployeeId = service.EmployeeId;
             newService.BasePrice = service.BasePrice;
             newService.DurationInMinutes = service.DurationInMinutes;
+            newService.Category = service.Category;
 
             try
             {

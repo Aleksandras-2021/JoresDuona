@@ -105,7 +105,6 @@ public class OrderController : Controller
     public async Task<IActionResult> SelectItems(int orderId,int pageNumber = 1, int pageSize = 20)
     {
         string? token = Request.Cookies["authToken"];
-
         _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
         var itemsApiUrl = ApiRoutes.Items.GetItemsPaginated(pageNumber,pageSize);
