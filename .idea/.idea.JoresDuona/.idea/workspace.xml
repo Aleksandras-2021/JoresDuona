@@ -15,29 +15,10 @@
   <component name="ChangeListManager">
     <list default="true" id="fe899842-ea22-4e77-98e6-59d0bab7b320" name="Changes" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/.idea.JoresDuona/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/.idea.JoresDuona/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/PosAPI/Controllers/OrderController.cs" beforeDir="false" afterPath="$PROJECT_DIR$/PosAPI/Controllers/OrderController.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/PosAPI/Controllers/ReservationController.cs" beforeDir="false" afterPath="$PROJECT_DIR$/PosAPI/Controllers/ReservationController.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/PosAPI/Migrations/ApplicationDbContextModelSnapshot.cs" beforeDir="false" afterPath="$PROJECT_DIR$/PosAPI/Migrations/ApplicationDbContextModelSnapshot.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/PosAPI/Program.cs" beforeDir="false" afterPath="$PROJECT_DIR$/PosAPI/Program.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/PosAPI/Repositories/IReservationRepository.cs" beforeDir="false" afterPath="$PROJECT_DIR$/PosAPI/Repositories/Interfaces/IReservationRepository.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/PosAPI/Repositories/Interfaces/IOrderRepository.cs" beforeDir="false" afterPath="$PROJECT_DIR$/PosAPI/Repositories/Interfaces/IOrderRepository.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/PosAPI/Repositories/OrderRepository.cs" beforeDir="false" afterPath="$PROJECT_DIR$/PosAPI/Repositories/OrderRepository.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/PosAPI/Repositories/ReservationRepository.cs" beforeDir="false" afterPath="$PROJECT_DIR$/PosAPI/Repositories/ReservationRepository.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/PosAPI/Repositories/TaxRepository.cs" beforeDir="false" afterPath="$PROJECT_DIR$/PosAPI/Repositories/TaxRepository.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/PosAPI/Services/Interfaces/IOrderService.cs" beforeDir="false" afterPath="$PROJECT_DIR$/PosAPI/Services/Interfaces/IOrderService.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/PosAPI/Services/Interfaces/IServiceService.cs" beforeDir="false" afterPath="$PROJECT_DIR$/PosAPI/Services/Interfaces/IServiceService.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/PosAPI/Services/OrderService.cs" beforeDir="false" afterPath="$PROJECT_DIR$/PosAPI/Services/OrderService.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/PosAPI/Services/ServiceService.cs" beforeDir="false" afterPath="$PROJECT_DIR$/PosAPI/Services/ServiceService.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/PosClient/Controllers/OrderController.cs" beforeDir="false" afterPath="$PROJECT_DIR$/PosClient/Controllers/OrderController.cs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/PosClient/Controllers/PaymentController.cs" beforeDir="false" afterPath="$PROJECT_DIR$/PosClient/Controllers/PaymentController.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/PosClient/Controllers/ReservationController.cs" beforeDir="false" afterPath="$PROJECT_DIR$/PosClient/Controllers/ReservationController.cs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/PosClient/Views/Order/SelectItems.cshtml" beforeDir="false" afterPath="$PROJECT_DIR$/PosClient/Views/Order/SelectItems.cshtml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/PosClient/Views/Reservation/Index.cshtml" beforeDir="false" afterPath="$PROJECT_DIR$/PosClient/Views/Reservation/Index.cshtml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/PosClient/Views/Service/Reserve.cshtml" beforeDir="false" afterPath="$PROJECT_DIR$/PosClient/Views/Service/Reserve.cshtml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/PosShared/ApiRoutes.cs" beforeDir="false" afterPath="$PROJECT_DIR$/PosShared/ApiRoutes.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/PosShared/Models/Service/OrderService.cs" beforeDir="false" afterPath="$PROJECT_DIR$/PosShared/Models/Service/OrderService.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/PosShared/Models/Service/Reservation/Reservation.cs" beforeDir="false" afterPath="$PROJECT_DIR$/PosShared/Models/Service/Reservation/Reservation.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/PosShared/ViewModels/SelectItemsViewModel.cs" beforeDir="false" afterPath="$PROJECT_DIR$/PosShared/ViewModels/SelectItemsViewModel.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/PosClient/Views/Payment/Receipt.cshtml" beforeDir="false" afterPath="$PROJECT_DIR$/PosClient/Views/Payment/Receipt.cshtml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/PosShared/ViewModels/ReceiptViewModel.cs" beforeDir="false" afterPath="$PROJECT_DIR$/PosShared/ViewModels/ReceiptViewModel.cs" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -113,7 +94,7 @@
       <workItem from="1734019440105" duration="3380000" />
       <workItem from="1734023136028" duration="76000" />
       <workItem from="1734030494081" duration="9657000" />
-      <workItem from="1734179569301" duration="30951000" />
+      <workItem from="1734179569301" duration="33787000" />
     </task>
     <servers />
   </component>

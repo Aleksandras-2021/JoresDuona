@@ -138,13 +138,28 @@ public class PaymentController : Controller
             if (orderItemVariationsResponse.IsSuccessStatusCode)
             {
                 var orderItemVariationsData = await orderItemVariationsResponse.Content.ReadAsStringAsync();
-                orderItemVariations = JsonSerializer.Deserialize<List<OrderItemVariation>>(orderItemVariationsData, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+                orderItemVariations = JsonSerializer.Deserialize<List<OrderItemVariation>>(orderItemVariationsData, JsonOptions.Default);
             }
             else
             {
                 orderItemVariations = new List<OrderItemVariation>();
-
             }
+            
+            var orderServicesApiUrl = ApiRoutes.Order.GetOrderServices(orderId);
+            var orderServicesResponse = await _httpClient.GetAsync(orderServicesApiUrl);
+
+            List<OrderService>? orderServices = null;
+            if (orderServicesResponse.IsSuccessStatusCode)
+            {
+                var orderServicesData = await orderServicesResponse.Content.ReadAsStringAsync();
+                orderServices = JsonSerializer.Deserialize<List<OrderService>>(orderServicesData,JsonOptions.Default);
+            }
+            else
+            {
+                orderServices = new List<OrderService>();
+            }
+            
+            
             decimal totalTax = 0;
             decimal totalCharge = 0;
             decimal total = 0;
@@ -161,6 +176,12 @@ public class PaymentController : Controller
                 totalCharge += variation.AdditionalPrice * variation.Quantity;
                 totalTax += variation.TaxedAmount * variation.Quantity;
             }
+            foreach (var service in orderServices)
+            {
+                totalCharge += service.Charge;
+                totalTax += service.Tax;
+            }
+            
             total = totalTax + totalCharge;
 
             var model = new ReceiptViewModel()
@@ -168,6 +189,7 @@ public class PaymentController : Controller
                 OrderId = orderId,
                 OrderItems = orderItems,
                 OrderItemVariatons = orderItemVariations,
+                OrderServices = orderServices,
                 Total = total,
                 TotalCharge = totalCharge,
                 TotalTax = totalTax,

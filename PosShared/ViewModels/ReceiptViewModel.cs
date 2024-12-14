@@ -12,7 +12,7 @@ public class ReceiptViewModel
     public int OrderId;
     public List<OrderItem>? OrderItems;
     public List<OrderItemVariation>? OrderItemVariatons;
-    public List<Tax>? Taxes;
+    public List<OrderService>?OrderServices;
     public decimal Total;
     public decimal TotalTax;
     public decimal TotalCharge;
