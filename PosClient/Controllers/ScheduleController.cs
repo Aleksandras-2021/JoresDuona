@@ -21,34 +21,53 @@ namespace PosClient.Controllers
             _userSessionService = userSessionService;
         }
 
-        public async Task<IActionResult> Schedules(int userId)
+        public async Task<IActionResult> Schedules(int userId, DateTime? date = null)
         {
             string? token = Request.Cookies["authToken"];
             _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
-            Console.WriteLine($"Getting schedules for user {userId}");
+            var userResponse = await _httpClient.GetAsync($"{_apiUrl}/api/Users/{userId}");
+            string? userName = null;
+            if (userResponse.IsSuccessStatusCode)
+            {
+                var userJson = await userResponse.Content.ReadAsStringAsync();
+                var user = JsonSerializer.Deserialize<User>(userJson, 
+                    new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+                userName = user?.Name;
+            }
 
-            // Get the schedules
-            var schedulesApiUrl = $"{_apiUrl}/api/Schedule/{userId}/User";
+            var currentDate = date ?? DateTime.Today;
+            var weekStart = currentDate.AddDays(-(int)currentDate.DayOfWeek);
+            var weekEnd = weekStart.AddDays(7);
+
+            var schedulesApiUrl = $"{_apiUrl}/api/Schedule/{userId}/User?startDate={weekStart:yyyy-MM-dd}&endDate={weekEnd:yyyy-MM-dd}";
             var schedulesResponse = await _httpClient.GetAsync(schedulesApiUrl);
 
+            List<Schedule> schedules;
             if (schedulesResponse.IsSuccessStatusCode)
             {
                 var schedulesJson = await schedulesResponse.Content.ReadAsStringAsync();
-                var schedules = JsonSerializer.Deserialize<List<Schedule>>(schedulesJson,
-                    new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
-                ViewBag.UserId = userId;
-                return View("~/Views/User/Schedule/Schedules.cshtml", schedules ?? new List<Schedule>()); 
+                schedules = JsonSerializer.Deserialize<List<Schedule>>(schedulesJson,
+                    new JsonSerializerOptions { PropertyNameCaseInsensitive = true }) ?? new List<Schedule>();
+            }
+            else
+            {
+                schedules = new List<Schedule>();
             }
 
             ViewBag.UserId = userId;
-            return View("~/Views/User/Schedule/Schedules.cshtml", new List<Schedule>());
+            ViewBag.UserName = userName;
+            ViewBag.CurrentDate = currentDate;
+            ViewBag.WeekStart = weekStart;
+            ViewBag.WeekEnd = weekEnd;
+
+            return View("~/Views/User/Schedule/Schedules.cshtml", schedules);
         }
+
 
         // GET: Schedule/Create
         public IActionResult Create(int userId)
         {
-            Console.WriteLine("Creating schedule for user: " + userId);
             var model = new ScheduleCreateViewModel
             {
                 UserId = userId,
@@ -58,14 +77,17 @@ namespace PosClient.Controllers
             return View("~/Views/User/Schedule/Create.cshtml", model);
         }
 
-        // POST: Schedule/Create
         [HttpPost]
         public async Task<IActionResult> Create(ScheduleCreateViewModel model)
         {
-            Console.WriteLine("Creating schedule: " + JsonSerializer.Serialize(model));
             if (!ModelState.IsValid)
             {
-                Console.WriteLine("Model state is invalid");
+                return View("~/Views/User/Schedule/Create.cshtml", model);
+            }
+
+            if (model.EndTime <= model.StartTime)
+            {
+                TempData["Error"] = "End time must be after start time.";
                 return View("~/Views/User/Schedule/Create.cshtml", model);
             }
 
@@ -85,7 +107,6 @@ namespace PosClient.Controllers
                 JsonSerializer.Serialize(schedule), 
                 Encoding.UTF8, 
                 "application/json");
-            
 
             var response = await _httpClient.PostAsync(apiUrl, content);
             if (response.IsSuccessStatusCode)
@@ -93,79 +114,9 @@ namespace PosClient.Controllers
                 return RedirectToAction("Schedules", new { userId = model.UserId });
             }
 
-            var errorMessage = await response.Content.ReadAsStringAsync();
-            ModelState.AddModelError(string.Empty, $"Error creating schedule: {errorMessage}");
-            TempData["Error"] = errorMessage;
+            var errorContent = await response.Content.ReadAsStringAsync();
+            TempData["Error"] = "Failed to create schedule. Please try again.";
             return View("~/Views/User/Schedule/Create.cshtml", model);
-        }
-
-        // GET: Schedule/Edit/5
-        [HttpGet]
-        public async Task<IActionResult> Edit(int id)
-        {
-            string? token = Request.Cookies["authToken"];
-            _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
-
-            var apiUrl = $"{_apiUrl}/api/Schedule/{id}";
-            var response = await _httpClient.GetAsync(apiUrl);
-
-            if (response.IsSuccessStatusCode)
-            {
-                var scheduleData = await response.Content.ReadAsStringAsync();
-                var schedule = JsonSerializer.Deserialize<Schedule>(scheduleData, 
-                    new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
-
-                if (schedule != null)
-                {
-                    var viewModel = new ScheduleCreateViewModel
-                    {
-                        UserId = schedule.UserId,
-                        StartTime = schedule.StartTime,
-                        EndTime = schedule.EndTime
-                    };
-                    return View(viewModel);
-                }
-            }
-
-            return NotFound();
-        }
-
-        // POST: Schedule/Edit/5
-        [HttpPost]
-        public async Task<IActionResult> Edit(int id, ScheduleCreateViewModel viewModel)
-        {
-            string? token = Request.Cookies["authToken"];
-            _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
-
-            if (ModelState.IsValid)
-            {
-                var schedule = new Schedule
-                {
-                    Id = id,
-                    UserId = viewModel.UserId,
-                    StartTime = viewModel.StartTime,
-                    EndTime = viewModel.EndTime,
-                    LastUpdate = DateTime.UtcNow
-                };
-
-                var apiUrl = $"{_apiUrl}/api/Schedule/{id}";
-                var content = new StringContent(
-                    JsonSerializer.Serialize(schedule), 
-                    Encoding.UTF8, 
-                    "application/json");
-
-                var response = await _httpClient.PutAsync(apiUrl, content);
-
-                if (response.IsSuccessStatusCode)
-                {
-                    return RedirectToAction("Schedules", new { userId = schedule.UserId });
-                }
-
-                var errorMessage = await response.Content.ReadAsStringAsync();
-                ModelState.AddModelError(string.Empty, $"Failed to update schedule: {errorMessage}");
-            }
-
-            return View(viewModel);
         }
 
         // GET: Schedule/Delete/5
