@@ -36,10 +36,8 @@ public class UserService : IUserService
     {
         AuthorizationHelper.Authorize("User", "Read", sender);
         var user = await _userRepository.GetUserByIdAsync(userId);
-        AuthorizationHelper.ValidateOwnershipOrRole(sender,user.BusinessId ,sender.BusinessId, "Update");
-
+        AuthorizationHelper.ValidateOwnershipOrRole(sender,user.BusinessId ,sender.BusinessId, "Read");
         
-
         if(user.BusinessId != sender.BusinessId && sender.Role != UserRole.SuperAdmin)
             throw new UnauthorizedAccessException();
 
@@ -64,6 +62,7 @@ public class UserService : IUserService
         newUser.Address = user.Address;
         newUser.Email = user.Email;
         newUser.Phone = user.Phone;
+        newUser.BusinessId = user.BusinessId;
         newUser.PasswordHash = BCrypt.Net.BCrypt.HashPassword(user.PasswordHash);
         newUser.EmploymentStatus = user.EmploymentStatus;
         newUser.Username = user.Username;
@@ -75,10 +74,11 @@ public class UserService : IUserService
             newUser.Role = user.Role;
         
         //Business owners can only make users with their own business ID
-        if (user.BusinessId != sender.BusinessId && sender.Role != UserRole.SuperAdmin)
-            user.BusinessId = sender.BusinessId;
+        if (newUser.BusinessId != sender.BusinessId && sender.Role != UserRole.SuperAdmin)
+            newUser.BusinessId = sender.BusinessId;
+
         
-        return user;
+        return newUser;
     }
     
     public async Task UpdateAuthorizedUser(int userId, UserDTO updatedUser, User? sender)
