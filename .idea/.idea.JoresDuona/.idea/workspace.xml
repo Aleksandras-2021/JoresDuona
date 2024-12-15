@@ -15,7 +15,13 @@
   <component name="ChangeListManager">
     <list default="true" id="fe899842-ea22-4e77-98e6-59d0bab7b320" name="Changes" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/.idea.JoresDuona/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/.idea.JoresDuona/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/PosAPI/Controllers/UserController.cs" beforeDir="false" afterPath="$PROJECT_DIR$/PosAPI/Controllers/UserController.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/PosAPI/Services/Interfaces/IUserService.cs" beforeDir="false" afterPath="$PROJECT_DIR$/PosAPI/Services/Interfaces/IUserService.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/PosAPI/Services/UserService.cs" beforeDir="false" afterPath="$PROJECT_DIR$/PosAPI/Services/UserService.cs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/PosClient/Controllers/DefaultShiftPatternController.cs" beforeDir="false" afterPath="$PROJECT_DIR$/PosClient/Controllers/DefaultShiftPatternController.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/PosClient/Controllers/UserController.cs" beforeDir="false" afterPath="$PROJECT_DIR$/PosClient/Controllers/UserController.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/PosClient/Views/User/Create.cshtml" beforeDir="false" afterPath="$PROJECT_DIR$/PosClient/Views/User/Create.cshtml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/PosShared/Models/Schedule/DefaultShiftPattern.cs" beforeDir="false" afterPath="$PROJECT_DIR$/PosShared/Models/Schedule/DefaultShiftPattern.cs" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -96,7 +102,8 @@
       <workItem from="1734217371523" duration="11912000" />
       <workItem from="1734262479046" duration="1309000" />
       <workItem from="1734289221946" duration="1306000" />
-      <workItem from="1734301133310" duration="336000" />
+      <workItem from="1734301133310" duration="2929000" />
+      <workItem from="1734304116294" duration="1109000" />
     </task>
     <servers />
   </component>

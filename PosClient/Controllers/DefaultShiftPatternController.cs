@@ -149,9 +149,7 @@ namespace PosClient.Controllers
             {
                 var usersJson = await userResponse.Content.ReadAsStringAsync();
                 viewModel.AvailableUsers = JsonSerializer.Deserialize<PaginatedResult<User>>(
-                    usersJson, 
-                    new JsonSerializerOptions { PropertyNameCaseInsensitive = true }
-                );
+                    usersJson, JsonOptions.Default);
             }
 
             return View(viewModel);
@@ -171,11 +169,12 @@ namespace PosClient.Controllers
             {
                 var patternData = await response.Content.ReadAsStringAsync();
                 var pattern = JsonSerializer.Deserialize<DefaultShiftPattern>(patternData, 
-                    new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+                   JsonOptions.Default);
 
                 if (pattern != null)
                 {
-                    return View(pattern);
+                    
+                    return View("Create");
                 }
             }
 

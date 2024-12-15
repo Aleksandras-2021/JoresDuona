@@ -15,7 +15,7 @@ public class User
     public string Username { get; set; }
 
     [JsonPropertyName("passwordHash")]
-    public string PasswordHash { get; set; }
+    public string? PasswordHash { get; set; }
 
     [JsonPropertyName("passwordSalt")]
     public string? PasswordSalt { get; set; }
