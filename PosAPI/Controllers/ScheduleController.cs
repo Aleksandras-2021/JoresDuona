@@ -25,19 +25,18 @@ namespace PosAPI.Controllers
         }
 
         [HttpGet("{userId}/User")]
-        public async Task<IActionResult> GetUserSchedules(int userId)
+        public async Task<IActionResult> GetUserSchedules(int userId, DateTime? startDate = null, DateTime? endDate = null)
         {
             try
             {
-                Console.WriteLine("Getting user schedules");
                 var sender = await GetUserFromToken();
                 if (sender == null)
                     return Unauthorized();
 
-                var currentDate = DateTime.Today;
-                var weekStart = currentDate.AddDays(-(int)currentDate.DayOfWeek);
-                var weekEnd = weekStart.AddDays(7);
-        
+                var currentDate = startDate ?? DateTime.Today;
+                var weekStart = startDate ?? currentDate.AddDays(-(int)currentDate.DayOfWeek);
+                var weekEnd = endDate ?? weekStart.AddDays(7);
+
                 weekStart = DateTime.SpecifyKind(weekStart, DateTimeKind.Utc);
                 weekEnd = DateTime.SpecifyKind(weekEnd, DateTimeKind.Utc);
 
@@ -49,7 +48,7 @@ namespace PosAPI.Controllers
 
                 if (schedules == null || schedules.Count == 0)
                 {
-                    return NotFound("No schedules found.");
+                    return Ok(new List<Schedule>()); // Return empty list instead of 404
                 }
 
                 return Ok(schedules);
@@ -126,51 +125,6 @@ namespace PosAPI.Controllers
             catch (DbUpdateException e)
             {
                 return StatusCode(500, $"Internal server error: {e.Message}");
-            }
-        }
-
-        // PUT: api/Schedule/{id}
-        [HttpPut("{id}")]
-        public async Task<IActionResult> UpdateSchedule(int id, [FromBody] Schedule schedule)
-        {
-            if (schedule == null)
-            {
-                return BadRequest("Invalid schedule data.");
-            }
-
-            try
-            {
-                User? sender = await GetUserFromToken();
-
-                if (sender == null || sender.Role == UserRole.Worker)
-                    return Unauthorized();
-
-                var existingSchedule = await _scheduleRepository.GetScheduleByIdAsync(id);
-                if (existingSchedule == null)
-                {
-                    return NotFound($"Schedule with ID {id} not found.");
-                }
-
-                if (sender.Role != UserRole.SuperAdmin && existingSchedule.User.BusinessId != sender.BusinessId)
-                    return Unauthorized();
-
-                schedule.StartTime = DateTime.SpecifyKind(schedule.StartTime, DateTimeKind.Utc);
-                schedule.EndTime = DateTime.SpecifyKind(schedule.EndTime, DateTimeKind.Utc);
-                schedule.Id = id;
-
-                await _scheduleRepository.UpdateScheduleAsync(schedule);
-
-                return NoContent();
-            }
-            catch (KeyNotFoundException ex)
-            {
-                _logger.LogWarning($"Schedule with ID {id} not found: {ex.Message}");
-                return NotFound(ex.Message);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError($"Error updating Schedule with ID {id}: {ex.Message}");
-                return StatusCode(500, "Internal server error");
             }
         }
 

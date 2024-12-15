@@ -1,7 +1,11 @@
 @model List<PosShared.Models.Schedule>
+@using System.Globalization
 
 @{
-    ViewData["Title"] = "Schedule Page";
+    ViewData["Title"] = $"Schedule for {ViewBag.UserName}";
+    var displayDate = ViewBag.CurrentDate ?? DateTime.Now.Date;
+    var displayWeekStart = ViewBag.WeekStart ?? displayDate.AddDays(-(int)displayDate.DayOfWeek);
+    var enCulture = new CultureInfo("en-US");
 }
 
 @if (TempData["Error"] != null)
@@ -11,42 +15,46 @@
     </div>
 }
 
-<div class="container my-4">
-    <h1 class="text-center mb-4">@ViewData["Title"]</h1>
+<div class="container-fluid my-4">
+    <div class="text-center mb-4">
+        <h1 class="mb-2">@ViewBag.UserName's Schedule</h1>
+        <p class="text-muted">Viewing week of @displayWeekStart.ToString("MMMM d, yyyy", enCulture)</p>
+    </div>
 
     <div class="d-flex justify-content-between align-items-center mb-3">
         <div>
             <p class="m-0">Below is the weekly schedule calendar.</p>
         </div>
         <div class="d-flex gap-2">
-            <button class="btn btn-outline-secondary btn-sm" onclick="previousWeek()">
+            <a href="@Url.Action("Schedules", "Schedule", new { userId = ViewBag.UserId, date = displayWeekStart.AddDays(-7).ToString("yyyy-MM-dd") })" 
+               class="btn btn-outline-secondary btn-sm">
                 <i class="bi bi-chevron-left"></i> Previous Week
-            </button>
-            <button class="btn btn-outline-secondary btn-sm" onclick="nextWeek()">
+            </a>
+            <a href="@Url.Action("Schedules", "Schedule", new { userId = ViewBag.UserId, date = displayWeekStart.AddDays(7).ToString("yyyy-MM-dd") })" 
+               class="btn btn-outline-secondary btn-sm">
                 Next Week <i class="bi bi-chevron-right"></i>
-            </button>
-            <a href="@Url.Action("Create", "Schedule", new { userId = ViewBag.UserId })" class="btn btn-outline-primary btn-sm">
-                <i class="bi bi-plus-circle"></i> Create New Schedule
+            </a>
+            <a href="@Url.Action("Create", "Schedule", new { userId = ViewBag.UserId })" 
+               class="btn btn-outline-primary btn-sm">
+                <i class="bi bi-plus-circle"></i> Create New Timeslot
             </a>
         </div>
     </div>
 
     <div class="table-responsive">
-        <table class="table table-bordered">
+        <table class="table table-bordered" style="max-width: 1400px; margin: auto;">
             <thead class="table-dark">
                 <tr>
-                    <th class="text-center" style="width: 100px">Time</th>
+                    <th class="text-center" style="width: 80px">Time</th>
                     @{
-                        var currentDate = DateTime.Now.Date;
-                        var weekStart = currentDate.AddDays(-(int)currentDate.DayOfWeek);
-                        
                         for (int i = 0; i < 7; i++)
                         {
-                            var day = weekStart.AddDays(i);
-                            <th class="text-center @(day.Date == DateTime.Now.Date ? "table-primary" : "")">
-                                @day.ToString("dddd")
-                                <br />
-                                @day.ToString("MMM dd, yyyy")
+                            var day = displayWeekStart.AddDays(i);
+                            <th class="text-center @(day.Date == DateTime.Now.Date ? "table-primary" : "")" style="min-width: 130px">
+                                <div class="small">
+                                    @day.ToString("dddd", enCulture)<br />
+                                    @day.ToString("MMM d", enCulture)
+                                </div>
                             </th>
                         }
                     }
@@ -54,45 +62,44 @@
             </thead>
             <tbody>
                 @{
-                    for (int hour = 8; hour <= 20; hour++)
+                    for (int hour = 0; hour <= 23; hour++)
                     {
                         <tr>
-                            <td class="align-middle text-center bg-light">
+                            <td class="align-middle text-center bg-light small py-1">
                                 @(hour.ToString("00")):00
                             </td>
                             @for (int day = 0; day < 7; day++)
                             {
-                                var currentSlotDate = weekStart.AddDays(day).AddHours(hour);
+                                var currentSlotDate = displayWeekStart.AddDays(day).AddHours(hour);
                                 var schedulesInSlot = Model?.Where(s => 
                                     s.StartTime.Date == currentSlotDate.Date && 
                                     s.StartTime.Hour <= hour && 
                                     s.EndTime.Hour > hour).ToList();
 
                                 <td class="position-relative @(currentSlotDate.Date == DateTime.Now.Date ? "bg-light" : "")" 
-                                    style="height: 80px; min-width: 150px">
+                                    style="height: 60px;">
                                     @if (schedulesInSlot != null && schedulesInSlot.Any())
                                     {
                                         foreach (var schedule in schedulesInSlot)
                                         {
                                             var isStartHour = schedule.StartTime.Hour == hour;
                                             var duration = (schedule.EndTime - schedule.StartTime).TotalHours;
-                                            var heightPercent = Math.Min(duration * 100, 100);
+                                            var startOffset = isStartHour ? 0 : (schedule.StartTime.Minute / 60.0 * 100);
+                                            var endHourOffset = schedule.EndTime.Hour == hour ? (schedule.EndTime.Minute / 60.0) : 1;
+                                            var heightPercent = ((endHourOffset - (isStartHour ? schedule.StartTime.Minute / 60.0 : 0)) * 100);
                                             
                                             <div class="position-absolute rounded border border-primary"
-                                                 style="top: 0; left: 5px; right: 5px; height: @(heightPercent)%; background-color: rgba(13, 110, 253, 0.1);">
+                                                 style="top: @startOffset%; left: 5px; right: 5px; height: @heightPercent%; background-color: rgba(13, 110, 253, 0.1);">
                                                 @if (isStartHour)
                                                 {
-                                                    <div class="p-2">
+                                                    <div class="p-1 small">
                                                         <strong class="d-block">@schedule.User?.Name</strong>
-                                                        <small class="d-block text-muted mb-2">
-                                                            @schedule.StartTime.ToLocalTime().ToString("HH:mm") - @schedule.EndTime.ToLocalTime().ToString("HH:mm")
+                                                        <small class="d-block text-muted mb-1">
+                                                            @schedule.StartTime.ToString("HH:mm", enCulture) - 
+                                                            @schedule.EndTime.ToString("HH:mm", enCulture)
                                                         </small>
                                                         <div class="d-flex gap-1">
-                                                        <!--
-                                                        <a asp-action="Edit" asp-route-id="@schedule.Id" class="btn btn-warning btn-sm">
-                                                            <i class="bi bi-pencil"></i> Edit
-                                                        </a>
-                                                        -->
+
                                                             <form asp-action="Delete" method="post" class="m-0">
                                                                 <input type="hidden" name="id" value="@schedule.Id"/>
                                                                 <input type="hidden" name="userId" value="@ViewBag.UserId"/>
@@ -116,21 +123,3 @@
         </table>
     </div>
 </div>
-
-@section Scripts {
-    <script>
-        function previousWeek() {
-            const urlParams = new URLSearchParams(window.location.search);
-            let currentDate = new Date(urlParams.get('date') || Date.now());
-            currentDate.setDate(currentDate.getDate() - 7);
-            window.location.href = '@Url.Action("Schedules", "Schedule", new { userId = ViewBag.UserId })?date=' + currentDate.toISOString().split('T')[0];
-        }
-
-        function nextWeek() {
-            const urlParams = new URLSearchParams(window.location.search);
-            let currentDate = new Date(urlParams.get('date') || Date.now());
-            currentDate.setDate(currentDate.getDate() + 7);
-            window.location.href = '@Url.Action("Schedules", "Schedule", new { userId = ViewBag.UserId })?date=' + currentDate.toISOString().split('T')[0];
-        }
-    </script>
-}
