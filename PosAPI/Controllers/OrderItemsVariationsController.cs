@@ -1,13 +1,11 @@
 ﻿using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using PosAPI.Controllers;
 using PosAPI.Repositories;
 using PosAPI.Services;
+using PosAPI.Services.Interfaces;
 using PosShared.DTOs;
 using PosShared.Models;
-using PosShared.Ultilities;
+using PosShared.Utilities;
 
 namespace PosAPI.Controllers;
 
@@ -17,17 +15,13 @@ namespace PosAPI.Controllers;
 public class OrderItemsVariationsController : ControllerBase
 {
     private readonly IOrderService _orderService;
-    private readonly IOrderRepository _orderRepository;
     private readonly IUserRepository _userRepository;
-    private readonly ITaxRepository _taxRepository;
     private readonly ILogger<OrderItemsVariationsController> _logger;
 
-    public OrderItemsVariationsController(IUserRepository userRepository, IOrderService orderService, IOrderRepository orderRepository, ITaxRepository taxRepository, ILogger<OrderItemsVariationsController> logger)
+    public OrderItemsVariationsController(IUserRepository userRepository, IOrderService orderService, ILogger<OrderItemsVariationsController> logger)
     {
         _userRepository = userRepository;
         _orderService = orderService;
-        _orderRepository = orderRepository;
-        _taxRepository = taxRepository;
         _logger = logger;
     }
 
@@ -36,23 +30,21 @@ public class OrderItemsVariationsController : ControllerBase
     public async Task<IActionResult> GetOrderItemVariations(int orderItemId)
     {
         User? sender = await GetUserFromToken();
-
-        if (sender == null)
-            return Unauthorized();
-
+        
         try
         {
-            var orderItem = await _orderService.GetAuthorizedOrderItem(orderItemId, sender);
             var orderItemVariations = await _orderService.GetAuthorizedOrderItemVariations(orderItemId, sender);
 
             return Ok(orderItemVariations);
         }
         catch (UnauthorizedAccessException ex)
         {
-            return Unauthorized(ex.Message);
+            _logger.LogWarning($"{ex.Message}");
+            return Forbid(ex.Message);
         }
         catch (KeyNotFoundException ex)
         {
+            _logger.LogWarning($"{ex.Message}");
             return NotFound(ex.Message);
         }
         catch (Exception ex)
@@ -67,10 +59,7 @@ public class OrderItemsVariationsController : ControllerBase
     public async Task<IActionResult> GetOrderItemVariationById(int orderId, int orderItemId, int variationId)
     {
         User? sender = await GetUserFromToken();
-
-        if (sender == null)
-            return Unauthorized();
-
+        
         try
         {
             var orderItemVariation = await _orderService.GetAuthorizedOrderItemVariation(variationId, orderItemId, sender);
@@ -79,10 +68,12 @@ public class OrderItemsVariationsController : ControllerBase
         }
         catch (UnauthorizedAccessException ex)
         {
-            return Unauthorized(ex.Message);
+            _logger.LogWarning($"{ex.Message}");
+            return Forbid(ex.Message);
         }
         catch (KeyNotFoundException ex)
         {
+            _logger.LogWarning($"{ex.Message}");
             return NotFound(ex.Message);
         }
         catch (Exception ex)
@@ -96,56 +87,25 @@ public class OrderItemsVariationsController : ControllerBase
     public async Task<IActionResult> AddOrderItemVariation(int orderId, int itemId, [FromBody] AddVariationDTO addVariationDTO)
     {
         User? sender = await GetUserFromToken();
-
-        if (sender == null)
-            return Unauthorized();
-
+        
         try
         {
-            var order = await _orderService.GetAuthorizedOrderForModification(orderId, sender);
-            var orderItem = await _orderService.GetAuthorizedOrderItem(itemId, sender);
-            var variation = await _orderService.GetAuthorizedItemVariation(addVariationDTO.VariationId, sender);
-
-            Tax? tax = await _taxRepository.GetTaxByItemIdAsync(variation.ItemId);
-
-            decimal taxedAmount;
-            if (tax != null)
-            {
-                if (tax.IsPercentage)
-                {
-                    taxedAmount = variation.AdditionalPrice * addVariationDTO.Quantity * tax.Amount / 100;
-                }
-                else
-                {
-                    taxedAmount = tax.Amount * addVariationDTO.Quantity;
-                }
-            }
-            else
-                taxedAmount = 0;
-
-
-            var orderItemVariation = new OrderItemVariation
-            {
-                OrderItemId = itemId,
-                ItemVariationId = addVariationDTO.VariationId,
-                Quantity = addVariationDTO.Quantity,
-                AdditionalPrice = variation.AdditionalPrice,
-                TaxedAmount = taxedAmount,
-            };
-
-            await _orderRepository.AddOrderItemVariationAsync(orderItemVariation);
-            await _orderRepository.UpdateOrderAsync(order);
-
+            var orderItemVariation =
+                await _orderService.CreateAuthorizedOrderItemVariation(orderId, itemId, addVariationDTO, sender);
+            
+            
             return CreatedAtAction(nameof(GetOrderItemVariationById),
                 new { orderId = orderId, orderItemId = itemId, variationId = orderItemVariation.Id },
                 orderItemVariation);
         }
         catch (UnauthorizedAccessException ex)
         {
-            return Unauthorized(ex.Message);
+            _logger.LogWarning($"{ex.Message}");
+            return Forbid(ex.Message);
         }
         catch (KeyNotFoundException ex)
         {
+            _logger.LogWarning($"{ex.Message}");
             return NotFound(ex.Message);
         }
         catch (Exception ex)
@@ -160,28 +120,21 @@ public class OrderItemsVariationsController : ControllerBase
     public async Task<IActionResult> DeleteOrderItemVariation(int orderId, int orderItemId, int orderItemVariationId)
     {
         User? sender = await GetUserFromToken();
-
-        if (sender == null)
-            return Unauthorized();
-
-        _logger.LogWarning($"{sender.Id} tries to delete Order item variation :" +
-            $"\nOrderID: {orderId}, OrderItemId:{orderItemId}, OrderItemVariationId:{orderItemVariationId}");
-
+        
         try
         {
-            var order = await _orderService.GetAuthorizedOrderForModification(orderId, sender);
-            var variation = await _orderService.GetAuthorizedOrderItemVariation(orderItemVariationId, orderItemId, sender);
-
-            await _orderRepository.DeleteOrderItemVariationAsync(orderItemVariationId);
+            await _orderService.DeleteAuthorizedOrderItemVariation(orderId, orderItemId, orderItemVariationId, sender);
 
             return Ok("Order Item Variation deleted successfully.");
         }
         catch (UnauthorizedAccessException ex)
         {
-            return Unauthorized(ex.Message);
+            _logger.LogWarning($"{ex.Message}");
+            return Forbid(ex.Message);
         }
         catch (KeyNotFoundException ex)
         {
+            _logger.LogWarning($"{ex.Message}");
             return NotFound(ex.Message);
         }
         catch (Exception ex)

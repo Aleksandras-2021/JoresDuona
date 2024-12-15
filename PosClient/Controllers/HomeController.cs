@@ -7,7 +7,7 @@ using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using PosShared;
 using System.IdentityModel.Tokens.Jwt;
-using PosShared.Ultilities;
+using PosShared.Utilities;
 using PosClient.Services;
 using System.Net;
 

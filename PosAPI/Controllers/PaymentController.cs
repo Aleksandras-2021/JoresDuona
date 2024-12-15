@@ -5,7 +5,7 @@ using Microsoft.EntityFrameworkCore;
 using PosAPI.Repositories;
 using PosShared.DTOs;
 using PosShared.Models;
-using PosShared.Ultilities;
+using PosShared.Utilities;
 using PosShared.ViewModels;
 
 namespace PosAPI.Controllers;

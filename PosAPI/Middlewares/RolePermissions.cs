@@ -18,7 +18,7 @@ public static class RolePermissions
         // Permissions for "Businesses" endpoints
         { "Businesses", new Dictionary<string, List<UserRole>>
             {
-                { "List", new List<UserRole> { UserRole.SuperAdmin } },
+                { "List", new List<UserRole> { UserRole.SuperAdmin,UserRole.Owner } },
                 { "Create", new List<UserRole> { UserRole.SuperAdmin } },
                 { "Read", AllRoles},
                 { "Update", new List<UserRole> { UserRole.SuperAdmin, UserRole.Owner } },
@@ -57,6 +57,27 @@ public static class RolePermissions
         },
         // Permissions for "Order" endpoints
         { "Order", new Dictionary<string, List<UserRole>>
+            {
+                { "List", AllRoles },
+                { "Create", AllRoles },
+                { "Read", AllRoles},
+                { "Update", AllRoles },
+                { "Delete", AllRoles }
+            }
+        },
+        // Permissions for "Service" endpoints
+        { "Service", new Dictionary<string, List<UserRole>>
+            {
+                { "List", AllRoles },
+                { "Create", new List<UserRole> { UserRole.SuperAdmin,UserRole.Owner,UserRole.Manager }  },
+                { "Read", AllRoles},
+                { "Update", new List<UserRole> { UserRole.SuperAdmin,UserRole.Owner,UserRole.Manager }  },
+                { "Delete", new List<UserRole> { UserRole.SuperAdmin,UserRole.Owner,UserRole.Manager }  }
+            }
+        },
+        
+        // Permissions for "Reservation" endpoints
+        { "Reservation", new Dictionary<string, List<UserRole>>
             {
                 { "List", AllRoles },
                 { "Create", AllRoles },

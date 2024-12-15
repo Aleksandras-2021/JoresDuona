@@ -1,6 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
-using PosShared.Ultilities;
+using PosShared.Utilities;
 using PosAPI.Repositories;
 using PosAPI.Services;
 using PosAPI.Services.Interfaces;

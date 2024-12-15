@@ -13,5 +13,6 @@ public class SelectItemsViewModel
     public Order? Order { get; set; }
     public PaginatedResult<Item>? Items { get; set; }
     public List<OrderItem>? OrderItems { get; set; } // Items already in the order
+    public List<OrderService>? OrderServices { get; set; } 
 
 }

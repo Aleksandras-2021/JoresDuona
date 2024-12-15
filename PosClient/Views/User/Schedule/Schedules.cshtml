@@ -99,9 +99,10 @@
                                                             @schedule.EndTime.ToString("HH:mm", enCulture)
                                                         </small>
                                                         <div class="d-flex gap-1">
+
                                                             <form asp-action="Delete" method="post" class="m-0">
-                                                                <input type="hidden" name="id" value="@schedule.Id" />
-                                                                <input type="hidden" name="userId" value="@ViewBag.UserId" />
+                                                                <input type="hidden" name="id" value="@schedule.Id"/>
+                                                                <input type="hidden" name="userId" value="@ViewBag.UserId"/>
                                                                 <button type="submit" class="btn btn-danger btn-sm"
                                                                         onclick="return confirm('Are you sure you want to delete this schedule?');">
                                                                     <i class="bi bi-trash"></i> Delete

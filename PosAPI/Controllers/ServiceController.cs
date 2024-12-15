@@ -4,8 +4,9 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Internal;
 using PosAPI.Repositories;
+using PosShared.DTOs;
 using PosShared.Models;
-using PosShared.Ultilities;
+using PosShared.Utilities;
 using PosShared.ViewModels;
 
 namespace PosAPI.Controllers
@@ -106,7 +107,7 @@ namespace PosAPI.Controllers
 
         // POST: api/Service
         [HttpPost]
-        public async Task<IActionResult> CreateService([FromBody] Service service)
+        public async Task<IActionResult> CreateService([FromBody] ServiceCreateDTO service)
         {
             User? senderUser = await GetUserFromToken();
 
@@ -126,8 +127,10 @@ namespace PosAPI.Controllers
             newService.BusinessId = senderUser.BusinessId;
             newService.Name = service.Name;
             newService.Description = service.Description;
+            newService.EmployeeId = service.EmployeeId;
             newService.BasePrice = service.BasePrice;
             newService.DurationInMinutes = service.DurationInMinutes;
+            newService.Category = service.Category;
 
             try
             {
@@ -144,12 +147,9 @@ namespace PosAPI.Controllers
 
         // PUT: api/Service/{id}
         [HttpPut("{id}")]
-        public async Task<IActionResult> UpdateService(int id, [FromBody] Service service)
+        public async Task<IActionResult> UpdateService(int id, [FromBody] ServiceCreateDTO service)
         {
-
-            if (service == null)
-                return BadRequest("Invalid service data.");
-
+            
             try
             {
                 User? senderUser = await GetUserFromToken();
@@ -164,12 +164,14 @@ namespace PosAPI.Controllers
 
                 existingService.Name = service.Name;
                 existingService.Description = service.Description;
+                existingService.EmployeeId = service.EmployeeId;
                 existingService.BasePrice = service.BasePrice;
                 existingService.DurationInMinutes = service.DurationInMinutes;
+                existingService.Category = service.Category;
 
                 await _serviceRepository.UpdateServiceAsync(existingService);
 
-                return NoContent();
+                return Ok();
                 
             }
             catch (KeyNotFoundException ex)

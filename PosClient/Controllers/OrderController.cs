@@ -28,16 +28,13 @@ public class OrderController : Controller
         string? token = Request.Cookies["authToken"];
         _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
-        var apiUrl = ApiRoutes.Orders.GetPaginated(pageNumber, pageSize);
+        var apiUrl = ApiRoutes.Order.GetPaginated(pageNumber, pageSize);
         var response = await _httpClient.GetAsync(apiUrl);
 
         if (response.IsSuccessStatusCode)
         {
             var jsonData = await response.Content.ReadAsStringAsync();
-            var result = JsonSerializer.Deserialize<PaginatedResult<Order>>(jsonData, new JsonSerializerOptions
-            {
-                PropertyNameCaseInsensitive = true
-            });
+            var result = JsonSerializer.Deserialize<PaginatedResult<Order>>(jsonData, JsonOptions.Default);
 
             return View(result);
         }
@@ -53,7 +50,7 @@ public class OrderController : Controller
         string? token = Request.Cookies["authToken"];
         _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
-        var apiUrl = ApiRoutes.Orders.Create;
+        var apiUrl = ApiRoutes.Order.Create;
         var content = new StringContent(string.Empty, Encoding.UTF8, "application/json");
 
         var response = await _httpClient.PostAsync(apiUrl, content);
@@ -61,7 +58,7 @@ public class OrderController : Controller
         if (response.IsSuccessStatusCode)
         {
             var jsonResponse = await response.Content.ReadAsStringAsync();
-            var createdOrder = JsonSerializer.Deserialize<Order>(jsonResponse, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+            var createdOrder = JsonSerializer.Deserialize<Order>(jsonResponse, JsonOptions.Default);
 
             // Redirect to Index after successful creation
             return RedirectToAction("SelectItems", new { orderId = createdOrder?.Id });
@@ -81,7 +78,7 @@ public class OrderController : Controller
         string? token = Request.Cookies["authToken"];
         _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
-        var apiUrl = ApiRoutes.Orders.Create;
+        var apiUrl = ApiRoutes.Order.Create;
 
         var content = new StringContent(string.Empty, Encoding.UTF8, "application/json");
 
@@ -90,7 +87,7 @@ public class OrderController : Controller
         if (response.IsSuccessStatusCode)
         {
             var jsonResponse = await response.Content.ReadAsStringAsync();
-            var createdOrder = JsonSerializer.Deserialize<Order>(jsonResponse, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+            var createdOrder = JsonSerializer.Deserialize<Order>(jsonResponse, JsonOptions.Default);
 
             return RedirectToAction(nameof(Index));
         }
@@ -105,7 +102,6 @@ public class OrderController : Controller
     public async Task<IActionResult> SelectItems(int orderId,int pageNumber = 1, int pageSize = 20)
     {
         string? token = Request.Cookies["authToken"];
-
         _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
         var itemsApiUrl = ApiRoutes.Items.GetItemsPaginated(pageNumber,pageSize);
@@ -115,7 +111,7 @@ public class OrderController : Controller
         if (itemsResponse.IsSuccessStatusCode)
         {
             var itemsJson = await itemsResponse.Content.ReadAsStringAsync();
-            items = JsonSerializer.Deserialize<PaginatedResult<Item>>(itemsJson, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+            items = JsonSerializer.Deserialize<PaginatedResult<Item>>(itemsJson, JsonOptions.Default);
         }
         else
         {
@@ -129,20 +125,35 @@ public class OrderController : Controller
         if (orderItemsResponse.IsSuccessStatusCode)
         {
             var orderItemsJson = await orderItemsResponse.Content.ReadAsStringAsync();
-            orderItems = JsonSerializer.Deserialize<List<OrderItem>>(orderItemsJson, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+            orderItems = JsonSerializer.Deserialize<List<OrderItem>>(orderItemsJson, JsonOptions.Default);
         }
         else
         {
             orderItems = new List<OrderItem>();
         }
+        
+        var orderServicesApiUrl = ApiRoutes.Order.GetOrderServices(orderId);
+        var orderServicesResponse = await _httpClient.GetAsync(orderServicesApiUrl);
 
-        var orderApiUrl = ApiRoutes.Orders.GetById(orderId);
+        List<PosShared.Models.OrderService>? orderServices = null;
+        if (orderServicesResponse.IsSuccessStatusCode)
+        {
+            var orderServicesJson = await orderServicesResponse.Content.ReadAsStringAsync();
+            orderServices = JsonSerializer.Deserialize<List<PosShared.Models.OrderService>>(orderServicesJson, JsonOptions.Default);
+        }
+        else
+        {
+            orderServices = new List<PosShared.Models.OrderService>();
+        }
+        
+
+        var orderApiUrl = ApiRoutes.Order.GetById(orderId);
         var orderResponse = await _httpClient.GetAsync(orderApiUrl);
         Order? order = null;
         if (orderResponse.IsSuccessStatusCode)
         {
             var orderJson = await orderResponse.Content.ReadAsStringAsync();
-            order = JsonSerializer.Deserialize<Order>(orderJson, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+            order = JsonSerializer.Deserialize<Order>(orderJson, JsonOptions.Default);
         }
         else
         {
@@ -154,7 +165,8 @@ public class OrderController : Controller
             OrderId = orderId,
             Order = order,
             Items = items,
-            OrderItems = orderItems
+            OrderItems = orderItems,
+            OrderServices = orderServices
         };
         
         return View(model);
@@ -168,7 +180,7 @@ public class OrderController : Controller
 
         _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
-        var apiUrl = ApiRoutes.Orders.GetById(orderId);
+        var apiUrl = ApiRoutes.Order.GetById(orderId);
         var response = await _httpClient.GetAsync(apiUrl);
 
         if (response.IsSuccessStatusCode)
@@ -197,7 +209,7 @@ public class OrderController : Controller
 
         if (ModelState.IsValid)
         {
-            var apiUrl = ApiRoutes.Orders.Update(order.Id);
+            var apiUrl = ApiRoutes.Order.Update(order.Id);
             var content = new StringContent(JsonSerializer.Serialize(order), Encoding.UTF8, "application/json");
 
             var response = await _httpClient.PutAsync(apiUrl, content);
@@ -221,7 +233,7 @@ public class OrderController : Controller
 
         _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
-        var apiUrl = ApiRoutes.Orders.Delete(orderId);
+        var apiUrl = ApiRoutes.Order.Delete(orderId);
         var response = await _httpClient.DeleteAsync(apiUrl);
 
         if (response.IsSuccessStatusCode)
@@ -390,7 +402,7 @@ public class OrderController : Controller
         string? token = Request.Cookies["authToken"];
         _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
-        var apiUrl = ApiRoutes.Orders.UpdateStatus(orderId, status);
+        var apiUrl = ApiRoutes.Order.UpdateStatus(orderId, status);
         var response = await _httpClient.PostAsync(apiUrl, null);
 
         if (response.IsSuccessStatusCode)

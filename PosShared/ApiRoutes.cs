@@ -9,10 +9,11 @@ public static class ApiRoutes
     public const string ClientBaseUrl = "https://localhost:5001";
 
 
-    public static class Orders
+    public static class Order
     {
         public static string GetPaginated(int pageNumber, int pageSize) => $"{ApiBaseUrl}/api/Order?pageNumber={pageNumber}&pageSize={pageSize}";
         public static string GetOrderVariations(int orderId) => $"{ApiBaseUrl}/api/Order/{orderId}/Variations";
+        public static string GetOrderServices(int orderId) => $"{ApiBaseUrl}/api/Order/{orderId}/Services";
         public static string Create => $"{ApiBaseUrl}/api/Order";
         public static string GetById(int id) => $"{ApiBaseUrl}/api/Order/{id}";
         public static string Update(int id) => $"{ApiBaseUrl}/api/Order/{id}";
@@ -62,6 +63,26 @@ public static class ApiRoutes
         public static string GetById(int id) =>  $"{ApiBaseUrl}/api/Users/{id}";
         public static string Update(int id) =>  $"{ApiBaseUrl}/api/Users/{id}";
         public static string Delete(int id) =>  $"{ApiBaseUrl}/api/Users/{id}";
+        
+    }
+    
+    public static class Reservation
+    {
+        public static string Get =>  $"{ApiBaseUrl}/api/Reservation";
+        public static string Create =>  $"{ApiBaseUrl}/api/Reservation";
+        public static string GetById(int id) =>  $"{ApiBaseUrl}/api/Reservation/{id}";
+        public static string Update(int id) =>  $"{ApiBaseUrl}/api/Reservation/{id}";
+        public static string Delete(int id) =>  $"{ApiBaseUrl}/api/Reservation/{id}";
+        
+    }
+    
+    public static class Service
+    {
+        public static string Get =>  $"{ApiBaseUrl}/api/Service";
+        public static string Create =>  $"{ApiBaseUrl}/api/Service";
+        public static string GetById(int id) =>  $"{ApiBaseUrl}/api/Service/{id}";
+        public static string Update(int id) =>  $"{ApiBaseUrl}/api/Service/{id}";
+        public static string Delete(int id) =>  $"{ApiBaseUrl}/api/Service/{id}";
         
     }
 

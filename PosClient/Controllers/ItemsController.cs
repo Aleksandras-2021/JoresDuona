@@ -4,7 +4,7 @@ using System.Net.Http.Headers;
 using System.Net.Http;
 using System.Text.Json;
 using PosShared;
-using PosShared.Ultilities;
+using PosShared.Utilities;
 using System.Text;
 using PosShared.ViewModels;
 using PosShared.DTOs;

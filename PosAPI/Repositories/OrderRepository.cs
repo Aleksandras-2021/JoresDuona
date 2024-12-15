@@ -186,10 +186,12 @@ public class OrderRepository : IOrderRepository
     public async Task<List<OrderItemVariation>> GetOrderItemVariationsByOrderIdAsync(int orderId)
     {
         return await _context.OrderItemVariations
+            .Include(oiv => oiv.OrderItem) // Eagerly load the OrderItem navigation property
             .Where(oiv => oiv.OrderItem.OrderId == orderId)
             .OrderBy(oiv => oiv.Id)
             .ToListAsync();
     }
+
 
     public async Task DeleteOrderItemVariationAsync(int varId)
     {
@@ -228,5 +230,19 @@ public class OrderRepository : IOrderRepository
     {
         return await _context.ItemVariations.FirstOrDefaultAsync(v => v.Id == variationId);
     }
+    
+    public async Task AddOrderServiceAsync(OrderService orderService)
+    {
+        await _context.OrderServices.AddAsync(orderService);
+        await _context.SaveChangesAsync(); 
+    }
+    
+    public async Task<List<OrderService>> GetAllOrderServices(int orderId)
+    {
+        return await _context.OrderServices
+            .Where(os => os.OrderId == orderId)
+            .ToListAsync();
+    }
+
     
 }
