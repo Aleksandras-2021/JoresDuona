@@ -14,20 +14,20 @@ public class ServiceService: IServiceService
     private readonly IServiceRepository _serviceRepository;
     private readonly IScheduleRepository _scheduleRepository;
     private readonly IReservationRepository _reservationRepository;
-    private readonly ITaxRepository _taxRepository;
+    private readonly ITaxService _taxService;
     private readonly IOrderService _orderService;
     private readonly IOrderRepository _orderRepository;
 
     public ServiceService(IUserRepository userRepository, IServiceRepository serviceRepository,
         IScheduleRepository scheduleRepository,IOrderService orderService, 
-        IReservationRepository reservationRepository,ITaxRepository taxRepository,IOrderRepository orderRepository)
+        IReservationRepository reservationRepository,ITaxService taxService,IOrderRepository orderRepository)
     {
         _userRepository = userRepository;
         _serviceRepository = serviceRepository;
         _scheduleRepository = scheduleRepository;
         _reservationRepository = reservationRepository;
         _orderService = orderService;
-        _taxRepository = taxRepository;
+        _taxService = taxService;
         _orderRepository = orderRepository;
     }
 
@@ -79,10 +79,8 @@ public class ServiceService: IServiceService
         
         //1. Create an order for reservation
         var orderId = await _orderService.CreateAuthorizedOrder(sender);
-        if (orderId <= 0) 
-        {
-            throw new Exception("Failed to create an order.");
-        }
+
+        var order = await _orderRepository.GetOrderByIdAsync(orderId);
 
         Customer? customer = await _reservationRepository.FindCustomerByPhone(reservation.CustomerPhone);
         if (customer == null)
@@ -106,7 +104,7 @@ public class ServiceService: IServiceService
         var endTime = reservation.ReservationTime.AddMinutes(service.DurationInMinutes);
         
 
-        // Check for overlapping reservations
+        // Check for overlapping reservations (it Does not check user schedule)
         var isOverlapping = await _reservationRepository.IsReservationOverlappingAsync(reservation.ServiceId, startTime, endTime);
         
         if (isOverlapping)
@@ -128,20 +126,7 @@ public class ServiceService: IServiceService
         await _reservationRepository.AddReservationAsync(newReservation);
 
         //Make OrderService 
-        Tax? tax = await _taxRepository.GetTaxByCategoryAsync(service.Category, sender.BusinessId);
-
-        decimal serviceTax;
-        if (tax != null)
-        {
-            if (tax.IsPercentage)
-                serviceTax = service.BasePrice * tax.Amount / 100;
-            else
-                serviceTax = tax.Amount;
-        }
-        else
-        {
-            serviceTax = 0;
-        }
+        decimal serviceTax = await _taxService.CalculateTaxByCategory(service.BasePrice,1,service.Category,service.BusinessId);
 
         // Must specify namespace, because it clashes with another class
         var orderService = new PosShared.Models.OrderService()
@@ -154,7 +139,11 @@ public class ServiceService: IServiceService
             Total = service.BasePrice + serviceTax
         };
         await _orderRepository.AddOrderServiceAsync(orderService);
-        await _orderService.RecalculateOrderCharge(orderId);
+
+        order.ChargeAmount += orderService.Charge;
+        order.TaxAmount += orderService.Tax;
+        
+        await _orderRepository.UpdateOrderAsync(order);
     }
 
     public async Task DeleteAuthorizedReservationAsync(int reservationId, User? sender)
@@ -163,6 +152,10 @@ public class ServiceService: IServiceService
         Reservation? reservation = await _reservationRepository.GetReservationByIdAsync(reservationId);
         Service? service = await _serviceRepository.GetServiceByIdAsync(reservation.ServiceId);
         AuthorizationHelper.ValidateOwnershipOrRole(sender,service.BusinessId ,sender.BusinessId, "Delete");
+        Order? order = await _orderRepository.GetOrderByIdAsync(reservation.OrderId);
+
+        order.ChargeAmount -= service.BasePrice;
+        order.TaxAmount -= await _taxService.CalculateTaxByCategory(service.BasePrice,1,service.Category,service.BusinessId);
         
         await _reservationRepository.DeleteReservationAsync(reservationId);
     }

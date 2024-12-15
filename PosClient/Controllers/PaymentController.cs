@@ -78,7 +78,7 @@ public class PaymentController : Controller
         if (response.IsSuccessStatusCode)
         {
             var paymentData = await response.Content.ReadAsStringAsync();
-            var payments = JsonSerializer.Deserialize<List<Payment>>(paymentData, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+            var payments = JsonSerializer.Deserialize<List<Payment>>(paymentData,JsonOptions.Default);
 
             if (payments != null && payments.Any())
             {

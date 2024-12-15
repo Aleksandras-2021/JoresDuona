@@ -53,11 +53,8 @@ public class ReservationController : ControllerBase
     [HttpGet("services/{serviceId}/available-slots")]
     public async Task<IActionResult> GetAvailableSlots(int serviceId, DateTime date)
     {
-        //Get service employee
-        
-        //Get already taken timeslots(
-        
-        
+
+        //Unimplemented
         User? sender = await GetUserFromToken();
         if (sender == null)
             return Unauthorized();

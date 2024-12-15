@@ -1,7 +1,9 @@
 using PosAPI.Middlewares;
+using PosAPI.Migrations;
 using PosAPI.Repositories;
 using PosAPI.Services.Interfaces;
 using PosShared.Models;
+using ItemCategory = PosShared.Models.Items.ItemCategory;
 
 namespace PosAPI.Services;
 
@@ -14,7 +16,6 @@ public class TaxService: ITaxService
     public async Task<List<Tax>> GetAuthorizedTaxesAsync(User? sender)
     {
         AuthorizationHelper.Authorize("Tax", "List", sender);
-
         
         List<Tax> taxes = new List<Tax>();
 
@@ -63,4 +64,25 @@ public class TaxService: ITaxService
         
         await _taxRepository.DeleteTaxAsync(taxId);
     }
+
+    public async Task<decimal> CalculateTaxByCategory(decimal itemPrice,int itemQuantity,ItemCategory itemCategory, int businessId)
+    {
+        Tax? tax = await _taxRepository.GetTaxByCategoryAsync(itemCategory, businessId);
+
+        decimal totalTaxAmount;
+        if (tax != null)
+        {
+            if (tax.IsPercentage)
+                totalTaxAmount = itemPrice * itemQuantity * tax.Amount / 100;
+            else
+                totalTaxAmount = tax.Amount;
+        }
+        else
+        {
+            totalTaxAmount = 0;
+        }
+
+        return totalTaxAmount;
+    }
+    
 }

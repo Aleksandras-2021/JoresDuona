@@ -62,15 +62,12 @@ public class OrderController : ControllerBase
     public async Task<IActionResult> GetOrderById(int id)
     {
         User? sender = await GetUserFromToken();
-
-        if (sender == null)
-            return Unauthorized();
-
+        
         try
         {
             Order? order = await _orderService.GetAuthorizedOrder(id, sender);
 
-            await _orderService.RecalculateOrderCharge(id);
+            //await _orderService.RecalculateOrderCharge(id);
 
             return Ok(order);
         }

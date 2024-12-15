@@ -107,7 +107,5 @@ namespace PosClient.Controllers
 
             return RedirectToAction("Index");
         }
-
-
     }
 }
