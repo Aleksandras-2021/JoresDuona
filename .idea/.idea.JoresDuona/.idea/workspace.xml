@@ -50,7 +50,7 @@
     &quot;RunOnceActivity.OpenProjectViewOnStart&quot;: &quot;true&quot;,
     &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
     &quot;WebServerToolWindowFactoryState&quot;: &quot;false&quot;,
-    &quot;git-widget-placeholder&quot;: &quot;feature/DefaultShiftPattern&quot;,
+
     &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
     &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
     &quot;node.js.selected.package.tslint&quot;: &quot;(autodetect)&quot;,
@@ -101,9 +101,7 @@
       <workItem from="1734217156837" duration="177000" />
       <workItem from="1734217371523" duration="11912000" />
       <workItem from="1734262479046" duration="1309000" />
-      <workItem from="1734289221946" duration="1306000" />
-      <workItem from="1734301133310" duration="2929000" />
-      <workItem from="1734304116294" duration="1109000" />
+
     </task>
     <servers />
   </component>

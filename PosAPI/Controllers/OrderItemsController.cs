@@ -43,9 +43,8 @@ public class OrderItemsController : ControllerBase
         }
         catch (UnauthorizedAccessException ex)
         {
-            _logger.LogError($"{ex.Message}");
-
-            return Forbid(ex.Message);
+            _logger.LogWarning($"403 Status, User {sender.Id}. {ex.Message}");
+            return StatusCode(403, $"Forbidden {ex.Message}");
         }
         catch (KeyNotFoundException ex)
         {
@@ -73,7 +72,8 @@ public class OrderItemsController : ControllerBase
         }
         catch (UnauthorizedAccessException ex)
         {
-            return Unauthorized(ex.Message);
+            _logger.LogWarning($"403 Status, User {sender.Id}. {ex.Message}");
+            return StatusCode(403, $"Forbidden {ex.Message}");
         }
         catch (KeyNotFoundException ex)
         {
@@ -105,8 +105,8 @@ public class OrderItemsController : ControllerBase
         }
         catch (UnauthorizedAccessException ex)
         {
-            _logger.LogError(ex.Message);
-            return Unauthorized(ex.Message);
+            _logger.LogWarning($"403 Status, User {sender.Id}. {ex.Message}");
+            return StatusCode(403, $"Forbidden {ex.Message}");
         }
         catch (Exception ex)
         {
@@ -129,8 +129,8 @@ public class OrderItemsController : ControllerBase
         }
         catch (UnauthorizedAccessException ex)
         {
-            _logger.LogError(ex.Message);
-            return Forbid(ex.Message);
+            _logger.LogWarning($"403 Status, User {sender.Id}. {ex.Message}");
+            return StatusCode(403, $"Forbidden {ex.Message}");
         }
         catch (KeyNotFoundException ex)
         {

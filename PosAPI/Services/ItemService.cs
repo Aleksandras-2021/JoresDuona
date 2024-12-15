@@ -76,7 +76,7 @@ public class ItemService: IItemService
         existingItem.Price = item.Price;
         existingItem.Name = item.Name;
         existingItem.Description = item.Description;
-        existingItem.BasePrice = item.Price;
+        existingItem.BasePrice = item.BasePrice;
         existingItem.Category = item.Category;
         existingItem.Quantity = item.Quantity;
         
@@ -152,7 +152,7 @@ public class ItemService: IItemService
         var variations = await _itemRepository.GetItemVariationsAsync(id);
         
         if(!variations.Any())
-            throw new KeyNotFoundException($"No variations for Item with ID {id} found.");
+            return (new List<ItemVariation>());
         
         return variations;
     }

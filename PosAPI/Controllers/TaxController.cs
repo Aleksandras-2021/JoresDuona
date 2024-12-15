@@ -43,8 +43,8 @@ public class TaxController : ControllerBase
         }
         catch (UnauthorizedAccessException ex)
         {
-            _logger.LogError($"Unauthorized access taxes: {ex.Message}");
-            return Unauthorized(ex.Message);
+            _logger.LogWarning($"403 Status, User {sender.Id}. {ex.Message}");
+            return StatusCode(403, $"Forbidden {ex.Message}");
         }
         catch (Exception ex)
         {
@@ -66,13 +66,13 @@ public class TaxController : ControllerBase
         }
         catch (KeyNotFoundException ex)
         {
-            _logger.LogError($"Tax with id  {id} not found. {ex.Message}");
+            _logger.LogWarning($"Tax with id  {id} not found. {ex.Message}");
             return NotFound(ex.Message);
         }
         catch (UnauthorizedAccessException ex)
         {
-            _logger.LogError($"Unauthorized access to tax with ID {id}. {ex.Message}");
-            return Unauthorized(ex.Message);
+            _logger.LogWarning($"403 Status, User {sender.Id}. {ex.Message}");
+            return StatusCode(403, $"Forbidden {ex.Message}");
         }
         catch (Exception ex)
         {
@@ -104,12 +104,12 @@ public class TaxController : ControllerBase
         }
         catch (UnauthorizedAccessException ex)
         {
-            _logger.LogError($"Unauthorized access to tax creation from sender with ID {sender.Id}. {ex.Message}");
-            return Unauthorized(ex.Message);
+            _logger.LogWarning($"403 Status, User {sender.Id}. {ex.Message}");
+            return StatusCode(403, $"Forbidden {ex.Message}");
         }
         catch (ArgumentNullException ex)
         {
-            _logger.LogError($"{ex.Message}");
+            _logger.LogWarning($"{ex.Message}");
             return Unauthorized(ex.Message);
         }
         catch (Exception e)
@@ -138,8 +138,8 @@ public class TaxController : ControllerBase
         }
         catch (UnauthorizedAccessException ex)
         {
-            _logger.LogError($"Unauthorized access to tax update. {ex.Message}");
-            return Unauthorized(ex.Message);
+            _logger.LogWarning($"403 Status, User {sender.Id}. {ex.Message}");
+            return StatusCode(403, $"Forbidden {ex.Message}");
         }
         catch (KeyNotFoundException ex)
         {
@@ -167,8 +167,8 @@ public class TaxController : ControllerBase
         }
         catch (UnauthorizedAccessException ex)
         {
-            _logger.LogError($"Unauthorized access to tax delete from sender with ID {sender.Id}. {ex.Message}");
-            return Unauthorized(ex.Message);
+            _logger.LogWarning($"403 Status, User {sender.Id}. {ex.Message}");
+            return StatusCode(403, $"Forbidden {ex.Message}");
         }
         catch (KeyNotFoundException ex)
         {

@@ -336,28 +336,28 @@ public class OrderController : Controller
 
         _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
-        var variationsApiUrl = ApiRoutes.Items.GetItemVariationById(itemId);
+        var variationsApiUrl = ApiRoutes.Items.GetItemVariations(itemId);
         var response = await _httpClient.GetAsync(variationsApiUrl);
 
         List<ItemVariation>? variations = null;
         if (response.IsSuccessStatusCode)
         {
             var variationsJson = await response.Content.ReadAsStringAsync();
-            variations = JsonSerializer.Deserialize<List<ItemVariation>>(variationsJson, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+            variations = JsonSerializer.Deserialize<List<ItemVariation>>(variationsJson, JsonOptions.Default);
         }
         else
         {
             variations = new List<ItemVariation>();
         }
 
-        var orderItemVariatonsApiUrl = ApiRoutes.OrderItems.GetVariations(orderId, orderItemId);
-        response = await _httpClient.GetAsync(orderItemVariatonsApiUrl);
+        var orderItemVariationsApiUrl = ApiRoutes.OrderItems.GetVariations(orderId, orderItemId);
+        response = await _httpClient.GetAsync(orderItemVariationsApiUrl);
 
         List<OrderItemVariation>? orderItemVariations = null;
         if (response.IsSuccessStatusCode)
         {
             var variationsJson = await response.Content.ReadAsStringAsync();
-            orderItemVariations = JsonSerializer.Deserialize<List<OrderItemVariation>>(variationsJson, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+            orderItemVariations = JsonSerializer.Deserialize<List<OrderItemVariation>>(variationsJson, JsonOptions.Default);
         }
         else
         {

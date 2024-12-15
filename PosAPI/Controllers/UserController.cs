@@ -45,10 +45,12 @@ public class UsersController : ControllerBase
         }
         catch (UnauthorizedAccessException ex)
         {
-            return Unauthorized(ex.Message);
+            _logger.LogWarning($"{ex.Message}");
+            return Forbid(ex.Message);
         }
         catch (KeyNotFoundException ex)
         {
+            _logger.LogWarning($"{ex.Message}");
             return NotFound(ex.Message);
         }
         catch (Exception ex)
@@ -84,10 +86,12 @@ public class UsersController : ControllerBase
         }
         catch (UnauthorizedAccessException ex)
         {
-            return Unauthorized(ex.Message);
+            _logger.LogWarning($"403 Status, User {sender.Id}. {ex.Message}");
+            return StatusCode(403, $"Forbidden {ex.Message}");
         }
         catch (KeyNotFoundException ex)
         {
+            _logger.LogWarning($"{ex.Message}");
             return NotFound(ex.Message);
         }
         catch (Exception ex)
@@ -112,7 +116,13 @@ public class UsersController : ControllerBase
         }
         catch (UnauthorizedAccessException ex)
         {
-            return Unauthorized(ex.Message);
+            _logger.LogWarning($"403 Status, User {sender.Id}. {ex.Message}");
+            return StatusCode(403, $"Forbidden {ex.Message}");
+        }
+        catch (KeyNotFoundException ex)
+        {
+            _logger.LogWarning($"{ex.Message}");
+            return NotFound(ex.Message);
         }
         catch (MissingFieldException ex)
         {
@@ -138,16 +148,18 @@ public class UsersController : ControllerBase
         }
         catch (UnauthorizedAccessException ex)
         {
-            return Unauthorized(ex.Message);
+            _logger.LogWarning($"403 Status, User {sender.Id}. {ex.Message}");
+            return StatusCode(403, $"Forbidden {ex.Message}");
         }
         catch (KeyNotFoundException ex)
         {
+            _logger.LogWarning($"{ex.Message}");
             return NotFound(ex.Message);
         }
         catch (Exception ex)
         {
-            _logger.LogError($"Error updating user with ID {id}: {ex.Message}");
-            return StatusCode(500, "Internal server error");
+            _logger.LogError($"Internal server error {ex.Message}");
+            return StatusCode(500, $"Internal server error {ex.Message}");
         }
     }
 
@@ -166,16 +178,18 @@ public class UsersController : ControllerBase
         }
         catch (UnauthorizedAccessException ex)
         {
-            return Unauthorized(ex.Message);
+            _logger.LogWarning($"403 Status, User {sender.Id}. {ex.Message}");
+            return StatusCode(403, $"Forbidden {ex.Message}");
         }
         catch (KeyNotFoundException ex)
         {
+            _logger.LogWarning($"{ex.Message}");
             return NotFound(ex.Message);
         }
         catch (Exception ex)
         {
-            _logger.LogError($"Error deleting user with ID {id}: {ex.Message}");
-            return StatusCode(500, "Internal server error");
+            _logger.LogError($"Internal server error {ex.Message}");
+            return StatusCode(500, $"Internal server error {ex.Message}");
         }
     }
 
