@@ -56,10 +56,12 @@ namespace PosAPI.Services
             return await _repository.GetByUserIdAsync(userId);
         }
 
-        public async Task CreateAuthorizedPatternAsync(DefaultShiftPattern pattern, User? sender)
+        public async Task<DefaultShiftPattern> CreateAuthorizedPatternAsync(DefaultShiftPattern pattern, User? sender)
         {
             AuthorizationHelper.Authorize("DefaultShiftPattern", "Create", sender);
-            
+            if (pattern == null)
+                throw new MissingFieldException();
+
             if (pattern.EndDate <= pattern.StartDate)
                 throw new ArgumentException("End date must be after start date.");
 
@@ -72,6 +74,8 @@ namespace PosAPI.Services
             }
 
             await _repository.AddAsync(pattern);
+
+            return pattern;
         }
 
         public async Task UpdateAuthorizedPatternAsync(DefaultShiftPattern pattern, User? sender)

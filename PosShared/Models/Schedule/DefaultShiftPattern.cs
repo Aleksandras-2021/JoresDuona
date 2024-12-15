@@ -12,6 +12,5 @@ public class DefaultShiftPattern
 
     public DateTime EndDate { get; set; }
 
-    [JsonIgnore]
     public ICollection<User>? Users { get; set; }
 }

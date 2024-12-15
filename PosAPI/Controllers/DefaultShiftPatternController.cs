@@ -48,7 +48,7 @@ public class DefaultShiftPatternController : ControllerBase
         }
     }
 
-    // GET: api/DefaultShiftPattern/{id}
+    // GET: api/DefaultShiftPattern/User/{userId}
     [HttpGet("{id}")]
     public async Task<IActionResult> GetPatternById(int id)
     {
@@ -105,19 +105,44 @@ public class DefaultShiftPatternController : ControllerBase
     public async Task<IActionResult> CreatePattern([FromBody] DefaultShiftPattern pattern)
     {
         User? sender = await GetUserFromToken();
+        if (sender == null)
+            return Unauthorized();
+
+        _logger.LogInformation($"{sender.Name} is creating a shift pattern");
+
+        if (pattern == null)
+            return BadRequest("Pattern data is null.");
+
+        if (sender.Role == UserRole.Worker)
+            return Unauthorized();
 
         try
         {
-            await _shiftPatternService.CreateAuthorizedPatternAsync(pattern, sender);
-            return CreatedAtAction(nameof(GetPatternById), new { id = pattern.Id }, pattern);
+            pattern.StartDate = DateTime.SpecifyKind(pattern.StartDate, DateTimeKind.Utc);
+            pattern.EndDate = DateTime.SpecifyKind(pattern.EndDate, DateTimeKind.Utc);
+
+            if (pattern.EndDate <= pattern.StartDate)
+            {
+                return BadRequest("End time must be after start time.");
+            }
+    
+            pattern.Users ??= new List<User>();
+
+            var newPattern = await _shiftPatternService.CreateAuthorizedPatternAsync(pattern, sender);
+
+            return CreatedAtAction(
+                nameof(GetPatternById), 
+                new { id = newPattern.Id }, 
+                newPattern
+            );
         }
         catch (UnauthorizedAccessException ex)
         {
             return Unauthorized(ex.Message);
         }
-        catch (ArgumentException ex)
+        catch (KeyNotFoundException ex)
         {
-            return BadRequest(ex.Message);
+            return NotFound(ex.Message);
         }
         catch (Exception ex)
         {
