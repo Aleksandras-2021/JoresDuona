@@ -39,8 +39,8 @@ namespace PosAPI.Controllers
             }
             catch (UnauthorizedAccessException ex)
             {
-                _logger.LogWarning($"{ex.Message}");
-                return Forbid(ex.Message);
+                _logger.LogWarning($"403 Status, User {sender.Id}. {ex.Message}");
+                return StatusCode(403, $"Forbidden {ex.Message}");
             }
             catch (KeyNotFoundException ex)
             {
@@ -67,8 +67,8 @@ namespace PosAPI.Controllers
             }
             catch (UnauthorizedAccessException ex)
             {
-                _logger.LogWarning($"{ex.Message}");
-                return Forbid(ex.Message);
+                _logger.LogWarning($"403 Status, User {sender.Id}. {ex.Message}");
+                return StatusCode(403, $"Forbidden {ex.Message}");
             }
             catch (KeyNotFoundException ex)
             {
@@ -97,8 +97,8 @@ namespace PosAPI.Controllers
             }
             catch (UnauthorizedAccessException ex)
             {
-                _logger.LogWarning($"{ex.Message}");
-                return Forbid(ex.Message);
+                _logger.LogWarning($"403 Status, User {sender.Id}. {ex.Message}");
+                return StatusCode(403, $"Forbidden {ex.Message}");
             }
             catch (KeyNotFoundException ex)
             {
@@ -125,8 +125,8 @@ namespace PosAPI.Controllers
             }
             catch (UnauthorizedAccessException ex)
             {
-                _logger.LogWarning($"{ex.Message}");
-                return Forbid(ex.Message);
+                _logger.LogWarning($"403 Status, User {sender.Id}. {ex.Message}");
+                return StatusCode(403, $"Forbidden {ex.Message}");
             }
             catch (KeyNotFoundException ex)
             {
@@ -154,8 +154,8 @@ namespace PosAPI.Controllers
             }
             catch (UnauthorizedAccessException ex)
             {
-                _logger.LogWarning($"{ex.Message}");
-                return Forbid(ex.Message);
+                _logger.LogWarning($"403 Status, User {sender.Id}. {ex.Message}");
+                return StatusCode(403, $"Forbidden {ex.Message}");
             }
             catch (KeyNotFoundException ex)
             {

@@ -64,9 +64,19 @@ public class ReservationController : ControllerBase
             var slots = await _serviceService.GetAvailableTimeSlots(serviceId);
             return Ok(slots);
         }
+        catch (KeyNotFoundException ex)
+        {
+            _logger.LogError($"{ex.Message}");
+            return NotFound(ex.Message);
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            _logger.LogWarning($"403 Status, User {sender.Id}. {ex.Message}");
+            return StatusCode(403, $"Forbidden {ex.Message}");
+        }
         catch (Exception ex)
         {
-            _logger.LogError($"Error getting available slots: {ex.Message}");
+            _logger.LogError($"Error deleting reservation: {ex.Message}");
             return StatusCode(500, "Internal server error");
         }
     }
@@ -81,9 +91,19 @@ public class ReservationController : ControllerBase
             await _serviceService.CreateAuthorizedReservation(dto, sender);
             return Ok();
         }
+        catch (KeyNotFoundException ex)
+        {
+            _logger.LogError($"{ex.Message}");
+            return NotFound(ex.Message);
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            _logger.LogWarning($"403 Status, User {sender.Id}. {ex.Message}");
+            return StatusCode(403, $"Forbidden {ex.Message}");
+        }
         catch (Exception ex)
         {
-            _logger.LogError($"Error creating reservation: {ex.Message}");
+            _logger.LogError($"Error deleting reservation: {ex.Message}");
             return StatusCode(500, "Internal server error");
         }
     }
@@ -106,8 +126,8 @@ public class ReservationController : ControllerBase
         }
         catch (UnauthorizedAccessException ex)
         {
-            _logger.LogError($"{ex.Message}");
-            return Unauthorized(ex.Message);
+            _logger.LogWarning($"403 Status, User {sender.Id}. {ex.Message}");
+            return StatusCode(403, $"Forbidden {ex.Message}");
         }
         catch (Exception ex)
         {
