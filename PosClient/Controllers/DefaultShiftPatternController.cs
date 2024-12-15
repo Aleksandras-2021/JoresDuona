@@ -28,10 +28,7 @@ namespace PosClient.Controllers
             if (response.IsSuccessStatusCode)
             {
                 var patternsData = await response.Content.ReadAsStringAsync();
-                var patterns = JsonSerializer.Deserialize<List<DefaultShiftPattern>>(
-                    patternsData,
-                    new JsonSerializerOptions { PropertyNameCaseInsensitive = true }
-                );
+                var patterns = JsonSerializer.Deserialize<List<DefaultShiftPattern>>(patternsData, JsonOptions.Default);
                 Console.WriteLine("Patterns:" + JsonSerializer.Serialize(patterns));
                 return View(patterns);
             }

@@ -45,6 +45,7 @@ public class User
     public ICollection<TimeOff>? TimeOffs { get; set; }
 
     [JsonPropertyName("defaultShiftPatterns")]
+    [JsonIgnore]
     public ICollection<DefaultShiftPattern>? DefaultShiftPatterns { get; set; }
 
     [JsonPropertyName("orders")]
