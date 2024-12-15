@@ -202,6 +202,8 @@ public class PaymentController : Controller
             var model = new ReceiptViewModel()
             {
                 OrderId = orderId,
+                EmployeeId = order.UserId,
+                ClosedAt = order.ClosedAt,
                 OrderItems = orderItems,
                 OrderItemVariatons = orderItemVariations,
                 OrderServices = orderServices,
