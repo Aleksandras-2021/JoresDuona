@@ -15,11 +15,11 @@
   <component name="ChangeListManager">
     <list default="true" id="fe899842-ea22-4e77-98e6-59d0bab7b320" name="Changes" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/.idea.JoresDuona/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/.idea.JoresDuona/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/PosAPI/Controllers/ServiceController.cs" beforeDir="false" afterPath="$PROJECT_DIR$/PosAPI/Controllers/ServiceController.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/PosAPI/Controllers/UserController.cs" beforeDir="false" afterPath="$PROJECT_DIR$/PosAPI/Controllers/UserController.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/PosAPI/Services/Interfaces/IServiceService.cs" beforeDir="false" afterPath="$PROJECT_DIR$/PosAPI/Services/Interfaces/IServiceService.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/PosAPI/Services/ServiceService.cs" beforeDir="false" afterPath="$PROJECT_DIR$/PosAPI/Services/ServiceService.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/PosAPI/Services/UserService.cs" beforeDir="false" afterPath="$PROJECT_DIR$/PosAPI/Services/UserService.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/PosAPI/Services/ItemService.cs" beforeDir="false" afterPath="$PROJECT_DIR$/PosAPI/Services/ItemService.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/PosClient/Controllers/ItemsController.cs" beforeDir="false" afterPath="$PROJECT_DIR$/PosClient/Controllers/ItemsController.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/PosClient/Controllers/OrderController.cs" beforeDir="false" afterPath="$PROJECT_DIR$/PosClient/Controllers/OrderController.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/PosShared/ApiRoutes.cs" beforeDir="false" afterPath="$PROJECT_DIR$/PosShared/ApiRoutes.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/PosShared/DTOs/VariationDTO.cs" beforeDir="false" afterPath="$PROJECT_DIR$/PosShared/DTOs/VariationDTO.cs" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -99,7 +99,7 @@
       <workItem from="1734217156837" duration="177000" />
       <workItem from="1734217371523" duration="11912000" />
       <workItem from="1734262479046" duration="1309000" />
-      <workItem from="1734271027268" duration="6163000" />
+      <workItem from="1734271027268" duration="8004000" />
     </task>
     <servers />
   </component>

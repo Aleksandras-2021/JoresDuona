@@ -17,10 +17,7 @@ public class ItemsController : Controller
 {
     private readonly HttpClient _httpClient;
     private readonly IUserSessionService _userSessionService;
-
-
-    private readonly string _apiUrl = ApiRoutes.ApiBaseUrl;
-
+    
     public ItemsController(HttpClient httpClient, IUserSessionService userSessionService)
     {
         _httpClient = httpClient;
@@ -41,7 +38,7 @@ public class ItemsController : Controller
         if (response.IsSuccessStatusCode)
         {
             var jsonData = await response.Content.ReadAsStringAsync();
-            var items = JsonSerializer.Deserialize<PaginatedResult<Item>>(jsonData, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+            var items = JsonSerializer.Deserialize<PaginatedResult<Item>>(jsonData, JsonOptions.Default);
             return View(items);
         }
 
@@ -108,7 +105,7 @@ public class ItemsController : Controller
         if (response.IsSuccessStatusCode)
         {
             var itemData = await response.Content.ReadAsStringAsync();
-            var item = JsonSerializer.Deserialize<Item>(itemData, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+            var item = JsonSerializer.Deserialize<Item>(itemData, JsonOptions.Default);
 
             if (item != null)
             {
@@ -214,19 +211,17 @@ public class ItemsController : Controller
 
 
         // API URL for fetching item variations
-        var apiUrl = _apiUrl + $"/api/Items/{itemId}/Variations";
+        var apiUrl = ApiRoutes.Items.GetItemVariations(itemId);
         var response = await _httpClient.GetAsync(apiUrl);
 
         if (response.IsSuccessStatusCode)
         {
             var jsonData = await response.Content.ReadAsStringAsync();
-            var variations = JsonSerializer.Deserialize<List<ItemVariation>>(jsonData, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+            var variations = JsonSerializer.Deserialize<List<ItemVariation>>(jsonData,JsonOptions.Default);
 
-            // Pass the variations to the view
             return View("Variations/Variations", variations);
         }
 
-        // Handle errors or empty results
         ViewBag.ErrorMessage = "Could not retrieve variations for the item.";
         return View("Variations/Variations", new List<ItemVariation>());
     }
@@ -255,7 +250,7 @@ public class ItemsController : Controller
         string? token = Request.Cookies["authToken"];
         _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
-        var apiUrl = _apiUrl + $"/api/Items/{model.ItemId}/Variations";
+        var apiUrl = ApiRoutes.Items.CreateVariation(model.ItemId);
 
         ItemVariation variation = new ItemVariation();
         variation.Name = model.Name;
@@ -289,15 +284,14 @@ public class ItemsController : Controller
         string? token = Request.Cookies["authToken"];
         _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
-        var apiUrl = _apiUrl + $"/api/Items/Variations/{id}";
+        var apiUrl = ApiRoutes.Items.GetItemVariationById(id);
         var response = await _httpClient.GetAsync(apiUrl);
 
         if (response.IsSuccessStatusCode)
         {
             var variationData = await response.Content.ReadAsStringAsync();
 
-            VariationsDTO variation = JsonSerializer.Deserialize<VariationsDTO>(variationData, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
-
+            VariationsDTO? variation = JsonSerializer.Deserialize<VariationsDTO>(variationData, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
 
             if (variation != null)
             {
@@ -321,8 +315,7 @@ public class ItemsController : Controller
             return View("Variations/Edit", variation);
         }
 
-        // Prepare the API request
-        var apiUrl = _apiUrl + $"/api/Items/Variations/{id}";
+        var apiUrl = ApiRoutes.Items.UpdateVariation(id);
         var content = new StringContent(JsonSerializer.Serialize(variation), Encoding.UTF8, "application/json");
 
         var response = await _httpClient.PutAsync(apiUrl, content);
@@ -330,10 +323,9 @@ public class ItemsController : Controller
         if (!response.IsSuccessStatusCode)
         {
             TempData["Error"] = "Failed to update the variation.";
-            return View("Variations/Edit", variation); // Return the view with the current model if the API fails
+            return View("Variations/Edit", variation);
         }
 
-        // Redirect to the Variations list on success
         return RedirectToAction("Variations", new { itemId = variation.ItemId });
     }
 
@@ -347,7 +339,7 @@ public class ItemsController : Controller
         string? token = Request.Cookies["authToken"];
         _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
-        var apiUrl = $"{_apiUrl}/api/Items/Variations/{varId}";
+        var apiUrl = ApiRoutes.Items.DeleteItem(id);
         var response = await _httpClient.DeleteAsync(apiUrl);
 
         if (response.IsSuccessStatusCode)

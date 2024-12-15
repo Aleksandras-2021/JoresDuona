@@ -184,7 +184,7 @@ public class ItemsController : ControllerBase
         }
         catch (UnauthorizedAccessException ex)
         {
-            return Unauthorized(ex.Message);
+            return Forbid(ex.Message);
         }
         catch (KeyNotFoundException ex)
         {
