@@ -44,13 +44,13 @@ public class UserService : IUserService
         return user;
     }
     
-    public async Task<User> CreateAuthorizedUser(User? user, User? sender)
+    public async Task<User> CreateAuthorizedUser(CreateUserDTO? user, User? sender)
     {
         AuthorizationHelper.Authorize("User", "Create", sender);
 
         if (user == null)
             throw new MissingFieldException();
-        if( string.IsNullOrEmpty(user.PasswordHash) ||  string.IsNullOrEmpty(user.Email))
+        if( string.IsNullOrEmpty(user.Password) ||  string.IsNullOrEmpty(user.Email))
             throw new MissingFieldException();
 
         if (await _userRepository.GetUserByEmailAsync(user.Email) != null)
@@ -62,8 +62,8 @@ public class UserService : IUserService
         newUser.Address = user.Address;
         newUser.Email = user.Email;
         newUser.Phone = user.Phone;
+        newUser.PasswordHash = BCrypt.Net.BCrypt.HashPassword(user.Password);
         newUser.BusinessId = user.BusinessId;
-        newUser.PasswordHash = BCrypt.Net.BCrypt.HashPassword(user.PasswordHash);
         newUser.EmploymentStatus = user.EmploymentStatus;
         newUser.Username = user.Username;
         

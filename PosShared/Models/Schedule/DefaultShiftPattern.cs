@@ -1,4 +1,5 @@
 namespace PosShared.Models;
+using System.Text.Json.Serialization;
 
 
 public class DefaultShiftPattern
@@ -11,5 +12,5 @@ public class DefaultShiftPattern
 
     public DateTime EndDate { get; set; }
 
-    public ICollection<User> Users { get; set; }
+    public ICollection<User>? Users { get; set; }// DO NOT JSON IGNORE THIS
 }

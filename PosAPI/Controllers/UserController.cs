@@ -103,7 +103,7 @@ public class UsersController : ControllerBase
 
     // POST: api/Users
     [HttpPost]
-    public async Task<IActionResult> CreateUser([FromBody] User user)
+    public async Task<IActionResult> CreateUser([FromBody] CreateUserDTO user)
     {
         User? sender = await GetUserFromToken();
         

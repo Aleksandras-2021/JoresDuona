@@ -15,9 +15,13 @@
   <component name="ChangeListManager">
     <list default="true" id="fe899842-ea22-4e77-98e6-59d0bab7b320" name="Changes" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/.idea.JoresDuona/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/.idea.JoresDuona/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/PosClient/Controllers/PaymentController.cs" beforeDir="false" afterPath="$PROJECT_DIR$/PosClient/Controllers/PaymentController.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/PosClient/Views/Payment/Receipt.cshtml" beforeDir="false" afterPath="$PROJECT_DIR$/PosClient/Views/Payment/Receipt.cshtml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/PosShared/ViewModels/ReceiptViewModel.cs" beforeDir="false" afterPath="$PROJECT_DIR$/PosShared/ViewModels/ReceiptViewModel.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/PosAPI/Controllers/UserController.cs" beforeDir="false" afterPath="$PROJECT_DIR$/PosAPI/Controllers/UserController.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/PosAPI/Services/Interfaces/IUserService.cs" beforeDir="false" afterPath="$PROJECT_DIR$/PosAPI/Services/Interfaces/IUserService.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/PosAPI/Services/UserService.cs" beforeDir="false" afterPath="$PROJECT_DIR$/PosAPI/Services/UserService.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/PosClient/Controllers/DefaultShiftPatternController.cs" beforeDir="false" afterPath="$PROJECT_DIR$/PosClient/Controllers/DefaultShiftPatternController.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/PosClient/Controllers/UserController.cs" beforeDir="false" afterPath="$PROJECT_DIR$/PosClient/Controllers/UserController.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/PosClient/Views/User/Create.cshtml" beforeDir="false" afterPath="$PROJECT_DIR$/PosClient/Views/User/Create.cshtml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/PosShared/Models/Schedule/DefaultShiftPattern.cs" beforeDir="false" afterPath="$PROJECT_DIR$/PosShared/Models/Schedule/DefaultShiftPattern.cs" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -46,7 +50,7 @@
     &quot;RunOnceActivity.OpenProjectViewOnStart&quot;: &quot;true&quot;,
     &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
     &quot;WebServerToolWindowFactoryState&quot;: &quot;false&quot;,
-    &quot;git-widget-placeholder&quot;: &quot;feature/globalExceptionHandling&quot;,
+
     &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
     &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
     &quot;node.js.selected.package.tslint&quot;: &quot;(autodetect)&quot;,
@@ -97,8 +101,7 @@
       <workItem from="1734217156837" duration="177000" />
       <workItem from="1734217371523" duration="11912000" />
       <workItem from="1734262479046" duration="1309000" />
-      <workItem from="1734271027268" duration="9111000" />
-      <workItem from="1734281722060" duration="423000" />
+
     </task>
     <servers />
   </component>

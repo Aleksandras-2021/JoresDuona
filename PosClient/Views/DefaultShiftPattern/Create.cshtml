@@ -1,0 +1,192 @@
+@model PosShared.ViewModels.DefaultShiftPatternCreateViewModel
+
+<div class="container my-4">
+    <h2>Create Shift Pattern</h2>
+
+    @if (TempData["Error"] != null)
+    {
+        <div class="alert alert-danger" role="alert">
+            <i class="bi bi-exclamation-circle"></i> @TempData["Error"]
+        </div>
+    }
+
+    <form asp-action="Create" method="post" id="createForm">
+
+        <div class="form-group mb-3">
+            <label asp-for="Pattern.DayOfWeek" class="control-label">Day of Week</label>
+            <select asp-for="Pattern.DayOfWeek" class="form-control" asp-items="Html.GetEnumSelectList<DayOfWeek>()"></select>
+            <span asp-validation-for="Pattern.DayOfWeek" class="text-danger"></span>
+        </div>
+
+        <div class="form-group mb-3">
+            <label asp-for="Pattern.StartDate" class="control-label">Start Time</label>
+            <select asp-for="Pattern.StartDate" class="form-control">
+                @for ( int hour = 0; hour < 24; hour++ )
+                {
+                    <option value="@(new DateTime(2000, 1, 1, hour, 0, 0))">@(hour.ToString("00")):00</option>
+                }
+            </select>
+            <span asp-validation-for="Pattern.StartDate" class="text-danger"></span>
+        </div>
+
+        <div class="form-group mb-3">
+            <label asp-for="Pattern.EndDate" class="control-label">End Time</label>
+            <select asp-for="Pattern.EndDate" class="form-control">
+                @for ( int hour = 0; hour < 24; hour++ )
+                {
+                    <option value="@(new DateTime(2000, 1, 1, hour, 0, 0))">@(hour.ToString("00")):00</option>
+                }
+            </select>
+            <span asp-validation-for="Pattern.EndDate" class="text-danger"></span>
+        </div>
+
+        <div class="row mt-4">
+            <div class="col-md-6">
+                <h4>Assigned Users</h4>
+                <div class="table-responsive">
+                    <table class="table table-sm" id="assignedUsersTable">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Name</th>
+                                <th>Role</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var user in Model.AssignedUsers)
+                            {
+                                <tr data-user-id="@user.Id">
+                                    <td>@user.Name</td>
+                                    <td>@user.Role</td>
+                                    <td>
+                                        <button type="button" class="btn btn-danger btn-sm remove-user">
+                                            <i class="bi bi-dash-circle"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="col-md-6">
+                <h4>Available Users</h4>
+                <div class="table-responsive">
+                    <table class="table table-sm">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Name</th>
+                                <th>Role</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @if (Model.AvailableUsers?.Items != null)
+                            {
+                                foreach (var user in Model.AvailableUsers.Items)
+                                {
+                                    <tr data-user-id="@user.Id">
+                                        <td>@user.Name</td>
+                                        <td>@user.Role</td>
+                                        <td>
+                                            <button type="button" class="btn btn-success btn-sm assign-user">
+                                                <i class="bi bi-plus-circle"></i>
+                                            </button>
+                                        </td>
+                                    </tr>
+                                }
+                            }
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Pagination -->
+                <nav aria-label="Available users pagination">
+                    <ul class="pagination justify-content-center">
+                        @if (Model.AvailableUsers?.HasPreviousPage == true)
+                        {
+                            <li class="page-item">
+                                <a class="page-link" href="?pageNumber=@(Model.AvailableUsers.PageNumber - 1)">Previous</a>
+                            </li>
+                        }
+
+                        @for (int i = 1; i <= Model.AvailableUsers?.TotalPages; i++)
+                        {
+                            <li class="page-item @(i == Model.AvailableUsers.PageNumber ? "active" : "")">
+                                <a class="page-link" href="?pageNumber=@i">@i</a>
+                            </li>
+                        }
+
+                        @if (Model.AvailableUsers?.HasNextPage == true)
+                        {
+                            <li class="page-item">
+                                <a class="page-link" href="?pageNumber=@(Model.AvailableUsers.PageNumber + 1)">Next</a>
+                            </li>
+                        }
+                    </ul>
+                </nav>
+            </div>
+        </div>
+
+        <div class="form-group mt-4">
+            <button type="submit" class="btn btn-primary">Create Pattern</button>
+            <a asp-action="ShiftPatterns" class="btn btn-secondary">Back to List</a>
+        </div>
+    </form>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+    
+    <script>
+        $(document).ready(function() {
+            $('.assign-user').click(function(e) {
+                e.preventDefault();
+                var row = $(this).closest('tr');
+                var userId = row.data('user-id');
+                
+                // Move user to assigned table
+                var newRow = row.clone();
+                newRow.find('.btn')
+                    .removeClass('btn-success assign-user')
+                    .addClass('btn-danger remove-user')
+                    .find('i')
+                    .removeClass('bi-plus-circle')
+                    .addClass('bi-dash-circle');
+                
+                $('#assignedUsersTable tbody').append(newRow);
+                row.remove();
+            });
+
+            $(document).on('click', '.remove-user', function(e) {
+                e.preventDefault();
+                var row = $(this).closest('tr');
+                var userId = row.data('user-id');
+                
+                var newRow = row.clone();
+                newRow.find('.btn')
+                    .removeClass('btn-danger remove-user')
+                    .addClass('btn-success assign-user')
+                    .find('i')
+                    .removeClass('bi-dash-circle')
+                    .addClass('bi-plus-circle');
+                
+                $('.table:not(#assignedUsersTable) tbody').append(newRow);
+                row.remove();
+            });
+
+            $('#createForm').submit(function() {
+                $('#assignedUsersTable tbody tr').each(function() {
+                    var userId = $(this).data('user-id');
+                    $('<input>').attr({
+                        type: 'hidden',
+                        name: 'AssignedUserIds',
+                        value: userId
+                    }).appendTo('#createForm');
+                });
+                return true;
+            });
+        });
+    </script>
+}
