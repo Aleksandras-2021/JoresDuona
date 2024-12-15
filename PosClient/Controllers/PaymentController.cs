@@ -112,6 +112,24 @@ public class PaymentController : Controller
         try
         {
             // Get Order Items
+            var orderApiUrl = ApiRoutes.Order.GetById(orderId);
+            var orderResponse = await _httpClient.GetAsync(orderApiUrl);
+            Order? order = null;
+
+            if (orderResponse.IsSuccessStatusCode)
+            {
+                var orderData = await orderResponse.Content.ReadAsStringAsync();
+                order = JsonSerializer.Deserialize<Order>(orderData, JsonOptions.Default);
+            }
+            else
+            {
+                TempData["Error"] = "Couldn't retrieve order.";
+
+            }
+            
+            
+            
+            // Get Order Items
             var orderItemsApiUrl = ApiRoutes.OrderItems.GetOrderItems(orderId);
             var orderItemsResponse = await _httpClient.GetAsync(orderItemsApiUrl);
 
@@ -179,16 +197,19 @@ public class PaymentController : Controller
                 totalTax += service.Tax;
             }
             
-            total = totalTax + totalCharge;
+            total = totalTax + totalCharge + order.TipAmount;
 
             var model = new ReceiptViewModel()
             {
                 OrderId = orderId,
+                EmployeeId = order.UserId,
+                ClosedAt = order.ClosedAt,
                 OrderItems = orderItems,
                 OrderItemVariatons = orderItemVariations,
                 OrderServices = orderServices,
                 Total = total,
                 TotalCharge = totalCharge,
+                Tips = order.TipAmount,
                 TotalTax = totalTax,
             };
 

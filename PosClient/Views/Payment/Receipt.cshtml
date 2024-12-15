@@ -6,7 +6,10 @@
 <div class="mb-4 p-3 border rounded bg-light">
     <p><strong>Untaxed Charge:</strong> @Model.TotalCharge.ToString("C")</p>
     <p><strong>Taxes:</strong> @Model.TotalTax.ToString("C")</p>
+    <p><strong>Tips:</strong> @Model.Tips.ToString("C")</p>
     <p><strong>Total:</strong> @Model.Total.ToString("C")</p>
+    <p><strong>Employee ID:</strong> @Model.EmployeeId</p>
+    <p><strong>Closed at:</strong> @Model.ClosedAt</p>
 </div>
 @if (TempData["Error"] != null)
 {

@@ -73,7 +73,8 @@ public class OrderController : ControllerBase
         }
         catch (UnauthorizedAccessException ex)
         {
-            return Unauthorized(ex.Message);
+            _logger.LogWarning($"403 Status, User {sender.Id}. {ex.Message}");
+            return StatusCode(403, $"Forbidden {ex.Message}");
         }
         catch (KeyNotFoundException ex)
         {
@@ -100,7 +101,8 @@ public class OrderController : ControllerBase
         }
         catch (UnauthorizedAccessException ex)
         {
-            return Unauthorized(ex.Message);
+            _logger.LogWarning($"403 Status, User {sender.Id}. {ex.Message}");
+            return StatusCode(403, $"Forbidden {ex.Message}");
         }
         catch (KeyNotFoundException ex)
         {
@@ -139,7 +141,8 @@ public class OrderController : ControllerBase
         }
         catch (UnauthorizedAccessException ex)
         {
-            return Unauthorized(ex.Message);
+            _logger.LogWarning($"403 Status, User {sender.Id}. {ex.Message}");
+            return StatusCode(403, $"Forbidden {ex.Message}");
         }
         catch (KeyNotFoundException ex)
         {
@@ -165,10 +168,10 @@ public class OrderController : ControllerBase
         {
             return Unauthorized("Cannot modify closed order.");
         }
+        User? sender = await GetUserFromToken();
 
         try
         {
-            User? sender = await GetUserFromToken();
 
             if (sender == null)
                 return Unauthorized();
@@ -193,7 +196,8 @@ public class OrderController : ControllerBase
         }
         catch (UnauthorizedAccessException ex)
         {
-            return Unauthorized(ex.Message);
+            _logger.LogWarning($"403 Status, User {sender.Id}. {ex.Message}");
+            return StatusCode(403, $"Forbidden {ex.Message}");
         }
         catch (Exception ex)
         {
