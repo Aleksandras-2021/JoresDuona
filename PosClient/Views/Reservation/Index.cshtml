@@ -33,7 +33,7 @@
                 @foreach (var reservation in Model)
                 {
                     <tr>
-                        <td>@reservation.Service?.Name</td>
+                        <td>@reservation.ServiceId</td>
                         <td>@reservation.CustomerName</td>
                         <td>@reservation.CustomerPhone</td>
                         <td>@reservation.ReservationTime.ToString("dd/MM/yyyy HH:mm")</td>

@@ -14,10 +14,9 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="fe899842-ea22-4e77-98e6-59d0bab7b320" name="Changes" comment="">
-      <change beforePath="$PROJECT_DIR$/PosAPI/Controllers/OrderItemsController.cs" beforeDir="false" afterPath="$PROJECT_DIR$/PosAPI/Controllers/OrderItemsController.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/PosAPI/Controllers/OrderItemsVariationsController.cs" beforeDir="false" afterPath="$PROJECT_DIR$/PosAPI/Controllers/OrderItemsVariationsController.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/PosClient/Controllers/PaymentController.cs" beforeDir="false" afterPath="$PROJECT_DIR$/PosClient/Controllers/PaymentController.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/PosClient/Controllers/ReservationController.cs" beforeDir="false" afterPath="$PROJECT_DIR$/PosClient/Controllers/ReservationController.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/.idea.JoresDuona/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/.idea.JoresDuona/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/PosAPI/Middlewares/RolePermissions.cs" beforeDir="false" afterPath="$PROJECT_DIR$/PosAPI/Middlewares/RolePermissions.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/PosClient/Views/Reservation/Index.cshtml" beforeDir="false" afterPath="$PROJECT_DIR$/PosClient/Views/Reservation/Index.cshtml" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -95,7 +94,7 @@
       <workItem from="1734030494081" duration="9657000" />
       <workItem from="1734179569301" duration="34459000" />
       <workItem from="1734217156837" duration="177000" />
-      <workItem from="1734217371523" duration="3992000" />
+      <workItem from="1734217371523" duration="11356000" />
     </task>
     <servers />
   </component>

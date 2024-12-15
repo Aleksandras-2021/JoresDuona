@@ -18,7 +18,7 @@ public static class RolePermissions
         // Permissions for "Businesses" endpoints
         { "Businesses", new Dictionary<string, List<UserRole>>
             {
-                { "List", new List<UserRole> { UserRole.SuperAdmin } },
+                { "List", new List<UserRole> { UserRole.SuperAdmin,UserRole.Owner } },
                 { "Create", new List<UserRole> { UserRole.SuperAdmin } },
                 { "Read", AllRoles},
                 { "Update", new List<UserRole> { UserRole.SuperAdmin, UserRole.Owner } },
