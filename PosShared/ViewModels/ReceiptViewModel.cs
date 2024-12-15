@@ -15,5 +15,6 @@ public class ReceiptViewModel
     public List<OrderService>?OrderServices;
     public decimal Total;
     public decimal TotalTax;
+    public decimal Tips;
     public decimal TotalCharge;
 }
