@@ -15,8 +15,9 @@
   <component name="ChangeListManager">
     <list default="true" id="fe899842-ea22-4e77-98e6-59d0bab7b320" name="Changes" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/.idea.JoresDuona/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/.idea.JoresDuona/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/PosAPI/Middlewares/RolePermissions.cs" beforeDir="false" afterPath="$PROJECT_DIR$/PosAPI/Middlewares/RolePermissions.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/PosClient/Views/Reservation/Index.cshtml" beforeDir="false" afterPath="$PROJECT_DIR$/PosClient/Views/Reservation/Index.cshtml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/PosClient/Controllers/ServiceController.cs" beforeDir="false" afterPath="$PROJECT_DIR$/PosClient/Controllers/ServiceController.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/PosShared/ApiRoutes.cs" beforeDir="false" afterPath="$PROJECT_DIR$/PosShared/ApiRoutes.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/PosShared/ViewModels/ServiceCreateViewModel.cs" beforeDir="false" afterPath="$PROJECT_DIR$/PosShared/ViewModels/ServiceCreateViewModel.cs" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -94,7 +95,8 @@
       <workItem from="1734030494081" duration="9657000" />
       <workItem from="1734179569301" duration="34459000" />
       <workItem from="1734217156837" duration="177000" />
-      <workItem from="1734217371523" duration="11356000" />
+      <workItem from="1734217371523" duration="11912000" />
+      <workItem from="1734262479046" duration="1309000" />
     </task>
     <servers />
   </component>

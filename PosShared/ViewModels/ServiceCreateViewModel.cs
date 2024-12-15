@@ -6,7 +6,7 @@ namespace PosShared.ViewModels;
 public class ServiceCreateViewModel
 {
     
-    public int? Id{ get; set; } //Null for creation(cause server handles it), populated in Edit
+    public int Id{ get; set; } //Null for creation(cause server handles it), populated in Edit
     public string? Name { get; set; }
     public string? Description { get; set; }
     public decimal BasePrice { get; set; }

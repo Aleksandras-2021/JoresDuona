@@ -149,10 +149,7 @@ namespace PosAPI.Controllers
         [HttpPut("{id}")]
         public async Task<IActionResult> UpdateService(int id, [FromBody] ServiceCreateDTO service)
         {
-
-            if (service == null)
-                return BadRequest("Invalid service data.");
-
+            
             try
             {
                 User? senderUser = await GetUserFromToken();

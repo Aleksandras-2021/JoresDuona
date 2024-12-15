@@ -16,8 +16,6 @@ public class ServiceController : Controller
 {
     private readonly HttpClient _httpClient;
     private readonly IUserSessionService _userSessionService;
-    
-    private readonly string _apiUrl = ApiRoutes.ApiBaseUrl;
     public ServiceController(HttpClient httpClient, IUserSessionService userSessionService)
     {
         _httpClient = httpClient;
@@ -30,10 +28,9 @@ public class ServiceController : Controller
         try 
         {
             string? token = Request.Cookies["authToken"];
-            Console.WriteLine($"Token: {token}");
             _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
-            var apiUrl = _apiUrl + "/api/Service";
+            var apiUrl = ApiRoutes.Service.Get;
 
             var response = await _httpClient.GetAsync(apiUrl);
 
@@ -42,7 +39,6 @@ public class ServiceController : Controller
             if (response.IsSuccessStatusCode)
             {
                 var services = JsonSerializer.Deserialize<List<Service>>(responseContent,JsonOptions.Default);
-                Console.WriteLine($"Deserialized services count: {services?.Count ?? 0}");
                 return View(services ?? new List<Service>());
             }
 
@@ -109,7 +105,7 @@ public class ServiceController : Controller
             Category = model.Category
         };
 
-        var apiUrl = _apiUrl + "/api/Service";
+        var apiUrl = ApiRoutes.Service.Create;
         var content = new StringContent(JsonSerializer.Serialize(service), Encoding.UTF8, "application/json");
 
         var response = await _httpClient.PostAsync(apiUrl, content);
@@ -133,7 +129,7 @@ public class ServiceController : Controller
         _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
         // Fetch service details
-        var serviceApiUrl = _apiUrl + $"/api/Service/{id}";
+        var serviceApiUrl = ApiRoutes.Service.GetById(id);
         var serviceResponse = await _httpClient.GetAsync(serviceApiUrl);
 
         if (!serviceResponse.IsSuccessStatusCode)
@@ -199,10 +195,11 @@ public class ServiceController : Controller
             Description = model.Description,
             BasePrice = model.BasePrice,
             DurationInMinutes = model.DurationInMinutes,
-            EmployeeId = model.EmployeeId // Include selected employee
+            EmployeeId = model.EmployeeId,
+            Category = model.Category,
         };
 
-        var apiUrl = _apiUrl + $"/api/Service/{model.Id}";
+        var apiUrl = ApiRoutes.Service.Update(model.Id);
         var content = new StringContent(JsonSerializer.Serialize(serviceDto), Encoding.UTF8, "application/json");
 
         var response = await _httpClient.PutAsync(apiUrl, content);
@@ -236,7 +233,7 @@ public class ServiceController : Controller
         string? token = Request.Cookies["authToken"];
         _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
-        var apiUrl = _apiUrl + $"/api/Service/{id}";
+        var apiUrl = ApiRoutes.Service.GetById(id);
         var response = await _httpClient.GetAsync(apiUrl);
 
         if (response.IsSuccessStatusCode)
@@ -260,7 +257,7 @@ public class ServiceController : Controller
         string? token = Request.Cookies["authToken"];
         _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
-        var apiUrl = _apiUrl + $"/api/Service/{id}";
+        var apiUrl = ApiRoutes.Service.Delete(id);
         var response = await _httpClient.DeleteAsync(apiUrl);
 
         if (response.IsSuccessStatusCode)
