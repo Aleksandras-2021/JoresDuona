@@ -14,12 +14,10 @@ namespace PosClient.Controllers;
 
 public class ServiceController : Controller
 {
-    private readonly HttpClient _httpClient;
-    private readonly IUserSessionService _userSessionService;
-    public ServiceController(HttpClient httpClient, IUserSessionService userSessionService)
+    private readonly ApiService _apiService;
+    public ServiceController(ApiService apiService)
     {
-        _httpClient = httpClient;
-        _userSessionService = userSessionService;
+        _apiService = apiService;
     }
 
     // GET: Service/Index
@@ -27,12 +25,9 @@ public class ServiceController : Controller
     {
         try 
         {
-            string? token = Request.Cookies["authToken"];
-            _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
-
             var apiUrl = ApiRoutes.Service.Get;
 
-            var response = await _httpClient.GetAsync(apiUrl);
+            var response = await _apiService.GetAsync(apiUrl);
 
             var responseContent = await response.Content.ReadAsStringAsync();
 
@@ -42,13 +37,11 @@ public class ServiceController : Controller
                 return View(services ?? new List<Service>());
             }
 
-            Console.WriteLine($"Request failed with status: {response.StatusCode}");
             TempData["Error"] = "Could not retrieve services.";
             return View(new List<Service>());
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Exception in Index: {ex.Message}");
             TempData["Error"] = "An error occurred while retrieving services.";
             return View(new List<Service>());
         }
@@ -57,11 +50,8 @@ public class ServiceController : Controller
     // GET: Service/Create
     public async Task<IActionResult> Create(int pageNumber = 1, int pageSize = 20)
     {
-        string? token = Request.Cookies["authToken"];
-        _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
-
         var usersApiUrl = ApiRoutes.User.GetPaginated(pageNumber, pageSize);
-        var userResponse = await _httpClient.GetAsync(usersApiUrl);
+        var userResponse = await _apiService.GetAsync(usersApiUrl);
 
         //Get all available users for service selection
         PaginatedResult<User>? users = null;
@@ -90,10 +80,7 @@ public class ServiceController : Controller
         {
             return View(model);
         }
-
-        string? token = Request.Cookies["authToken"];
-        _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
-
+        
         // Service DTO
         var service = new ServiceCreateDTO
         {
@@ -108,7 +95,7 @@ public class ServiceController : Controller
         var apiUrl = ApiRoutes.Service.Create;
         var content = new StringContent(JsonSerializer.Serialize(service), Encoding.UTF8, "application/json");
 
-        var response = await _httpClient.PostAsync(apiUrl, content);
+        var response = await _apiService.PostAsync(apiUrl, content);
 
         if (response.IsSuccessStatusCode)
         {
@@ -125,12 +112,9 @@ public class ServiceController : Controller
 // GET: Service/Edit/
     public async Task<IActionResult> Edit(int id, int pageNumber = 1, int pageSize = 20)
     {
-        string? token = Request.Cookies["authToken"];
-        _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
-
         // Fetch service details
         var serviceApiUrl = ApiRoutes.Service.GetById(id);
-        var serviceResponse = await _httpClient.GetAsync(serviceApiUrl);
+        var serviceResponse = await _apiService.GetAsync(serviceApiUrl);
 
         if (!serviceResponse.IsSuccessStatusCode)
         {
@@ -143,7 +127,7 @@ public class ServiceController : Controller
 
         // Fetch users for selection
         var usersApiUrl = ApiRoutes.User.GetPaginated(pageNumber, pageSize);
-        var usersResponse = await _httpClient.GetAsync(usersApiUrl);
+        var usersResponse = await _apiService.GetAsync(usersApiUrl);
 
         PaginatedResult<User>? users = null;
         if (usersResponse.IsSuccessStatusCode)
@@ -184,10 +168,7 @@ public class ServiceController : Controller
         {
             return View(model); // Return the view with validation errors
         }
-
-        string? token = Request.Cookies["authToken"];
-        _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
-
+        
         // Prepare Service DTO
         var serviceDto = new ServiceCreateDTO
         {
@@ -202,7 +183,7 @@ public class ServiceController : Controller
         var apiUrl = ApiRoutes.Service.Update(model.Id);
         var content = new StringContent(JsonSerializer.Serialize(serviceDto), Encoding.UTF8, "application/json");
 
-        var response = await _httpClient.PutAsync(apiUrl, content);
+        var response = await _apiService.PutAsync(apiUrl, content);
 
         if (response.IsSuccessStatusCode)
         {
@@ -214,7 +195,7 @@ public class ServiceController : Controller
 
         // Re-fetch users to show in the dropdown if there's an error
         var usersApiUrl = ApiRoutes.User.GetPaginated(1, 20);
-        var usersResponse = await _httpClient.GetAsync(usersApiUrl);
+        var usersResponse = await _apiService.GetAsync(usersApiUrl);
         
         if (usersResponse.IsSuccessStatusCode)
         {
@@ -230,16 +211,13 @@ public class ServiceController : Controller
     [HttpGet]
     public async Task<IActionResult> Delete(int id)
     {
-        string? token = Request.Cookies["authToken"];
-        _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
-
         var apiUrl = ApiRoutes.Service.GetById(id);
-        var response = await _httpClient.GetAsync(apiUrl);
+        var response = await _apiService.GetAsync(apiUrl);
 
         if (response.IsSuccessStatusCode)
         {
             var serviceData = await response.Content.ReadAsStringAsync();
-            var service = JsonSerializer.Deserialize<Service>(serviceData);
+            var service = JsonSerializer.Deserialize<Service>(serviceData, JsonOptions.Default);
 
             if (service != null)
             {
@@ -254,11 +232,8 @@ public class ServiceController : Controller
     [HttpPost, ActionName("Delete")]
     public async Task<IActionResult> DeleteConfirmed(int id)
     {
-        string? token = Request.Cookies["authToken"];
-        _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
-
         var apiUrl = ApiRoutes.Service.Delete(id);
-        var response = await _httpClient.DeleteAsync(apiUrl);
+        var response = await _apiService.DeleteAsync(apiUrl);
 
         if (response.IsSuccessStatusCode)
         {

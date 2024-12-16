@@ -84,7 +84,7 @@ public class PaymentService: IPaymentService
         }
     
 
-    //refund  is a negative payment
+        //refund  is a negative payment
         var newPayment = new Payment()
         {
             OrderId = payment.OrderId,
@@ -96,8 +96,12 @@ public class PaymentService: IPaymentService
         
         await _paymentRepository.AddPaymentAsync(newPayment);
         order.Status = OrderStatus.Refunded;
+        
+        if (order.ClosedAt == null)
+            order.ClosedAt = DateTime.UtcNow;
+        
         await _orderRepository.UpdateOrderAsync(order);
-
+        
         return newPayment;
     }
 

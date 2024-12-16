@@ -168,12 +168,10 @@ namespace PosClient.Controllers
             if (response.IsSuccessStatusCode)
             {
                 var patternData = await response.Content.ReadAsStringAsync();
-                var pattern = JsonSerializer.Deserialize<DefaultShiftPattern>(patternData, 
-                   JsonOptions.Default);
+                var pattern = JsonSerializer.Deserialize<DefaultShiftPattern>(patternData, JsonOptions.Default);
 
                 if (pattern != null)
                 {
-                    
                     return View("Create");
                 }
             }
