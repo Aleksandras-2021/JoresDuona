@@ -130,8 +130,9 @@ namespace PosClient.Controllers
                 {
                     return RedirectToAction("Index");
                 }
+                TempData["Error"] = "Failed to update business." + response.StatusCode;
+
             }
-            TempData["Error"] = "Failed to update business.";
 
             return View(business); 
         }

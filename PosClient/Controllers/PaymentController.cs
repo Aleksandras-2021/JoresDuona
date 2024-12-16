@@ -57,10 +57,11 @@ public class PaymentController : Controller
 
         if (response.IsSuccessStatusCode)
         {
+            TempData["Message"] = $"Payment successfully added";
             return RedirectToAction("Index", "Order");
         }
 
-        TempData["Error"] = "Failed to create Payment. Please try again.\n" + response.ToString();
+        TempData["Error"] = "Failed to create Payment. Please try again. \n" + response.StatusCode;
         return View(paymentViewModel);
     }
     
@@ -86,7 +87,7 @@ public class PaymentController : Controller
 
                 var model = new RefundViewModel() 
                 {
-                    Payments = payments,
+                    Payments = payments.Where(p => p.Amount > 0).ToList(),
                     RefundDate = today,
                     Amount = untaxedAmount + tax,
                     Reason = string.Empty,
@@ -119,10 +120,12 @@ public class PaymentController : Controller
 
         if (response.IsSuccessStatusCode)
         {
-            return RedirectToAction("Index", "Order");
+            TempData["Message"] = $"Payment {paymentId} successfully refunded";
+
+        return RedirectToAction("Index", "Order");
         }
 
-        TempData["Error"] = "Failed to create Payment. Please try again.\n" + response.ToString();
+        TempData["Error"] = "Failed to create Payment. Please try again. \n" + response.StatusCode;
         return RedirectToAction("Refund");
     }
 
@@ -184,7 +187,7 @@ public class PaymentController : Controller
             }
             else
             {
-                TempData["Error"] = "Couldn't retrieve order.";
+                TempData["Error"] = "Couldn't retrieve order." + orderResponse.StatusCode;
 
             }
             

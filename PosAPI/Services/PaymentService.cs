@@ -75,15 +75,20 @@ public class PaymentService: IPaymentService
 
         return newPayment;
     }
-    
+
     public async Task<Payment> CreateAuthorizedRefund(RefundDTO refund, User? sender)
     {
         AuthorizationHelper.Authorize("Payment", "Create", sender);
         var payment = await _paymentRepository.GetPaymentByIdAsync(refund.PaymentId);
         var order = await _orderRepository.GetOrderByIdAsync(payment.OrderId);
         AuthorizationHelper.ValidateOwnershipOrRole(sender, order.BusinessId, sender.BusinessId, "List");
-        
-        //refund  is a negative payment
+        if (refund.Amount < 0)
+        {
+            throw new Exception("Refund must be higher than 0");
+        }
+    
+
+    //refund  is a negative payment
         var newPayment = new Payment()
         {
             OrderId = payment.OrderId,
@@ -107,8 +112,7 @@ public class PaymentService: IPaymentService
         var payment = await _paymentRepository.GetPaymentByIdAsync(id);        
         var order = await _orderRepository.GetOrderByIdAsync(payment.OrderId);        
         AuthorizationHelper.ValidateOwnershipOrRole(sender, order.BusinessId, sender.BusinessId, "List");
-
-
+        
         return payment;
     }
 }
