@@ -274,8 +274,6 @@ public class OrderRepository : IOrderRepository
             .Where(oiv => oiv.OrderItem.OrderId == orderId)
             .OrderBy(oiv => oiv.Id)
             .ToListAsync();
-
-        return orderItemsVariations;
     }
 
     public async Task DeleteOrderItemAsync(int id)

@@ -9,6 +9,7 @@ using PosShared;
 using PosShared.ViewModels;
 using Microsoft.EntityFrameworkCore.Query.Internal;
 using System.Net.Http.Headers;
+using PosShared.DTOs;
 
 namespace PosClient.Controllers;
 

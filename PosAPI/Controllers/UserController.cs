@@ -10,6 +10,7 @@ using System;
 using System.Collections.Generic;
 using System.Reflection;
 using System.Threading.Tasks;
+using PosShared.DTOs;
 
 namespace PosAPI.Controllers;
 
@@ -81,11 +82,8 @@ public class UsersController : ControllerBase
     [HttpGet("{id}")]
     public async Task<IActionResult> GetUserById(int id)
     {
-        User? senderUser = await GetUserFromToken();
-
-        if (senderUser == null)
-            return BadRequest();
-
+        User? sender = await GetUserFromToken();
+        
         try
         {
             User? user;

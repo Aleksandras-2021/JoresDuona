@@ -14,8 +14,11 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="fe899842-ea22-4e77-98e6-59d0bab7b320" name="Changes" comment="">
+      <change afterPath="$PROJECT_DIR$/PosAPI/Repositories/Interfaces/IScheduleRepository.cs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/.idea.JoresDuona/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/.idea.JoresDuona/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/PosShared/Models/User/User.cs" beforeDir="false" afterPath="$PROJECT_DIR$/PosShared/Models/User/User.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/PosAPI/Repositories/OrderRepository.cs" beforeDir="false" afterPath="$PROJECT_DIR$/PosAPI/Repositories/OrderRepository.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/PosClient/Controllers/UserController.cs" beforeDir="false" afterPath="$PROJECT_DIR$/PosClient/Controllers/UserController.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/PosShared/ApiRoutes.cs" beforeDir="false" afterPath="$PROJECT_DIR$/PosShared/ApiRoutes.cs" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -44,7 +47,7 @@
     "RunOnceActivity.OpenProjectViewOnStart": "true",
     "RunOnceActivity.ShowReadmeOnStart": "true",
     "WebServerToolWindowFactoryState": "false",
-    "git-widget-placeholder": "main",
+    "git-widget-placeholder": "Discounts",
     "node.js.detected.package.eslint": "true",
     "node.js.selected.package.eslint": "(autodetect)",
     "node.js.selected.package.tslint": "(autodetect)",
