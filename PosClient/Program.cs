@@ -30,7 +30,7 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
     .AddCookie(options =>
     {
         options.Cookie.HttpOnly = true;
-        options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
+        options.Cookie.SecurePolicy = CookieSecurePolicy.Always;  // Ensure this is set if using HTTPS
         options.LoginPath = "/Home/Login"; // Redirect here if not authenticated
         options.SlidingExpiration = true; // Optional: extend session on activity
     });
@@ -39,8 +39,8 @@ builder.Services.AddDistributedMemoryCache(); // Use an in-memory cache
 builder.Services.AddSession(options =>
 {
     options.Cookie.HttpOnly = true;
-    options.Cookie.IsEssential = true;
-    options.IdleTimeout = TimeSpan.FromMinutes(60); // Session timeout
+    options.Cookie.IsEssential = true; // Ensure session cookies are retained even without consent
+    options.IdleTimeout = TimeSpan.FromMinutes(20); // Session timeout
 });
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<IUserSessionService, UserSessionService>();

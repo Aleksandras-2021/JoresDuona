@@ -34,18 +34,16 @@ public class BusinessRepository : IBusinessRepository
         var totalCount = await _context.Set<Business>().CountAsync();
 
         var businesses = await _context.Set<Business>()
+            .OrderByDescending(business => business.Id)
             .Skip((pageNumber - 1) * pageSize)
             .Take(pageSize)
-            .OrderByDescending(business => business.Id)
             .ToListAsync();
         return PaginatedResult<Business>.Create(businesses, totalCount, pageNumber, pageSize);
     }
 
     public async Task<PaginatedResult<Business>> GetPaginatedBusinessAsync(int businessId, int pageNumber = 1, int pageSize = 10)
     {
-        var totalCount = await _context.Set<Business>()
-            .Where(b =>b.Id == businessId)
-            .CountAsync();
+        var totalCount = await _context.Set<Business>().CountAsync();
 
         var businesses = await _context.Set<Business>()
             .Where(b => b.Id == businessId)

@@ -106,22 +106,17 @@ public class OrderItemsVariationsController : ControllerBase
             var orderItem = await _orderService.GetAuthorizedOrderItem(itemId, sender);
             var variation = await _orderService.GetAuthorizedItemVariation(addVariationDTO.VariationId, sender);
 
-            Tax? tax = await _taxRepository.GetTaxByItemIdAsync(variation.ItemId);
+            Tax tax = await _taxRepository.GetTaxByItemIdAsync(variation.ItemId);
 
             decimal taxedAmount;
-            if (tax != null)
+            if (tax.IsPercentage)
             {
-                if (tax.IsPercentage)
-                {
-                    taxedAmount = variation.AdditionalPrice * addVariationDTO.Quantity * tax.Amount / 100;
-                }
-                else
-                {
-                    taxedAmount = tax.Amount * addVariationDTO.Quantity;
-                }
+                taxedAmount = variation.AdditionalPrice * addVariationDTO.Quantity * tax.Amount / 100;
             }
             else
-                taxedAmount = 0;
+            {
+                taxedAmount = tax.Amount * addVariationDTO.Quantity;
+            }
 
 
             var orderItemVariation = new OrderItemVariation

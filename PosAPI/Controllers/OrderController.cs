@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using PosAPI.Repositories;
+using PosAPI.Repositories.Interfaces;
 using PosAPI.Services;
 using PosShared.Models;
 using PosShared.Ultilities;
@@ -15,15 +16,17 @@ public class OrderController : ControllerBase
     private readonly IOrderRepository _orderRepository;
     private readonly IUserRepository _userRepository;
     private readonly IOrderService _orderService;
-
+    private readonly IDiscountRepository _discountRepository;
     private readonly ILogger<OrderController> _logger;
 
-    public OrderController(IOrderRepository orderRepository, IUserRepository userRepository, IOrderService orderService, ILogger<OrderController> logger)
+    public OrderController(IOrderRepository orderRepository, IUserRepository userRepository, IDiscountRepository discountRepository, IOrderService orderService, ILogger<OrderController> logger)
     {
         _orderRepository = orderRepository;
         _userRepository = userRepository;
         _orderService = orderService;
         _logger = logger;
+        _orderRepository = orderRepository;
+        _discountRepository = discountRepository;
     }
 
     // GET: api/Order
@@ -266,8 +269,62 @@ public class OrderController : ControllerBase
         {
             _logger.LogError($"Error retrieving order item variations: {ex.Message}");
             return StatusCode(500, "Internal server error.");
-        }
+        } 
     }
+    [HttpPut("{orderId}/apply-discount")]
+    public async Task<IActionResult> ApplyDiscountToOrder(int orderId, string discountName)
+    {
+        Console.WriteLine($"Fetching discount with name '{discountName}'...");
+        var discount = await _discountRepository.GetActiveDiscountByNameAsync(discountName);
+
+        if (discount == null)
+        {
+            Console.WriteLine($"Discount with name '{discountName}' not found or not active.");
+            return NotFound("Discount not found or not active.");
+        }
+        Console.WriteLine($"Discount retrieved: Name={discount.Description}, Amount={discount.Amount}, IsPercentage={discount.IsPercentage}");
+
+        Console.WriteLine($"Fetching order with ID {orderId}...");
+        var order = await _orderRepository.GetByIdAsync(orderId);
+
+        if (order == null)
+        {
+            Console.WriteLine($"Order with ID {orderId} not found.");
+            return NotFound("Order not found.");
+        }
+        Console.WriteLine($"Order retrieved: ChargeAmount={order.ChargeAmount}, DiscountAmount={order.DiscountAmount}, TaxAmount={order.TaxAmount}, TipAmount={order.TipAmount}");
+
+        // Calculate TotalAmount dynamically
+        var totalAmount = order.ChargeAmount + order.TaxAmount + order.TipAmount - order.DiscountAmount;
+
+        // Apply the discount
+        order.DiscountAmount += discount.IsPercentage
+            ? totalAmount * (discount.Amount / 100)
+            : discount.Amount;
+
+        order.ChargeAmount = totalAmount - order.DiscountAmount;
+        order.DiscountId = discount.Id; // Assign the discount to the order
+
+        Console.WriteLine($"Total before discount: {totalAmount}");
+        Console.WriteLine($"Discount applied: {(discount.IsPercentage ? $"{discount.Amount}%" : discount.Amount.ToString())}");
+        Console.WriteLine($"DiscountAmount after applying: {order.DiscountAmount}");
+        Console.WriteLine($"ChargeAmount after discount: {order.ChargeAmount}");
+
+        try
+        {
+            await _orderRepository.UpdateAsync(order);
+            Console.WriteLine($"Order with ID {order.Id} updated successfully.");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error updating order: {ex.Message}");
+            return StatusCode(500, "Failed to apply discount.");
+        }
+
+        return Ok(order);
+    }
+
+
 
 
     #region HelperMethods

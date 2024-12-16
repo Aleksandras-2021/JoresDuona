@@ -12,28 +12,24 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
     public DbSet<ItemVariation> ItemVariations { get; set; }
     public DbSet<Discount> Discounts { get; set; }
     public DbSet<Tax> Taxes { get; set; }
-
     public DbSet<User> Users { get; set; }
-
     public DbSet<Schedule> Schedules { get; set; }
     public DbSet<DefaultShiftPattern> DefaultShiftPatterns { get; set; }
     public DbSet<TimeOff> TimeOffs { get; set; }
-
     public DbSet<Order> Orders { get; set; }
-
     public DbSet<Payment> Payments { get; set; }
     public DbSet<Refund> Refunds { get; set; }
-
     public DbSet<OrderItem> OrderItems { get; set; }
     public DbSet<OrderItemVariation> OrderItemVariations { get; set; }
     public DbSet<OrderItemTax> OrderItemTaxes { get; set; }
     public DbSet<OrderDiscount> OrderDiscounts { get; set; }
     public DbSet<OrderItemDiscount> OrderItemDiscounts { get; set; }
-
     public DbSet<OrderService> OrderServices { get; set; }
     public DbSet<Reservation> Reservations { get; set; }
     public DbSet<Customer> Customers { get; set; }
     public DbSet<Notification> Notifications { get; set; }
+
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
@@ -66,5 +62,6 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
         modelBuilder.ApplyConfiguration(new ReservationEntityConfiguration());
         modelBuilder.ApplyConfiguration(new CustomerEntityConfiguration());
         modelBuilder.ApplyConfiguration(new NotificationEntityConfiguration());
+        
     }
 }

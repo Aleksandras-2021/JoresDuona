@@ -1,5 +1,4 @@
 
-using PosAPI.Middlewares;
 using PosAPI.Repositories.Interfaces;
 using PosAPI.Services.Interfaces;
 using PosShared;
@@ -21,8 +20,8 @@ public class BusinessService : IBusinessService
         int pageNumber = 1,
         int pageSize = 10)
     {
-        AuthorizationHelper.Authorize("Businesses", "List", sender);
-
+        if (sender == null || sender.Role is UserRole.Manager or UserRole.Worker)
+            throw new UnauthorizedAccessException("You are not authorized to access businesses.");
 
         PaginatedResult<Business> business = null;
 
@@ -40,31 +39,51 @@ public class BusinessService : IBusinessService
 
     public async Task<Business> GetAuthorizedBusinessByIdAsync(int businessId, User? sender)
     {
-        AuthorizationHelper.Authorize("Businesses", "Read", sender);
-        AuthorizationHelper.ValidateOwnershipOrRole(sender,businessId,sender.BusinessId,"Update");
+        if (sender == null || sender.Role is UserRole.Manager or UserRole.Worker)
+            throw new UnauthorizedAccessException("You are not authorized to access this business.");
 
-        Business? business = await _businessRepository.GetBusinessByIdAsync(businessId);
-        
+        if (businessId != sender.BusinessId && sender.Role != UserRole.SuperAdmin)
+            throw new UnauthorizedAccessException("You are not authorized to access this business.");
+
+        var business = await _businessRepository.GetBusinessByIdAsync(sender.BusinessId);
+
+        if (business == null)
+            throw new KeyNotFoundException($"Business with ID {businessId} not found.");
+
         return business;
     }
 
     public async Task UpdateAuthorizedBusinessAsync(Business business, User? sender)
     {
-        AuthorizationHelper.Authorize("Businesses", "Update", sender);
-        AuthorizationHelper.ValidateOwnershipOrRole(sender,business.Id,sender.BusinessId,"Update");
+        if (sender == null || sender.Role is UserRole.Manager or UserRole.Worker)
+            throw new UnauthorizedAccessException("You are not authorized to update business information.");
+
+        if (business.Id != sender.BusinessId && sender.Role != UserRole.SuperAdmin)
+            throw new UnauthorizedAccessException("You are not authorized to update this business.");
+
+        var existingBusiness = await _businessRepository.GetBusinessByIdAsync(business.Id);
+        if (existingBusiness == null)
+            throw new KeyNotFoundException($"Business with ID {business.Id} not found.");
+
         await _businessRepository.UpdateBusinessAsync(business);
     }
 
     public async Task CreateAuthorizedBusinessAsync(Business business, User? sender)
     {
-        AuthorizationHelper.Authorize("Businesses", "Create", sender);
-        AuthorizationHelper.ValidateOwnershipOrRole(sender,business.Id,sender.BusinessId,"Create");
+        if (business == null) throw new ArgumentNullException(nameof(business));
+        if (sender == null) throw new ArgumentNullException(nameof(sender));
+
+        if (sender is not { Role: UserRole.SuperAdmin })
+            throw new UnauthorizedAccessException("You are not authorized to Create Business.");
 
         await _businessRepository.AddBusinessAsync(business);
     }
     public async Task DeleteAuthorizedBusinessAsync(int businessId, User? sender)
     {
-        AuthorizationHelper.Authorize("Businesses", "Delete", sender);
+        if (sender == null) throw new UnauthorizedAccessException(nameof(sender));
+
+        if (sender is not { Role: UserRole.SuperAdmin })
+            throw new UnauthorizedAccessException("You are not authorized to Create Business.");
 
         await _businessRepository.DeleteBusinessAsync(businessId);
     }

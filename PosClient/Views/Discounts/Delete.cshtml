@@ -1,0 +1,15 @@
+﻿@model PosShared.Models.Discount
+
+<div class="container my-4">
+    <h1 class="text-center mb-4">Delete Discount</h1>
+    <p class="text-center">Are you sure you want to delete this discount?</p>
+    <ul class="list-group w-50 mx-auto">
+        <li class="list-group-item"><strong>Description:</strong> @Model.Description</li>
+        <li class="list-group-item"><strong>Amount:</strong> @Model.Amount @(Model.IsPercentage ? "%" : "")</li>
+        <li class="list-group-item"><strong>Valid From:</strong> @Model.ValidFrom.ToString("yyyy-MM-dd")</li>
+        <li class="list-group-item"><strong>Valid To:</strong> @Model.ValidTo.ToString("yyyy-MM-dd")</li>
+    </ul>
+    <form asp-action="DeleteConfirmed" method="post" class="text-center mt-3">
+        <button type="submit" class="btn btn-danger">Delete</button>
+    </form>
+</div>

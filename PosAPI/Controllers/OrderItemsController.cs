@@ -112,24 +112,18 @@ public class OrderItemsController : ControllerBase
             var order = await _orderService.GetAuthorizedOrderForModification(orderId, sender);
 
             var item = await _itemRepository.GetItemByIdAsync(addItemDTO.ItemId);
-            Tax? tax = await _taxRepository.GetTaxByItemIdAsync(addItemDTO.ItemId);
+            Tax tax = await _taxRepository.GetTaxByItemIdAsync(addItemDTO.ItemId);
 
             decimal taxedAmount;
-            if (tax != null)
+            if (tax.IsPercentage)
             {
-                if (tax.IsPercentage)
-                {
-                    taxedAmount = item.Price * tax.Amount / 100;
-                }
-                else
-                {
-                    taxedAmount = tax.Amount;
-                }
+                taxedAmount = item.Price * tax.Amount / 100;
             }
             else
             {
-                taxedAmount = 0; //No taxes if Item aint got a tax bracket
+                taxedAmount = tax.Amount;
             }
+
 
             OrderItem orderItem = new OrderItem
             {

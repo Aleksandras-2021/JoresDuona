@@ -1,0 +1,37 @@
+﻿@model PosShared.Models.Discount
+@if (TempData["Error"] != null)
+{
+    <div class="alert alert-danger">@TempData["Error"]</div>
+}
+
+<div class="container my-4">
+    <h1 class="text-center mb-4">Create Discount</h1>
+    <form asp-action="Create" method="post" class="w-50 mx-auto">
+        <div class="mb-3">
+            <label class="form-label">Description:</label>
+            <input type="text" name="Description" class="form-control" required />
+        </div>
+        <div class="mb-3">
+            <label class="form-label">Amount:</label>
+            <input type="number" name="Amount" step="0.01" class="form-control" required />
+        </div>
+        <div class="form-check mb-3">
+            <!-- Hidden field for unchecked value -->
+            <input type="hidden" name="IsPercentage" value="false" />
+            <input type="checkbox" name="IsPercentage" value="true" class="form-check-input" />
+            <label class="form-check-label">Is Percentage</label>
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label">Valid From:</label>
+            <input type="datetime-local" name="ValidFrom" value="@Model.ValidFrom.ToString("yyyy-MM-ddTHH:mm")" class="form-control" required />
+
+        </div>
+        <div class="mb-3">
+            <label class="form-label">Valid To:</label>
+            <input type="datetime-local" name="ValidTo" value="@Model.ValidTo.ToString("yyyy-MM-ddTHH:mm")" class="form-control" required />
+        </div>
+
+        <button type="submit" class="btn btn-primary">Create</button>
+    </form>
+</div>

@@ -21,12 +21,8 @@ public class Business
 
     [JsonIgnore]  // Ignore this property to break the infinity serialization cycle
     public ICollection<User>? Users { get; set; }
-    [JsonIgnore]
     public ICollection<Service>? Services { get; set; }
-    [JsonIgnore]
     public ICollection<Item>? Items { get; set; }
-    [JsonIgnore]
     public ICollection<Discount>? Discounts { get; set; }
-    [JsonIgnore]
     public ICollection<Tax>? Taxes { get; set; }
 }

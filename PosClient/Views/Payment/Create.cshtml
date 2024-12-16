@@ -48,6 +48,11 @@
                     }
                 </select>
             </div>
+            <form asp-action="ActivateDiscount" method="get" class="d-flex">
+                <input type="text" name="name" class="form-control me-2" placeholder="Enter discount name" required />
+                <button type="submit" class="btn btn-success">Apply Discount</button>
+            </form>
+
 
 
         <button type="submit" class="btn btn-primary btn-block" style="padding: 10px 20px; font-size: 1rem;">Submit Payment</button>

@@ -14,7 +14,10 @@ namespace PosAPI.Repositories
 
         public async Task AddPaymentAsync(Payment payment)
         {
-            ArgumentNullException.ThrowIfNull(payment);
+            if (payment == null)
+            {
+                throw new ArgumentNullException(nameof(payment));
+            }
 
             var order = await _context.Orders
                                        .Include(o => o.Payments)
@@ -27,14 +30,16 @@ namespace PosAPI.Repositories
 
             try
             {
+                // Associate the payment with the order
                 payment.Order = order;
 
+                // Add the payment to the database
                 await _context.Payments.AddAsync(payment);
 
                 // Add the payment to the order's collection
-                order.Payments?.Add(payment);
+                order.Payments.Add(payment);
 
-
+                // Save changes to the database
                 await _context.SaveChangesAsync();
             }
             catch (DbUpdateException ex)
@@ -76,12 +81,12 @@ namespace PosAPI.Repositories
             return payment;
         }
 
-        public async Task UpdatePaymentAsync(Payment payment)
+        public Task UpdatePaymentAsync(Payment payment)
         {
             throw new NotImplementedException();
         }
 
-        public async Task DeletePaymentAsync(int id)
+        public Task DeletePaymentAsync(int id)
         {
             throw new NotImplementedException();
         }

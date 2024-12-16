@@ -1,0 +1,31 @@
+﻿@model PosShared.Models.Discount
+
+<div class="container my-4">
+    <h1 class="text-center mb-4">Edit Discount</h1>
+    <form asp-action="Edit" method="post" class="w-50 mx-auto">
+        <div class="mb-3">
+            <label class="form-label">Description:</label>
+            <input type="text" name="Description" value="@Model.Description" class="form-control" required />
+        </div>
+        <div class="mb-3">
+            <label class="form-label">Amount:</label>
+            <input type="number" name="Amount" value="@Model.Amount" step="0.01" class="form-control" required />
+        </div>
+        <div class="form-check mb-3">
+            <input type="hidden" name="IsPercentage" value="false" />
+            <input type="checkbox" name="IsPercentage" value="true" class="form-check-input" @(Model.IsPercentage ? "checked" : "") />
+
+            <label class="form-check-label">Is Percentage</label>
+        </div>
+        <div class="mb-3">
+            <label class="form-label">Valid From:</label>
+            <input type="datetime-local" name="ValidFrom" value="@Model.ValidFrom.ToString("yyyy-MM-ddTHH:mm")" class="form-control" required />
+
+        </div>
+        <div class="mb-3">
+            <label class="form-label">Valid To:</label>
+            <input type="datetime-local" name="ValidTo" value="@Model.ValidTo.ToString("yyyy-MM-ddTHH:mm")" class="form-control" required />
+        </div>
+        <button type="submit" class="btn btn-success">Save Changes</button>
+    </form>
+</div>

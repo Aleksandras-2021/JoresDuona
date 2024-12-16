@@ -1,62 +1,49 @@
-﻿@model PosShared.ViewModels.UserViewModel;
+﻿@model PosShared.Models.User;
 @using PosShared.Models;
-@using PosClient.Services
-@inject IUserSessionService UserSessionService
 
-@{
-    var userRole = UserSessionService.GetCurrentUserRole()?.ToString();
-}
 <h2>Edit User @Model.Name</h2>
 
 
 <form asp-action="Edit" method="post">
-    
-        <div class="form-group">
-            <label asp-for="Id" class="control-label"></label>
-            <input asp-for="Id" class="form-control"  value="@Model.Id" readonly/>
-            <span asp-validation-for="Name" class="text-danger"></span>
-        </div>
-    
     <div class="form-group">
         <label asp-for="Name" class="control-label"></label>
-        <input asp-for="Name" class="form-control"/>
+        <input asp-for="Name" class="form-control" />
         <span asp-validation-for="Name" class="text-danger"></span>
     </div>
 
     <div class="form-group">
         <label asp-for="Username" class="control-label"></label>
-        <input asp-for="Username" class="form-control"/>
+        <input asp-for="Username" class="form-control" />
         <span asp-validation-for="Username" class="text-danger"></span>
     </div>
 
     <div class="form-group">
-        <label asp-for="BusinessId" class="control-label"></label>
-        @if (userRole != "SuperAdmin")
-        {
-            <input asp-for="BusinessId" class="form-control" readonly/>
-        }
-        else
-        {
-            <input asp-for="BusinessId" class="form-control"/>
-        }
+        <label class="control-label">Password</label>
+        <input asp-for="PasswordHash" class="form-control" />
+        <span asp-validation-for="PasswordHash" class="text-danger"></span>
+    </div>
+
+        <div class="form-group">
+            <label asp-for="BusinessId" class="control-label"></label>
+        <input asp-for="BusinessId" class="form-control" />
         <span asp-validation-for="BusinessId" class="text-danger"></span>
     </div>
 
     <div class="form-group">
         <label asp-for="Email" class="control-label"></label>
-        <input asp-for="Email" class="form-control"/>
+        <input asp-for="Email" class="form-control" />
         <span asp-validation-for="Email" class="text-danger"></span>
     </div>
 
     <div class="form-group">
         <label asp-for="Phone" class="control-label"></label>
-        <input asp-for="Phone" class="form-control"/>
+        <input asp-for="Phone" class="form-control" />
         <span asp-validation-for="Phone" class="text-danger"></span>
     </div>
 
     <div class="form-group">
         <label asp-for="Address" class="control-label"></label>
-        <input asp-for="Address" class="form-control"/>
+        <input asp-for="Address" class="form-control" />
         <span asp-validation-for="Address" class="text-danger"></span>
     </div>
 

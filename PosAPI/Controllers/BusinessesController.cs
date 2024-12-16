@@ -51,7 +51,6 @@ public class BusinessesController : ControllerBase
         }
         catch (Exception ex)
         {
-            _logger.LogError($"Internal server error {ex.Message}");
             return StatusCode(500, $"Internal server error {ex.Message}");
         }
     }
@@ -77,15 +76,13 @@ public class BusinessesController : ControllerBase
         }
         catch (Exception ex)
         {
-            _logger.LogError($"Internal server error {ex.Message}");
-
             return StatusCode(500, $"Internal server error {ex.Message}");
         }
     }
 
     // PUT: api/Businesses/{id}
     [HttpPut("{id}")]
-    public async Task<IActionResult> EditBusiness([FromRoute]int id, [FromBody] Business updatedBusiness)
+    public async Task<IActionResult> EditBusiness(int id, [FromBody] Business updatedBusiness)
     {
         User? sender = await GetUserFromToken();
         
@@ -114,7 +111,7 @@ public class BusinessesController : ControllerBase
         }
         catch (Exception ex)
         {
-            _logger.LogError($"Internal server error {ex.Message}");
+            _logger.LogError(ex.Message);
             return StatusCode(500, $"Internal server error {ex.Message}");
         }
     }
@@ -133,19 +130,14 @@ public class BusinessesController : ControllerBase
         }
         catch (UnauthorizedAccessException ex)
         {
-            _logger.LogError($"{ex.Message}");
-
             return Unauthorized(ex.Message);
         }
         catch (ArgumentNullException ex)
         {
-            _logger.LogError($"{ex.Message}");
-
             return BadRequest(ex.Message);
         }
         catch (Exception ex)
         {
-            _logger.LogError($"Internal server error {ex.Message}");
             return StatusCode(500, $"Internal server error {ex.Message}");
         }
     }
@@ -170,7 +162,6 @@ public class BusinessesController : ControllerBase
         }
         catch (Exception ex)
         {
-            _logger.LogError($"Internal server error {ex.Message}");
             return StatusCode(500, $"Internal server error {ex.Message}");
         }
     }
@@ -199,6 +190,7 @@ public class BusinessesController : ControllerBase
 
     }
     #endregion
-    
+
+
 }
 
