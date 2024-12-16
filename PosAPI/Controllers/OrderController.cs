@@ -15,7 +15,6 @@ public class OrderController : ControllerBase
     private readonly IOrderRepository _orderRepository;
     private readonly IUserRepository _userRepository;
     private readonly IOrderService _orderService;
-
     private readonly ILogger<OrderController> _logger;
 
     public OrderController(IOrderRepository orderRepository, IUserRepository userRepository, IOrderService orderService, ILogger<OrderController> logger)
@@ -63,9 +62,6 @@ public class OrderController : ControllerBase
     public async Task<IActionResult> UpdateStatus([FromRoute] int orderId, OrderStatus status)
     {
         User? sender = await GetUserFromToken();
-        
-        _logger.LogInformation($"User with id: {sender.Id} is updating an order at {DateTime.Now}, orderId:{orderId}");
-        
         Order? order = await _orderService.GetAuthorizedOrder(orderId, sender);
 
         order.Status = status;
@@ -80,67 +76,25 @@ public class OrderController : ControllerBase
 
 
     [HttpPut("{orderId}")]
-    public async Task<IActionResult> UpdateOrder([FromBody] Order order)
+    public async Task<IActionResult> UpdateOrder([FromBody] Order? order)
     {
         if (order == null)
         {
             return BadRequest("Invalid order data.");
         }
-
-        if (order.Status == OrderStatus.Closed)
-        {
-            return Forbid("Cannot modify closed order.");
-        }
-        User? sender = await GetUserFromToken();
         
-        if (sender == null)
-            return Unauthorized();
+        User? sender = await GetUserFromToken();
+        await _orderService.UpdateAuthorizedOrder(order, sender);
 
-        Order? existingOrder = await _orderService.GetAuthorizedOrderForModification(order.Id, sender);
-
-        existingOrder.UserId = sender.Id; //Whoever updates order, takes over the ownership of it
-        existingOrder.User = sender;
-        existingOrder.Status = order.Status;
-        existingOrder.ChargeAmount = order.ChargeAmount;
-        existingOrder.DiscountAmount = order.DiscountAmount;
-        existingOrder.TaxAmount = order.TaxAmount;
-        existingOrder.TipAmount = order.TipAmount;
-
-        await _orderRepository.UpdateOrderAsync(existingOrder);
-
-        return Ok();
+        return Ok("Order updated");
     }
 
     [HttpDelete("{orderId}")]
     public async Task<IActionResult> DeleteOrder(int orderId)
     {
         User? sender = await GetUserFromToken();
-        if (sender == null)
-        {
-            return Unauthorized();
-        }
-
-        try
-        {
-            Order? order = await _orderService.GetAuthorizedOrderForModification(orderId, sender);
-
-            await _orderRepository.DeleteOrderAsync(orderId);
-
-            return Ok("Order deleted successfully.");
-        }
-        catch (UnauthorizedAccessException ex)
-        {
-            return Unauthorized(ex.Message);
-        }
-        catch (KeyNotFoundException ex)
-        {
-            return NotFound(ex.Message);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError($"Error deleting order with ID {orderId}: {ex.Message}");
-            return StatusCode(500, "Internal server error.");
-        }
+        await _orderService.DeleteAuthorizedOrder(orderId,sender);
+        return Ok("Order deleted successfully.");
     }
 
     [HttpGet("{orderId}/Variations")]

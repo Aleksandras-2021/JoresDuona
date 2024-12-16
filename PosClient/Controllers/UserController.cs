@@ -29,7 +29,7 @@ public class UserController : Controller
     // GET: User/Index
     public async Task<IActionResult> Index(int pageNumber = 1, int pageSize = 10)
     {
-        var apiUrl = ApiRoutes.User.GetPaginated(pageNumber, pageSize);
+        var apiUrl = ApiRoutes.User.ListPaginated(pageNumber, pageSize);
         var response = await _apiService.GetAsync(apiUrl);
 
         if (response.IsSuccessStatusCode)

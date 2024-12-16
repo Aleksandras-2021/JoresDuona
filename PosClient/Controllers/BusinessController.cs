@@ -24,7 +24,7 @@ namespace PosClient.Controllers
         // GET: Business/Index (retrieves all businesses)
         public async Task<IActionResult> Index(int pageNumber = 1, int pageSize = 20)
         {
-            var apiUrl = ApiRoutes.Business.GetPaginated(pageNumber, pageSize);
+            var apiUrl = ApiRoutes.Business.ListPaginated(pageNumber, pageSize);
             var response = await _apiService.GetAsync(apiUrl);
 
             if (response.IsSuccessStatusCode)

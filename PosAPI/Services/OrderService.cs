@@ -1,4 +1,5 @@
-﻿using PosAPI.Middlewares;
+﻿using BCrypt.Net;
+using PosAPI.Middlewares;
 using PosAPI.Repositories;
 using PosAPI.Services.Interfaces;
 using PosShared;
@@ -49,7 +50,10 @@ public class OrderService : IOrderService
 
         AuthorizationHelper.ValidateOwnershipOrRole(sender, order.BusinessId, sender.BusinessId, "Create");
         AuthorizationHelper.ValidateOwnershipOrRole(sender, item.BusinessId, sender.BusinessId, "Read");
-
+      
+        if (order.Status is OrderStatus.Closed or OrderStatus.Paid or OrderStatus.Refunded)
+            throw new BusinessRuleViolationException("Cannot modify closed order");
+        
         decimal taxedAmount = await _taxService.CalculateTaxByCategory(item.Price, 1, item.Category, item.BusinessId);
 
         OrderItem orderItem = new OrderItem
@@ -77,7 +81,10 @@ public class OrderService : IOrderService
         var order = await _orderRepository.GetOrderByIdAsync(orderId);
 
         AuthorizationHelper.ValidateOwnershipOrRole(sender, order.BusinessId, sender.BusinessId, "Delete");
-
+       
+        if (order.Status is OrderStatus.Closed or OrderStatus.Paid or OrderStatus.Refunded)
+            throw new BusinessRuleViolationException("Cannot modify closed order");
+        
         var orderItem = await GetAuthorizedOrderItem(orderItemId, sender);
 
         order.ChargeAmount -= orderItem.Price * orderItem.Quantity;
@@ -126,6 +133,38 @@ public class OrderService : IOrderService
         return newOrder.Id;
     }
 
+    public async Task UpdateAuthorizedOrder(Order order, User? sender)
+    {
+        AuthorizationHelper.Authorize("Order", "Update", sender);
+        var existingOrder = await GetAuthorizedOrderForModification(order.Id, sender);
+
+        if (order.Status is OrderStatus.Closed or OrderStatus.Paid or OrderStatus.Refunded)
+            throw new BusinessRuleViolationException("Cannot modify closed order");
+        
+        existingOrder.UserId = sender.Id; //Whoever updates order, takes over the ownership of it
+        existingOrder.User = sender;
+        existingOrder.Status = order.Status;
+        existingOrder.ChargeAmount = order.ChargeAmount;
+        existingOrder.DiscountAmount = order.DiscountAmount;
+        existingOrder.TaxAmount = order.TaxAmount;
+        existingOrder.TipAmount = order.TipAmount;
+        
+        await _orderRepository.UpdateOrderAsync(existingOrder);
+
+    }
+
+    
+    public async Task DeleteAuthorizedOrder(int orderId, User? sender)
+    {
+        AuthorizationHelper.Authorize("Order", "Delete", sender);
+        Order order = await _orderRepository.GetOrderByIdAsync(orderId);
+        AuthorizationHelper.ValidateOwnershipOrRole(sender, order.BusinessId, sender.BusinessId, "Delete");
+        
+        if (order.Status is OrderStatus.Closed or OrderStatus.Paid or OrderStatus.Refunded)
+            throw new BusinessRuleViolationException("Cannot modify closed order");
+    }
+
+
     public async Task<Order?> GetAuthorizedOrderForModification(int orderId, User sender)
     {
         AuthorizationHelper.Authorize("Order", "Update", sender);
@@ -154,9 +193,7 @@ public class OrderService : IOrderService
     public async Task<List<OrderItem>?> GetAuthorizedOrderItems(int orderId, User sender)
     {
         AuthorizationHelper.Authorize("Order", "Read", sender);
-
         var order = await _orderRepository.GetOrderByIdAsync(orderId);
-
         AuthorizationHelper.ValidateOwnershipOrRole(sender, order.BusinessId, sender.BusinessId, "Read");
 
         var orderItems = await _orderRepository.GetOrderItemsByOrderIdAsync(orderId);
@@ -210,6 +247,9 @@ public class OrderService : IOrderService
         var order = await _orderRepository.GetOrderByIdAsync(orderId);
         AuthorizationHelper.ValidateOwnershipOrRole(sender, order.BusinessId, sender.BusinessId, "Create");
 
+        if (order.Status is OrderStatus.Closed or OrderStatus.Paid or OrderStatus.Refunded)
+            throw new BusinessRuleViolationException("Cannot modify closed order");
+        
         var variation = await GetAuthorizedItemVariation(addVariationDTO.VariationId, sender);
         var item = await _itemRepository.GetItemByIdAsync(variation.ItemId);
 
@@ -241,7 +281,10 @@ public class OrderService : IOrderService
         var order = await _orderRepository.GetOrderByIdAsync(orderId);
         AuthorizationHelper.ValidateOwnershipOrRole(sender, order.BusinessId, sender.BusinessId, "Create");
         var orderItemVariation = await _orderRepository.GetOrderItemVariationByIdAsync(orderItemVariationId);
-
+        
+        if (order.Status is OrderStatus.Closed or OrderStatus.Paid or OrderStatus.Refunded)
+            throw new BusinessRuleViolationException("Cannot modify closed order");
+        
         order.ChargeAmount -= orderItemVariation.AdditionalPrice * orderItemVariation.Quantity;
         order.TaxAmount -= orderItemVariation.TaxedAmount * orderItemVariation.Quantity;
             
@@ -279,7 +322,7 @@ public class OrderService : IOrderService
 
         return orderVariations;
     }
-
+    
     public async Task<List<PosShared.Models.OrderService>?> GetAuthorizedOrderServices(int orderId, User? sender)
     {
         AuthorizationHelper.Authorize("Service", "Read", sender);

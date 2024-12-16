@@ -78,11 +78,11 @@ public class PaymentService: IPaymentService
         var payment = await _paymentRepository.GetPaymentByIdAsync(refund.PaymentId);
         var order = await _orderRepository.GetOrderByIdAsync(payment.OrderId);
         AuthorizationHelper.ValidateOwnershipOrRole(sender, order.BusinessId, sender.BusinessId, "List");
+        
         if (refund.Amount < 0)
         {
             throw new BusinessRuleViolationException("Refund must be higher than 0");
         }
-    
 
         //refund  is a negative payment
         var newPayment = new Payment()
@@ -96,9 +96,7 @@ public class PaymentService: IPaymentService
         
         await _paymentRepository.AddPaymentAsync(newPayment);
         order.Status = OrderStatus.Refunded;
-        
-        if (order.ClosedAt == null)
-            order.ClosedAt = DateTime.UtcNow;
+        order.ClosedAt ??= DateTime.UtcNow.AddHours(2);
         
         await _orderRepository.UpdateOrderAsync(order);
         

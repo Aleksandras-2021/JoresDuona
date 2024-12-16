@@ -45,7 +45,7 @@ public class PaymentController : Controller
         };
 
         var content = new StringContent(JsonSerializer.Serialize(payment), Encoding.UTF8, "application/json");
-        var response = await _apiService.PostAsync(_apiUrl + $"/api/Payment", content);
+        var response = await _apiService.PostAsync(ApiRoutes.Payment.Create, content);
 
         if (response.IsSuccessStatusCode)
         {
@@ -60,7 +60,7 @@ public class PaymentController : Controller
     [HttpGet]
     public async Task<IActionResult> Refund(int orderId, decimal untaxedAmount, decimal tax)
     {
-        var apiUrl = _apiUrl + $"/api/Payment/Order/{orderId}";
+        var apiUrl = ApiRoutes.Order.GetOrderPayments(orderId);
         var response = await _apiService.GetAsync(apiUrl);
 
         if (response.IsSuccessStatusCode)
@@ -85,7 +85,8 @@ public class PaymentController : Controller
             }
         }
 
-        
+        TempData["Error"] = "Failed to get Payments. Please try again. \n" + response.StatusCode;
+
         return RedirectToAction("Index", "Order");
     }
 
@@ -101,23 +102,22 @@ public class PaymentController : Controller
         };
 
         var content = new StringContent(JsonSerializer.Serialize(refund), Encoding.UTF8, "application/json");
-        var response = await _apiService.PostAsync(_apiUrl + $"/api/Payment/Refund/{paymentId}", content);
+        var response = await _apiService.PostAsync(ApiRoutes.Payment.CreateRefund(paymentId), content);
 
         if (response.IsSuccessStatusCode)
         {
             TempData["Message"] = $"Payment {paymentId} successfully refunded";
-
-        return RedirectToAction("Index", "Order");
+            return RedirectToAction("Index", "Order");
         }
 
-        TempData["Error"] = "Failed to create Payment. Please try again. \n" + response.StatusCode;
+        TempData["Error"] = "Failed to create Payment. \n" + response.StatusCode;
         return RedirectToAction("Refund");
     }
 
     [HttpGet]
     public async Task<IActionResult> GetOrderPayments(int orderId)
     {
-        var apiUrl = _apiUrl + $"/api/Payment/Order/{orderId}";
+        var apiUrl = ApiRoutes.Order.GetOrderPayments(orderId);
         var response = await _apiService.GetAsync(apiUrl);
 
         if (response.IsSuccessStatusCode)

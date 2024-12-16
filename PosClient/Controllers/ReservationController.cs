@@ -25,7 +25,7 @@ namespace PosClient.Controllers
         [HttpGet]
         public async Task<IActionResult> Index()
         {
-            var apiUrl = ApiRoutes.Reservation.Get;
+            var apiUrl = ApiRoutes.Reservation.List;
             var response = await _apiService.GetAsync(apiUrl);
         
             if (response.IsSuccessStatusCode)

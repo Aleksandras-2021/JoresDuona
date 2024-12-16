@@ -51,7 +51,7 @@ public class ExceptionHandlingMiddleware
             var controllerAction = GetControllerAndAction(context);
             _logger.LogError($"500 Internal Server Error - Database error in {controllerAction}. Message: {ex.Message}");
             context.Response.StatusCode = StatusCodes.Status500InternalServerError;
-            await context.Response.WriteAsJsonAsync(new { message = "A database error occurred. Please try again later." });
+            await context.Response.WriteAsJsonAsync(new { message = "A database error occurred." });
         }
         catch (InvalidOperationException ex)
         {
@@ -79,7 +79,7 @@ public class ExceptionHandlingMiddleware
             var controllerAction = GetControllerAndAction(context);
             _logger.LogError($"500 Internal Server Error in {controllerAction}. Message: {ex.Message}");
             context.Response.StatusCode = StatusCodes.Status500InternalServerError;
-            await context.Response.WriteAsJsonAsync(new { message = "An unexpected error occurred. Please contact support if the issue persists." });
+            await context.Response.WriteAsJsonAsync(new { message = "An unexpected error occurred. Contact support if the issue persists." });
         }
         
     }

@@ -9,24 +9,20 @@ using PosAPI.Services.Interfaces;
 
 namespace PosAPI.Controllers;
 
-
 [Authorize]
 [Route("api/Order")]//Documentation says so
 [ApiController]
 public class OrderItemsController : ControllerBase
 {
     private readonly IUserRepository _userRepository;
-    private readonly ITaxService _taxService;
     private readonly IOrderService _orderService;
 
     private readonly ILogger<OrderItemsController> _logger;
 
-    public OrderItemsController(IUserRepository userRepository, IOrderService orderService, ILogger<OrderItemsController> logger, ITaxService taxService)
+    public OrderItemsController(IUserRepository userRepository, IOrderService orderService, ILogger<OrderItemsController> logger)
     {
         _userRepository = userRepository;
         _orderService = orderService;
-        _taxService = taxService;
-
         _logger = logger;
     }
 

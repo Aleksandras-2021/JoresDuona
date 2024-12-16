@@ -187,7 +187,7 @@ public class OrderRepository : IOrderRepository
     public async Task<List<OrderItemVariation>> GetOrderItemVariationsByOrderIdAsync(int orderId)
     {
         return await _context.OrderItemVariations
-            .Include(oiv => oiv.OrderItem) // Eagerly load the OrderItem navigation property
+            .Include(oiv => oiv.OrderItem)
             .Where(oiv => oiv.OrderItem.OrderId == orderId)
             .OrderBy(oiv => oiv.Id)
             .ToListAsync();

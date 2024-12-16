@@ -25,7 +25,7 @@ public class ServiceController : Controller
     {
         try 
         {
-            var apiUrl = ApiRoutes.Service.Get;
+            var apiUrl = ApiRoutes.Service.List;
 
             var response = await _apiService.GetAsync(apiUrl);
 
@@ -50,7 +50,7 @@ public class ServiceController : Controller
     // GET: Service/Create
     public async Task<IActionResult> Create(int pageNumber = 1, int pageSize = 20)
     {
-        var usersApiUrl = ApiRoutes.User.GetPaginated(pageNumber, pageSize);
+        var usersApiUrl = ApiRoutes.User.ListPaginated(pageNumber, pageSize);
         var userResponse = await _apiService.GetAsync(usersApiUrl);
 
         //Get all available users for service selection
@@ -126,7 +126,7 @@ public class ServiceController : Controller
         var service = JsonSerializer.Deserialize<Service>(serviceData, JsonOptions.Default);
 
         // Fetch users for selection
-        var usersApiUrl = ApiRoutes.User.GetPaginated(pageNumber, pageSize);
+        var usersApiUrl = ApiRoutes.User.ListPaginated(pageNumber, pageSize);
         var usersResponse = await _apiService.GetAsync(usersApiUrl);
 
         PaginatedResult<User>? users = null;
@@ -194,7 +194,7 @@ public class ServiceController : Controller
         ModelState.AddModelError(string.Empty, $"Error updating service: {errorMessage}");
 
         // Re-fetch users to show in the dropdown if there's an error
-        var usersApiUrl = ApiRoutes.User.GetPaginated(1, 20);
+        var usersApiUrl = ApiRoutes.User.ListPaginated(1, 20);
         var usersResponse = await _apiService.GetAsync(usersApiUrl);
         
         if (usersResponse.IsSuccessStatusCode)

@@ -56,11 +56,9 @@ public class ItemsController : ControllerBase
     {
         User? sender = await GetUserFromToken();
         var newItem = await _itemService.CreateAuthorizedItemAsync(item,sender);
-        _logger.LogInformation($"{sender.Name} is creating an item {item.Name}");
         return CreatedAtAction(nameof(GetItemById), new { id = newItem.Id }, newItem);
     }
-
-
+    
     // PUT: api/Items/{id}
     [HttpPut("{id}")]
     public async Task<IActionResult> UpdateItem(int id, [FromBody] ItemViewModel item)
@@ -128,7 +126,6 @@ public class ItemsController : ControllerBase
     {
         User? sender = await GetUserFromToken();
         await _itemService.DeleteAuthorizedItemVariationAsync(varId, sender);
-        _logger.LogInformation($"Variation with id {varId} deleted at {DateTime.Now} by userId:{sender.Id}");
         return Ok();
     }
 
@@ -140,7 +137,6 @@ public class ItemsController : ControllerBase
         await _itemService.UpdateAuthorizedItemVariationAsync(id,variation,sender);
         return Ok();
     }
-
 
     #region HelperMethods
     private async Task<User?> GetUserFromToken()
