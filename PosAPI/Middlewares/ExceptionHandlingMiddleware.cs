@@ -21,7 +21,7 @@ public class ExceptionHandlingMiddleware
         catch (BusinessRuleViolationException ex)
         {
             var controllerAction = GetControllerAndAction(context);
-            _logger.LogWarning(ex, $"400 Bad Request - Business rule violation in {controllerAction}. Message: {ex.Message}");
+            _logger.LogWarning($"400 Bad Request - Business rule violation in {controllerAction}. Message: {ex.Message}");
             context.Response.StatusCode = StatusCodes.Status400BadRequest;
             await context.Response.WriteAsJsonAsync(new { message = ex.Message });
         }
