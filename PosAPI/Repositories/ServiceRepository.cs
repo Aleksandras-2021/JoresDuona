@@ -14,6 +14,9 @@ public class ServiceRepository : IServiceRepository
 
     public async Task AddServiceAsync(Service service)
     {
+        var user = await _context.Users.FindAsync(service.EmployeeId);
+        if (user == null)
+            throw new DbUpdateException("Cannot add this user to this service");
         try
         {
             await _context.Services.AddAsync(service);
@@ -21,7 +24,7 @@ public class ServiceRepository : IServiceRepository
         }
         catch (DbUpdateException ex)
         {
-            throw new Exception("An error occurred while adding the new service to the database.", ex);
+            throw new DbUpdateException("An error occurred while adding the new service to the database.", ex);
         }
     }
 

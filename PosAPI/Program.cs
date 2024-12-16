@@ -183,7 +183,7 @@ using (var scope = app.Services.CreateScope())
     }
 }
 
-
+app.UseMiddleware<RequestHandlingMiddleware>();
 app.UseMiddleware<ExceptionHandlingMiddleware>();
 
 app.UseHttpsRedirection();
