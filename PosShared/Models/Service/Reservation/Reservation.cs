@@ -17,8 +17,6 @@ public class Reservation
     public DateTime ReservationTime { get; set; }
     public DateTime ReservationEndTime { get; set; }
     public ReservationStatus Status { get; set; }
-
-    [JsonIgnore]
     public Customer? Customer { get; set; }
     [JsonIgnore]
     public Order? Order { get; set; }

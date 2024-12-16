@@ -25,10 +25,8 @@ public class PaymentService: IPaymentService
     public async Task<List<Payment?>> GetAuthorizedOrderPayments(int orderId, User? sender)
     {
         AuthorizationHelper.Authorize("Payment", "List", sender);
-
         var order = await _orderRepository.GetOrderByIdAsync(orderId);
         AuthorizationHelper.ValidateOwnershipOrRole(sender, order.BusinessId, sender.BusinessId, "List");
-
         var payments = await _paymentRepository.GetAllOrderPaymentsAsync(orderId);
 
         return payments;

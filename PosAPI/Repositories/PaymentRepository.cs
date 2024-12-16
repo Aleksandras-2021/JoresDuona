@@ -18,8 +18,8 @@ namespace PosAPI.Repositories
             ArgumentNullException.ThrowIfNull(payment);
 
             var order = await _context.Orders
-                                       .Include(o => o.Payments)
-                                       .FirstOrDefaultAsync(o => o.Id == payment.OrderId);
+                .Include(o => o.Payments)
+                .FirstOrDefaultAsync(o => o.Id == payment.OrderId);
 
             if (order == null)
             {
@@ -32,7 +32,6 @@ namespace PosAPI.Repositories
 
                 await _context.Payments.AddAsync(payment);
 
-                // Add the payment to the order's collection
                 order.Payments?.Add(payment);
 
 

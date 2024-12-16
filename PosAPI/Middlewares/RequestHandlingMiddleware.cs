@@ -1,3 +1,5 @@
+using PosShared.Utilities;
+
 public class RequestHandlingMiddleware
 {
     private readonly RequestDelegate _next;
@@ -11,19 +13,20 @@ public class RequestHandlingMiddleware
 
     public async Task Invoke(HttpContext context)
     {
-        // Log request details 
-        _logger.LogInformation("Handling request: {Method} {Path} - {QueryString}", 
+        var userId = Ultilities.ExtractUserIdFromToken(context.Request.Headers["Authorization"].ToString());
+
+        _logger.LogInformation("Handling request: {Method} {Path} - {QueryString} - UserId: {UserId}", 
             context.Request.Method, 
             context.Request.Path, 
-            context.Request.QueryString);
+            context.Request.QueryString, 
+            userId.HasValue ? userId.Value.ToString() : "Anonymous");
 
-        // Call the next middleware in the pipeline
         await _next(context);
 
-        // Log after the response is generated
-        _logger.LogInformation("Response: {StatusCode} for {Method} {Path}", 
+        _logger.LogInformation("Response: {StatusCode} for {Method} {Path} - UserId: {UserId}",
             context.Response.StatusCode, 
             context.Request.Method, 
-            context.Request.Path);
+            context.Request.Path,
+            userId.HasValue ? userId.Value.ToString() : "Anonymous");
     }
 }

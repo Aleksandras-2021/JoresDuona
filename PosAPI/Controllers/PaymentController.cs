@@ -17,19 +17,15 @@ namespace PosAPI.Controllers;
 public class PaymentController : ControllerBase
 {
 
-    private readonly IOrderRepository _orderRepository;
     private readonly IUserRepository _userRepository;
     private readonly IPaymentRepository _paymentRepository;
     private readonly IPaymentService _paymentService;
-    private readonly ITaxRepository _taxRepository;
     private readonly ILogger<OrderController> _logger;
-    public PaymentController(IPaymentService paymentService,IOrderRepository orderRepository, IUserRepository userRepository, IPaymentRepository paymentRepository, ITaxRepository taxRepository, ILogger<OrderController> logger)
+    public PaymentController(IPaymentService paymentService, IUserRepository userRepository, IPaymentRepository paymentRepository, ILogger<OrderController> logger)
     {
         _paymentService = paymentService;
-        _orderRepository = orderRepository;
         _userRepository = userRepository;
         _paymentRepository = paymentRepository;
-        _taxRepository = taxRepository;
         _logger = logger;
     }
 
