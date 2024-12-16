@@ -162,6 +162,8 @@ public class OrderService : IOrderService
         
         if (order.Status is OrderStatus.Closed or OrderStatus.Paid or OrderStatus.Refunded)
             throw new BusinessRuleViolationException("Cannot modify closed order");
+
+        await _orderRepository.DeleteOrderAsync(orderId);
     }
 
 

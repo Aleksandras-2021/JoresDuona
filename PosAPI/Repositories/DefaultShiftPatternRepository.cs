@@ -1,5 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using PosAPI.Data.DbContext;
+using PosAPI.Migrations;
+using PosShared;
 using PosShared.Models;
 
 namespace PosAPI.Repositories
@@ -7,10 +9,12 @@ namespace PosAPI.Repositories
     public class DefaultShiftPatternRepository : IDefaultShiftPatternRepository
     {
         private readonly ApplicationDbContext _context;
+        private readonly ILogger<DefaultShiftPattern> _logger;
 
-        public DefaultShiftPatternRepository(ApplicationDbContext context)
+        public DefaultShiftPatternRepository(ApplicationDbContext context, ILogger<DefaultShiftPattern> logger)
         {
             _context = context;
+            _logger = logger;
         }
 
         public async Task<DefaultShiftPattern?> GetByIdAsync(int id)
@@ -117,7 +121,7 @@ namespace PosAPI.Repositories
                 }
             }
         }
-
+        
         public async Task RemoveUserFromPatternAsync(int patternId, int userId)
         {
             var pattern = await _context.DefaultShiftPatterns

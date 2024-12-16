@@ -33,13 +33,10 @@ public class ReservationController : ControllerBase
         return Ok(reservations);
     }
 
-    [HttpGet("services/{serviceId}/available-slots")]
+    [HttpGet("services/{serviceId}/available-slots")]//Unimplemented
     public async Task<IActionResult> GetAvailableSlots(int serviceId, DateTime date)
     {
-
-        //Unimplemented
         User? sender = await GetUserFromToken();
-        
         var slots = await _serviceService.GetAvailableTimeSlots(serviceId);
         return Ok(slots);
     }

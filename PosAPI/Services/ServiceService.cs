@@ -18,10 +18,15 @@ public class ServiceService: IServiceService
     private readonly ITaxService _taxService;
     private readonly IOrderService _orderService;
     private readonly IOrderRepository _orderRepository;
+    private readonly IDefaultShiftPatternService _defaultShiftPatternService;
+    private readonly ILogger<ServiceService> _logger;
 
     public ServiceService(IUserRepository userRepository, IServiceRepository serviceRepository,
         IScheduleRepository scheduleRepository,IOrderService orderService, 
-        IReservationRepository reservationRepository,ITaxService taxService,IOrderRepository orderRepository)
+        IReservationRepository reservationRepository,ITaxService taxService,IOrderRepository orderRepository,
+        IDefaultShiftPatternService defaultShiftPatternService,
+        ILogger<ServiceService> logger
+        )
     {
         _userRepository = userRepository;
         _serviceRepository = serviceRepository;
@@ -30,6 +35,8 @@ public class ServiceService: IServiceService
         _orderService = orderService;
         _taxService = taxService;
         _orderRepository = orderRepository;
+        _defaultShiftPatternService = defaultShiftPatternService;
+        _logger = logger;
     }
 
     public async Task<List<Service>> GetAuthorizedServices(User? sender)
@@ -176,17 +183,17 @@ public class ServiceService: IServiceService
             throw new DbUpdateException("Failed to create or retrieve customer.");
         
         // 2. Calculate the end time for the reservation
-        var startTime = reservation.ReservationTime;
-        var endTime = reservation.ReservationTime.AddMinutes(service.DurationInMinutes);
-        
+        var startTime = reservation.ReservationTime.ToUniversalTime();
+        var endTime = reservation.ReservationTime.AddMinutes(service.DurationInMinutes).ToUniversalTime();
 
-        // Check for overlapping reservations (it Does not check user schedule)
+        // 3. Check for overlapping reservations
         var isOverlapping = await _reservationRepository.IsReservationOverlappingAsync(reservation.ServiceId, startTime, endTime);
+        var isEmployeeAvailable = await IsValidShiftForReservationAsync(sender.Id,sender, startTime);
         
-        if (isOverlapping || startTime < DateTime.Today) //Add if employee is unavailable at that time check
-            throw new BusinessRuleViolationException($"The selected time slot from {startTime} to {endTime} are invalid");
+        if (!isEmployeeAvailable ||isOverlapping || startTime < DateTime.Today)
+            throw new BusinessRuleViolationException($"The selected time slot from {startTime} to {endTime} are invalid. Is employee available: {isEmployeeAvailable}");
         
-        //3. Create new reservation
+        //4. Create new reservation
         Reservation newReservation = new Reservation
         {
             ReservationTime = reservation.ReservationTime,
@@ -221,6 +228,42 @@ public class ServiceService: IServiceService
         
         await _orderRepository.UpdateOrderAsync(order);
     }
+    
+    private async Task<bool> IsValidShiftForReservationAsync(int userId,User? sender ,DateTime startTime)
+    {
+        // Convert reservation start time to UTC (if it's not already in UTC)
+        startTime = startTime.ToUniversalTime();
+
+        // Get the authorized shift patterns for the user
+        var patterns = await _defaultShiftPatternService.GetAuthorizedPatternsByUserAsync(userId,sender);
+
+        // Get the day of the week for the reservation time
+        DayOfWeek dayOfWeek = startTime.DayOfWeek;
+
+        // Loop through all the shift patterns for that day
+        foreach (var pattern in patterns)
+        {
+            // We only care about the patterns that match the day of the week
+            if (pattern.DayOfWeek == dayOfWeek)
+            {
+                // Extract the times from the StartDate and EndDate
+                var patternStartTime = pattern.StartDate.TimeOfDay;
+                var patternEndTime = pattern.EndDate.TimeOfDay;
+
+                // Check if the reservation time falls within this shift pattern's time range
+                if (startTime.TimeOfDay >= patternStartTime && startTime.TimeOfDay <= patternEndTime)
+                {
+                    // The reservation time is within the employee's shift pattern for that day
+                    return true;
+                }
+            }
+        }
+
+        // No matching shift pattern found for the given reservation time
+        return false;
+    }
+
+
 
     public async Task DeleteAuthorizedReservationAsync(int reservationId, User? sender)
     {

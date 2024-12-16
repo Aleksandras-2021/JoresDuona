@@ -30,8 +30,6 @@ namespace PosAPI.Controllers
             try
             {
                 var sender = await GetUserFromToken();
-                if (sender == null)
-                    return Unauthorized();
 
                 var currentDate = startDate ?? DateTime.Today;
                 var weekStart = startDate ?? currentDate.AddDays(-(int)currentDate.DayOfWeek);
