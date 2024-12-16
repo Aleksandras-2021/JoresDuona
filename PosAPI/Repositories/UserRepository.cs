@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using PosAPI.Data.DbContext;
 using PosShared.Models;
 
@@ -127,6 +127,37 @@ namespace PosAPI.Repositories
             {
                 throw new Exception($"An error occurred while updating the user: {user.Id}.", e);
             }
+        }
+
+  
+
+        public async Task<bool> HasOverlappingReservationsAsync(DateTime startTime, DateTime endTime, int? employeeId)
+        {
+            var query = _context.Reservations
+                .Where(r => 
+                    // Check if the new reservation overlaps with any existing ones
+                    r.ReservationTime < endTime && 
+                    r.ReservationTime.AddMinutes(r.Service.DurationInMinutes) > startTime);
+
+            if (employeeId.HasValue)
+            {
+                query = query.Where(r => r.EmployeeId == employeeId.Value);
+            }
+
+            bool hasOverlapping = await query.AnyAsync();
+
+            return hasOverlapping;
+        }
+
+        public async Task<bool> HasTimeOffAsync(int userId, DateTime date)
+        {
+            var user = await _context.Users.Include(u => u.TimeOffs).FirstOrDefaultAsync(u => u.Id == userId);
+            if (user == null)
+            {
+                throw new KeyNotFoundException($"User with ID {userId} not found.");
+            }
+
+            return user.TimeOffs.Any(to => to.StartDate <= date && to.EndDate >= date);
         }
     }
 }

@@ -1,5 +1,8 @@
-﻿using PosAPI.Repositories;
+using PosAPI.Middlewares;
+using PosAPI.Repositories;
+using PosAPI.Services.Interfaces;
 using PosShared;
+using PosShared.DTOs;
 using PosShared.Models;
 
 namespace PosAPI.Services;
@@ -10,23 +13,16 @@ public class OrderService : IOrderService
 {
     private readonly IOrderRepository _orderRepository;
     private readonly IItemRepository _itemRepository;
-    private readonly ITaxRepository _taxRepository;
+    private readonly ITaxService _taxService;
 
-    public OrderService(IOrderRepository orderRepository, IItemRepository itemRepository, ITaxRepository taxRepository)
+    public OrderService(IOrderRepository orderRepository, IItemRepository itemRepository, ITaxService taxService)
     {
         _orderRepository = orderRepository;
         _itemRepository = itemRepository;
-        _taxRepository = taxRepository;
+        _taxService = taxService;
     }
 
-    public async Task<Order?> GetOrderByIdAsync(int orderId)
-    {
-        return await _orderRepository.GetOrderByIdAsync(orderId);
-    }
-    public async Task<PaginatedResult<Order>> GetAuthorizedOrders(
-        User sender,
-        int pageNumber = 1,
-        int pageSize = 10)
+    public async Task<PaginatedResult<Order>> GetAuthorizedOrders(User sender, int pageNumber = 1, int pageSize = 10)
     {
         PaginatedResult<Order>? orders = null;
 
@@ -41,31 +37,100 @@ public class OrderService : IOrderService
 
         return orders;
     }
+
+    public async Task<OrderItem> CreateAuthorizedOrderItem(int orderId, AddItemDTO addItemDTO, User? sender)
+    {
+        AuthorizationHelper.Authorize("Order", "Create", sender);
+        AuthorizationHelper.Authorize("Items", "Read", sender);
+
+        var item = await _itemRepository.GetItemByIdAsync(addItemDTO.ItemId);
+        var order = await _orderRepository.GetOrderByIdAsync(orderId);
+
+        AuthorizationHelper.ValidateOwnershipOrRole(sender, order.BusinessId, sender.BusinessId, "Create");
+        AuthorizationHelper.ValidateOwnershipOrRole(sender, item.BusinessId, sender.BusinessId, "Read");
+
+        decimal taxedAmount = await _taxService.CalculateTaxByCategory(item.Price, 1, item.Category, item.BusinessId);
+
+        OrderItem orderItem = new OrderItem
+        {
+            OrderId = orderId,
+            ItemId = addItemDTO.ItemId,
+            Quantity = 1, //or addItemDto.Quantity if that ever gets implemented
+            Price = item.Price,
+            TaxedAmount = taxedAmount
+        };
+
+        order.ChargeAmount += orderItem.Price * orderItem.Quantity;
+        order.TaxAmount += orderItem.TaxedAmount * orderItem.Quantity;
+
+        await _orderRepository.AddOrderItemAsync(orderItem);
+        await _orderRepository.UpdateOrderAsync(order);
+
+        return orderItem;
+    }
+
+    public async Task DeleteAuthorizedOrderItem(int orderId, int orderItemId, User? sender)
+    {
+        AuthorizationHelper.Authorize("Order", "Delete", sender);
+
+        var order = await _orderRepository.GetOrderByIdAsync(orderId);
+
+        AuthorizationHelper.ValidateOwnershipOrRole(sender, order.BusinessId, sender.BusinessId, "Delete");
+
+        var orderItem = await GetAuthorizedOrderItem(orderItemId, sender);
+
+        order.ChargeAmount -= orderItem.Price * orderItem.Quantity;
+        order.TaxAmount -= orderItem.TaxedAmount * orderItem.Quantity;
+
+        var orderItemVariations = await _orderRepository.GetOrderItemVariationsByOrderItemIdAsync(orderItemId);
+
+        foreach (var variation in orderItemVariations)
+        {
+            order.ChargeAmount -= variation.AdditionalPrice * variation.Quantity;
+            order.TaxAmount -= variation.TaxedAmount * variation.Quantity;
+        }
+        
+        await _orderRepository.DeleteOrderItemAsync(orderItemId);
+    }
+
     public async Task<Order?> GetAuthorizedOrder(int orderId, User sender)
     {
         var order = await _orderRepository.GetOrderByIdAsync(orderId);
-
-        if (sender.Role != UserRole.SuperAdmin && order.BusinessId != sender.BusinessId)
-            throw new UnauthorizedAccessException();
-
-        if (order == null)
-            throw new KeyNotFoundException($"Order with ID {orderId} not found.");
+        AuthorizationHelper.ValidateOwnershipOrRole(sender, order.BusinessId, sender.BusinessId, "Read");
 
         return order;
+    }
+
+    public async Task<int> CreateAuthorizedOrder(User? sender)
+    {
+        AuthorizationHelper.Authorize("Order", "Create", sender);
+        Order newOrder = new Order()
+        {
+            BusinessId = sender.BusinessId,
+            CreatedAt = DateTime.UtcNow.AddHours(2),
+            ClosedAt = null,
+            UserId = sender.Id,
+            Status = OrderStatus.Open,
+            ChargeAmount = 0,
+            DiscountAmount = 0,
+            TaxAmount = 0,
+            TipAmount = 0,
+            Payments = new List<Payment>(),
+            OrderDiscounts = new List<OrderDiscount>()
+        };
+        await _orderRepository.AddOrderAsync(newOrder);
+
+        return newOrder.Id;
     }
 
     public async Task<Order?> GetAuthorizedOrderForModification(int orderId, User sender)
     {
         var order = await _orderRepository.GetOrderByIdAsync(orderId);
-
-        if (sender.Role != UserRole.SuperAdmin && order.BusinessId != sender.BusinessId)
-            throw new UnauthorizedAccessException();
-
-        if (order == null)
-            throw new KeyNotFoundException($"Order with ID {orderId} not found.");
+        AuthorizationHelper.ValidateOwnershipOrRole(sender, order.BusinessId, sender.BusinessId, "Update");
 
         //Owner can modify orders & manager
-        if ((order.Status == OrderStatus.Closed || order.Status == OrderStatus.Paid) && sender.Role == UserRole.Worker)
+        if ((order.Status == OrderStatus.Closed || order.Status == OrderStatus.Paid) &&
+            sender.Role != UserRole.SuperAdmin)
             throw new UnauthorizedAccessException("You are not authorized to modify closed orders.");
 
         return order;
@@ -80,12 +145,7 @@ public class OrderService : IOrderService
             throw new KeyNotFoundException($"Order item with ID {orderItemId} not found.");
 
         var item = await _itemRepository.GetItemByIdAsync(orderItem.ItemId);
-
-        if (item == null)
-            throw new KeyNotFoundException($"Item with ID {orderItem.ItemId} not found.");
-
-        if (item.BusinessId != sender.BusinessId && sender.Role != UserRole.SuperAdmin)
-            throw new UnauthorizedAccessException("You are not authorized to access this order item.");
+        AuthorizationHelper.ValidateOwnershipOrRole(sender, item.BusinessId, sender.BusinessId, "Read");
 
         return orderItem;
     }
@@ -94,11 +154,7 @@ public class OrderService : IOrderService
     {
         var order = await _orderRepository.GetOrderByIdAsync(orderId);
 
-        if (order == null)
-            throw new KeyNotFoundException($"Order with ID {orderId} not found.");
-
-        if (order.BusinessId != sender.BusinessId && sender.Role != UserRole.SuperAdmin)
-            throw new UnauthorizedAccessException("You are not authorized to access this order.");
+        AuthorizationHelper.ValidateOwnershipOrRole(sender, order.BusinessId, sender.BusinessId, "Read");
 
         var orderItems = await _orderRepository.GetOrderItemsByOrderIdAsync(orderId);
 
@@ -108,22 +164,20 @@ public class OrderService : IOrderService
         return orderItems;
     }
 
-    public async Task<OrderItemVariation?> GetAuthorizedOrderItemVariation(int variationId, int orderItemId, User sender)
+    public async Task<OrderItemVariation?> GetAuthorizedOrderItemVariation(int variationId, int orderItemId,
+        User sender)
     {
         var orderItemVariation = await _orderRepository.GetOrderItemVariationByIdAsync(variationId);
 
-        if (orderItemVariation == null)
-            throw new KeyNotFoundException($"Variation with ID {variationId} not found.");
-
         if (orderItemVariation.OrderItemId != orderItemId)
-            throw new KeyNotFoundException($"Variation with ID {variationId} does not belong to OrderItem {orderItemId}.");
+            throw new KeyNotFoundException(
+                $"Variation with ID {variationId} does not belong to OrderItem {orderItemId}.");
 
         // Fetch the associated OrderItem and Item for further validation
         var orderItem = await _orderRepository.GetOrderItemById(orderItemId);
         var item = await _itemRepository.GetItemByIdAsync(orderItem.ItemId);
 
-        if (item == null)
-            throw new KeyNotFoundException($"Item with ID {orderItem.ItemId} not found.");
+        AuthorizationHelper.ValidateOwnershipOrRole(sender, item.BusinessId, sender.BusinessId, "Read");
 
         if (item.BusinessId != sender.BusinessId && sender.Role != UserRole.SuperAdmin)
             throw new UnauthorizedAccessException("You are not authorized to access this variation.");
@@ -140,20 +194,61 @@ public class OrderService : IOrderService
 
         var item = await _itemRepository.GetItemByIdAsync(variation.ItemId);
 
-        if (item == null)
-            throw new KeyNotFoundException($"Item with ID {variation.ItemId} not found.");
-
-        if (item.BusinessId != sender.BusinessId && sender.Role != UserRole.SuperAdmin)
-            throw new UnauthorizedAccessException("You are not authorized to access this item variation.");
+        AuthorizationHelper.ValidateOwnershipOrRole(sender, item.BusinessId, sender.BusinessId, "Read");
 
         return variation;
+    }
+
+    public async Task<OrderItemVariation> CreateAuthorizedOrderItemVariation(int orderId, int itemId, AddVariationDTO addVariationDTO, User sender)
+    {
+        AuthorizationHelper.Authorize("Order", "Create", sender);
+
+        var order = await _orderRepository.GetOrderByIdAsync(orderId);
+        AuthorizationHelper.ValidateOwnershipOrRole(sender, order.BusinessId, sender.BusinessId, "Create");
+
+        var variation = await GetAuthorizedItemVariation(addVariationDTO.VariationId, sender);
+        var item = await _itemRepository.GetItemByIdAsync(variation.ItemId);
+
+        decimal taxedAmount = await _taxService.CalculateTaxByCategory(variation.AdditionalPrice, addVariationDTO.Quantity, item.Category, sender.BusinessId);
+
+
+        var orderItemVariation = new OrderItemVariation
+        {
+            OrderItemId = itemId,
+            ItemVariationId = addVariationDTO.VariationId,
+            Quantity = addVariationDTO.Quantity,
+            AdditionalPrice = variation.AdditionalPrice * addVariationDTO.Quantity,
+            TaxedAmount = taxedAmount
+        };
+
+        await _orderRepository.AddOrderItemVariationAsync(orderItemVariation);
+            
+        order.ChargeAmount += orderItemVariation.AdditionalPrice ;
+        order.TaxAmount += orderItemVariation.TaxedAmount;
+            
+        await _orderRepository.UpdateOrderAsync(order);
+
+        return orderItemVariation;
+    }
+
+    public async Task DeleteAuthorizedOrderItemVariation(int orderId, int orderItemId, int orderItemVariationId, User sender)
+    {
+        AuthorizationHelper.Authorize("Order", "Delete", sender);
+        var order = await _orderRepository.GetOrderByIdAsync(orderId);
+        AuthorizationHelper.ValidateOwnershipOrRole(sender, order.BusinessId, sender.BusinessId, "Create");
+        var orderItemVariation = await _orderRepository.GetOrderItemVariationByIdAsync(orderItemVariationId);
+
+        order.ChargeAmount -= orderItemVariation.AdditionalPrice * orderItemVariation.Quantity;
+        order.TaxAmount -= orderItemVariation.TaxedAmount * orderItemVariation.Quantity;
+            
+        await _orderRepository.DeleteOrderItemVariationAsync(orderItemVariationId);
     }
 
     public async Task<List<OrderItemVariation>?> GetAuthorizedOrderItemVariations(int orderItemId, User sender)
     {
         var orderItemVariations = await _orderRepository.GetOrderItemVariationsByOrderItemIdAsync(orderItemId);
 
-        if (orderItemVariations == null || !orderItemVariations.Any())
+        if (!orderItemVariations.Any())
             throw new KeyNotFoundException($"No variations found for order item with ID {orderItemId}.");
 
         var orderItem = await _orderRepository.GetOrderItemById(orderItemId);
@@ -161,11 +256,8 @@ public class OrderService : IOrderService
             throw new KeyNotFoundException($"Order item with ID {orderItemId} not found.");
 
         var order = await _orderRepository.GetOrderByIdAsync(orderItem.OrderId);
-        if (order == null)
-            throw new KeyNotFoundException($"Order with ID {orderItem.OrderId} not found.");
 
-        if (order.BusinessId != sender.BusinessId && sender.Role != UserRole.SuperAdmin)
-            throw new UnauthorizedAccessException("You are not authorized to access variations for this order item.");
+        AuthorizationHelper.ValidateOwnershipOrRole(sender, order.BusinessId, sender.BusinessId, "Read");
 
         return orderItemVariations;
     }
@@ -178,16 +270,24 @@ public class OrderService : IOrderService
         if (orderVariations == null || !orderVariations.Any())
             throw new KeyNotFoundException($"No variations found for order with ID {order}.");
 
-        if (order == null)
-            throw new KeyNotFoundException($"Order with ID {orderId} not found.");
-
-        if (order.BusinessId != sender.BusinessId && sender.Role != UserRole.SuperAdmin)
-            throw new UnauthorizedAccessException("You are not authorized to access variations for this order.");
+        AuthorizationHelper.ValidateOwnershipOrRole(sender, order.BusinessId, sender.BusinessId, "Read");
 
         return orderVariations;
     }
 
+    public async Task<List<PosShared.Models.OrderService>?> GetAuthorizedOrderServices(int orderId, User? sender)
+    {
+        AuthorizationHelper.Authorize("Service", "Read", sender);
 
+        List<PosShared.Models.OrderService> orderVariations = await _orderRepository.GetAllOrderServices(orderId);
+        Order order = await _orderRepository.GetOrderByIdAsync(orderId);
+        AuthorizationHelper.ValidateOwnershipOrRole(sender, order.BusinessId, sender.BusinessId, "Read");
+
+        return orderVariations;
+    }
+}
+
+/* Deprecated
     public async Task RecalculateOrderCharge(int orderId)
     {
         Order order = await _orderRepository.GetOrderByIdAsync(orderId);
@@ -197,7 +297,8 @@ public class OrderService : IOrderService
 
         List<OrderItem> orderItems = await _orderRepository.GetOrderItemsByOrderIdAsync(orderId);
         List<OrderItemVariation> orderItemVariations = await _orderRepository.GetOrderItemVariationsByOrderIdAsync(orderId);
-        Tax tax;
+        List<PosShared.Models.OrderService> orderServices = await _orderRepository.GetAllOrderServices(orderId);
+        Tax? tax;
 
         order.ChargeAmount = 0;
         order.TaxAmount = 0;
@@ -228,10 +329,14 @@ public class OrderService : IOrderService
             else
                 order.TaxAmount += tax.Amount;
         }
+
+        foreach (var service in orderServices)
+        {
+            order.TaxAmount += service.Tax;
+            order.ChargeAmount += service.Tax + service.Charge;
+        }
+
         await _orderRepository.UpdateOrderAsync(order);
     }
+*/
 
-
-
-
-}

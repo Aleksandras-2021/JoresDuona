@@ -1,4 +1,4 @@
-@model PosShared.Models.Service
+@model PosShared.ViewModels.ServiceCreateViewModel
 
 <h1>Create New Service</h1>
 
@@ -23,7 +23,130 @@
         <input asp-for="DurationInMinutes" class="form-control" />
         <span asp-validation-for="DurationInMinutes" class="text-danger"></span>
     </div>
+        <div class="form-group">
+            <label asp-for="Category">Category</label>
+            <select asp-for="Category" class="form-control">
+                @foreach (var type in Enum.GetValues(typeof(PosShared.Models.Items.ItemCategory)))
+                {
+                    <option value="@type">@type</option>
+                }
+            </select>
+        </div>
+    
+        <div class="form-group">
+            <label asp-for="EmployeeId"></label>
+            <input asp-for="EmployeeId" class="form-control" />
+            <span asp-validation-for="EmployeeId" class="text-danger"></span>
+        </div>
 
     <button type="submit" class="btn btn-primary">Create</button>
-
 </form>
+
+<div class="container my-4">
+   <h1 class="text-center mb-4">@ViewData["Title"]</h1>
+
+   <div class="d-flex justify-content-between align-items-center mb-3">
+       <p class="m-0">Below is a list of all users.</p>
+   </div>
+
+   @if (Model.Users.Items.Any())
+   {
+       <div class="table-responsive">
+           <table class="table table-striped table-hover align-middle">
+               <thead class="table-dark">
+                   <tr>
+                       <th>#</th>
+                       <th>Name</th>
+                       <th>Email</th>
+                       <th>Phone Number</th>
+                       <th>Role</th>
+                       <th>Employment Status</th>
+                       <th>Business Id</th>
+                   </tr>
+               </thead>
+               <tbody>
+                   @foreach (var user in Model.Users.Items)
+                   {
+                       <tr>
+                           <td>@user.Id</td>
+                           <td>@user.Name</td>
+                           <td>@user.Email</td>
+                           <td>@user.Phone</td>
+                           <td>@user.BusinessId</td>
+                           <td>
+                               <span class="badge @GetRoleBadgeClass(user.Role)">
+                                   @user.Role
+                               </span>
+                           </td>
+                           <td>
+                               <span class="badge @GetStatusBadgeClass(user.EmploymentStatus)">
+                                   @user.EmploymentStatus
+                               </span>
+                           </td>
+                       </tr>
+                   }
+               </tbody>
+           </table>
+       </div>
+       
+       <!-- Pagination -->
+       <nav aria-label="Order pagination">
+           <ul class="pagination justify-content-center">
+               @if (Model.Users.HasPreviousPage)
+               {
+                   <li class="page-item">
+                       <a class="page-link" href="?pageNumber=@(Model.Users.PageNumber - 1)&pageSize=@Model.Users.PageSize" aria-label="Previous">
+                           <span aria-hidden="true">&laquo;</span>
+                       </a>
+                   </li>
+               }
+
+               @for (int i = 1; i <= Model.Users.TotalPages; i++)
+               {
+                   <li class="page-item @(i == Model.Users.PageNumber ? "active" : "")">
+                       <a class="page-link" href="?pageNumber=@i&pageSize=@Model.Users.PageSize">@i</a>
+                   </li>
+               }
+
+               @if (Model.Users.HasNextPage)
+               {
+                   <li class="page-item">
+                       <a class="page-link" href="?pageNumber=@(Model.Users.PageNumber + 1)&pageSize=@Model.Users.PageSize" aria-label="Next">
+                           <span aria-hidden="true">&raquo;</span>
+                       </a>
+                   </li>
+               }
+           </ul>
+       </nav>
+       
+   }
+</div>
+
+@functions {
+    private string GetRoleBadgeClass(PosShared.Models.UserRole role)
+    {
+        return role switch
+        {
+            PosShared.Models.UserRole.SuperAdmin => "bg-danger text-white",
+            PosShared.Models.UserRole.Owner => "bg-primary text-white",
+            PosShared.Models.UserRole.Manager => "bg-success text-white",
+            PosShared.Models.UserRole.Worker => "bg-info text-dark",
+            _ => "bg-secondary text-white"
+            };
+    }
+
+    private string GetStatusBadgeClass(PosShared.Models.EmploymentStatus status)
+    {
+        return status switch
+        {
+            PosShared.Models.EmploymentStatus.Active => "bg-success text-white",
+            PosShared.Models.EmploymentStatus.PaidLeave => "bg-info text-white",
+            PosShared.Models.EmploymentStatus.SickLeave => "bg-warning text-dark",
+            PosShared.Models.EmploymentStatus.ChildCareLeave => "bg-primary text-white",
+            PosShared.Models.EmploymentStatus.Fired => "bg-danger text-white",
+            PosShared.Models.EmploymentStatus.Quit => "bg-dark text-white",
+            PosShared.Models.EmploymentStatus.UnpaidLeave => "bg-secondary text-white",
+            _ => "bg-light text-dark"
+            };
+    }
+}

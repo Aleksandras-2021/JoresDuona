@@ -1,13 +1,11 @@
 ﻿using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 using PosAPI.Repositories;
 using PosAPI.Services;
 using PosShared.DTOs;
 using PosShared.Models;
-using PosShared.Ultilities;
-using System.Diagnostics.Eventing.Reader;
+using PosShared.Utilities;
+using PosAPI.Services.Interfaces;
 
 namespace PosAPI.Controllers;
 
@@ -17,21 +15,17 @@ namespace PosAPI.Controllers;
 [ApiController]
 public class OrderItemsController : ControllerBase
 {
-    private readonly IOrderRepository _orderRepository;
     private readonly IUserRepository _userRepository;
-    private readonly IItemRepository _itemRepository;
-    private readonly ITaxRepository _taxRepository;
+    private readonly ITaxService _taxService;
     private readonly IOrderService _orderService;
 
     private readonly ILogger<OrderItemsController> _logger;
 
-    public OrderItemsController(IOrderRepository orderRepository, IUserRepository userRepository, IOrderService orderService, ILogger<OrderItemsController> logger, IItemRepository itemRepository, ITaxRepository taxRepository)
+    public OrderItemsController(IUserRepository userRepository, IOrderService orderService, ILogger<OrderItemsController> logger, ITaxService taxService)
     {
-        _orderRepository = orderRepository;
         _userRepository = userRepository;
         _orderService = orderService;
-        _itemRepository = itemRepository;
-        _taxRepository = taxRepository;
+        _taxService = taxService;
 
         _logger = logger;
     }
@@ -41,24 +35,20 @@ public class OrderItemsController : ControllerBase
     {
         User? sender = await GetUserFromToken();
 
-        if (sender == null)
-            return Unauthorized();
-
         try
         {
             var orderItems = await _orderService.GetAuthorizedOrderItems(orderId, sender);
-
-            if (orderItems == null || !orderItems.Any())
-                return NotFound("No items found for this order.");
 
             return Ok(orderItems);
         }
         catch (UnauthorizedAccessException ex)
         {
-            return Unauthorized(ex.Message);
+            _logger.LogWarning($"403 Status, User {sender.Id}. {ex.Message}");
+            return StatusCode(403, $"Forbidden {ex.Message}");
         }
         catch (KeyNotFoundException ex)
         {
+            _logger.LogError($"{ex.Message}");
             return NotFound(ex.Message);
         }
         catch (Exception ex)
@@ -73,10 +63,7 @@ public class OrderItemsController : ControllerBase
     public async Task<IActionResult> GetOrderItem(int id)
     {
         User? sender = await GetUserFromToken();
-
-        if (sender == null)
-            return Unauthorized();
-
+        
         try
         {
             var orderItem = await _orderService.GetAuthorizedOrderItem(id, sender);
@@ -85,7 +72,8 @@ public class OrderItemsController : ControllerBase
         }
         catch (UnauthorizedAccessException ex)
         {
-            return Unauthorized(ex.Message);
+            _logger.LogWarning($"403 Status, User {sender.Id}. {ex.Message}");
+            return StatusCode(403, $"Forbidden {ex.Message}");
         }
         catch (KeyNotFoundException ex)
         {
@@ -103,53 +91,26 @@ public class OrderItemsController : ControllerBase
     public async Task<IActionResult> AddItemToOrder(int orderId, [FromBody] AddItemDTO addItemDTO)
     {
         User? sender = await GetUserFromToken();
-
-        if (sender == null)
-            return Unauthorized();
-
+        
         try
         {
-            var order = await _orderService.GetAuthorizedOrderForModification(orderId, sender);
+            var orderItem = await _orderService.CreateAuthorizedOrderItem(orderId, addItemDTO, sender);
 
-            var item = await _itemRepository.GetItemByIdAsync(addItemDTO.ItemId);
-            Tax tax = await _taxRepository.GetTaxByItemIdAsync(addItemDTO.ItemId);
-
-            decimal taxedAmount;
-            if (tax.IsPercentage)
-            {
-                taxedAmount = item.Price * tax.Amount / 100;
-            }
-            else
-            {
-                taxedAmount = tax.Amount;
-            }
-
-
-            OrderItem orderItem = new OrderItem
-            {
-                OrderId = orderId,
-                ItemId = addItemDTO.ItemId,
-                Quantity = 1, //or addItemDto.Quantity if that ever gets implemented
-                Price = item.Price,
-                TaxedAmount = taxedAmount
-            };
-
-            await _orderRepository.AddOrderItemAsync(orderItem);
-            await _orderRepository.UpdateOrderAsync(order);
-            await _orderService.RecalculateOrderCharge(orderItem.OrderId);
-
-            return CreatedAtRoute("GetOrderById", new { id = order.Id }, orderItem);
+            return CreatedAtRoute("GetOrderById", new { id = orderId }, orderItem);
         }
         catch (KeyNotFoundException ex)
         {
+            _logger.LogError(ex.Message);
             return NotFound(ex.Message);
         }
         catch (UnauthorizedAccessException ex)
         {
-            return Unauthorized(ex.Message);
+            _logger.LogWarning($"403 Status, User {sender.Id}. {ex.Message}");
+            return StatusCode(403, $"Forbidden {ex.Message}");
         }
         catch (Exception ex)
         {
+            _logger.LogError(ex.Message);
             return StatusCode(500, $"Internal server error: {ex.Message}");
         }
     }
@@ -159,31 +120,21 @@ public class OrderItemsController : ControllerBase
     public async Task<IActionResult> DeleteOrderItem(int orderId, int orderItemId)
     {
         User? sender = await GetUserFromToken();
-
-        if (sender == null)
-            return Unauthorized();
-
+        
         try
         {
-            // Get Order for validation on its status
-            var order = await _orderService.GetAuthorizedOrderForModification(orderId, sender);
-            // Validate order item
-            var orderItem = await _orderService.GetAuthorizedOrderItem(orderItemId, sender);
-
-            // Delete the order item
-            await _orderRepository.DeleteOrderItemAsync(orderItemId);
-
-            // Recalculate charges
-            await _orderService.RecalculateOrderCharge(orderItem.OrderId);
-
+            await _orderService.DeleteAuthorizedOrderItem(orderId,orderItemId,sender);
+            
             return Ok("Order item deleted successfully.");
         }
         catch (UnauthorizedAccessException ex)
         {
-            return Unauthorized(ex.Message);
+            _logger.LogWarning($"403 Status, User {sender.Id}. {ex.Message}");
+            return StatusCode(403, $"Forbidden {ex.Message}");
         }
         catch (KeyNotFoundException ex)
         {
+            _logger.LogError(ex.Message);
             return NotFound(ex.Message);
         }
         catch (Exception ex)

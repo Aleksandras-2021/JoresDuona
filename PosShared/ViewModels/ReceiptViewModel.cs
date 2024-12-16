@@ -10,10 +10,13 @@ namespace PosShared.ViewModels;
 public class ReceiptViewModel
 {
     public int OrderId;
+    public int EmployeeId;
+    public DateTime? ClosedAt;
     public List<OrderItem>? OrderItems;
     public List<OrderItemVariation>? OrderItemVariatons;
-    public List<Tax>? Taxes;
+    public List<OrderService>?OrderServices;
     public decimal Total;
     public decimal TotalTax;
+    public decimal Tips;
     public decimal TotalCharge;
 }

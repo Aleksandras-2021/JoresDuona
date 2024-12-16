@@ -234,7 +234,7 @@ namespace PosAPI.Migrations
                     b.Property<DateTime>("SentAt")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("timestamp with time zone")
-                        .HasDefaultValue(new DateTime(2024, 12, 15, 14, 11, 22, 798, DateTimeKind.Utc).AddTicks(7867));
+                        .HasDefaultValue(new DateTime(2024, 12, 15, 12, 46, 14, 659, DateTimeKind.Utc).AddTicks(4274));
 
                     b.Property<string>("Type")
                         .IsRequired()
@@ -271,7 +271,7 @@ namespace PosAPI.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("timestamp with time zone")
-                        .HasDefaultValue(new DateTime(2024, 12, 15, 14, 11, 22, 796, DateTimeKind.Utc).AddTicks(7360));
+                        .HasDefaultValue(new DateTime(2024, 12, 15, 12, 46, 14, 656, DateTimeKind.Utc).AddTicks(6732));
 
                     b.Property<decimal>("DiscountAmount")
                         .HasColumnType("numeric");
@@ -452,6 +452,9 @@ namespace PosAPI.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
+                    b.Property<decimal>("Charge")
+                        .HasColumnType("numeric");
+
                     b.Property<int>("DurationInMinutes")
                         .HasColumnType("integer");
 
@@ -461,7 +464,10 @@ namespace PosAPI.Migrations
                     b.Property<int>("ServiceId")
                         .HasColumnType("integer");
 
-                    b.Property<decimal>("TotalPrice")
+                    b.Property<decimal>("Tax")
+                        .HasColumnType("numeric");
+
+                    b.Property<decimal>("Total")
                         .HasColumnType("numeric");
 
                     b.HasKey("Id");
@@ -490,7 +496,7 @@ namespace PosAPI.Migrations
                     b.Property<DateTime>("PaymentDate")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("timestamp with time zone")
-                        .HasDefaultValue(new DateTime(2024, 12, 15, 14, 11, 22, 797, DateTimeKind.Utc).AddTicks(3103));
+                        .HasDefaultValue(new DateTime(2024, 12, 15, 12, 46, 14, 657, DateTimeKind.Utc).AddTicks(4465));
 
                     b.Property<string>("PaymentGateway")
                         .IsRequired()
@@ -530,7 +536,7 @@ namespace PosAPI.Migrations
                     b.Property<DateTime>("RefundDate")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("timestamp with time zone")
-                        .HasDefaultValue(new DateTime(2024, 12, 15, 14, 11, 22, 797, DateTimeKind.Utc).AddTicks(5967));
+                        .HasDefaultValue(new DateTime(2024, 12, 15, 12, 46, 14, 657, DateTimeKind.Utc).AddTicks(7306));
 
                     b.HasKey("Id");
 
@@ -550,32 +556,29 @@ namespace PosAPI.Migrations
                     b.Property<DateTime>("BookedAt")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("timestamp with time zone")
-                        .HasDefaultValue(new DateTime(2024, 12, 15, 14, 11, 22, 798, DateTimeKind.Utc).AddTicks(3966));
+                        .HasDefaultValue(new DateTime(2024, 12, 15, 12, 46, 14, 658, DateTimeKind.Utc).AddTicks(8077));
 
                     b.Property<string>("CustomerEmail")
-                        .IsRequired()
                         .HasColumnType("text");
 
-                    b.Property<int>("CustomerId")
+                    b.Property<int?>("CustomerId")
                         .HasColumnType("integer");
 
                     b.Property<string>("CustomerName")
-                        .IsRequired()
                         .HasColumnType("text");
 
                     b.Property<string>("CustomerPhone")
-                        .IsRequired()
                         .HasMaxLength(20)
                         .HasColumnType("character varying(20)");
 
                     b.Property<int>("EmployeeId")
                         .HasColumnType("integer");
 
-                    b.Property<int>("NumberOfGuests")
-                        .HasColumnType("integer");
-
                     b.Property<int>("OrderId")
                         .HasColumnType("integer");
+
+                    b.Property<DateTime>("ReservationEndTime")
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<DateTime>("ReservationTime")
                         .HasColumnType("timestamp with time zone");
@@ -617,7 +620,7 @@ namespace PosAPI.Migrations
                     b.Property<DateTime>("LastUpdate")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("timestamp with time zone")
-                        .HasDefaultValue(new DateTime(2024, 12, 15, 14, 11, 22, 796, DateTimeKind.Utc).AddTicks(5153));
+                        .HasDefaultValue(new DateTime(2024, 12, 15, 12, 46, 14, 656, DateTimeKind.Utc).AddTicks(3962));
 
                     b.Property<DateTime>("StartTime")
                         .HasColumnType("timestamp with time zone");
@@ -648,13 +651,16 @@ namespace PosAPI.Migrations
                     b.Property<int>("BusinessId")
                         .HasColumnType("integer");
 
+                    b.Property<int>("Category")
+                        .HasColumnType("integer");
+
                     b.Property<string>("Description")
                         .HasColumnType("text");
 
                     b.Property<int>("DurationInMinutes")
                         .HasColumnType("integer");
 
-                    b.Property<int?>("EmployeeId")
+                    b.Property<int>("EmployeeId")
                         .HasColumnType("integer");
 
                     b.Property<string>("Name")
@@ -734,6 +740,33 @@ namespace PosAPI.Migrations
                     b.ToTable("TimeOffs");
 
                     b.HasAnnotation("Relational:JsonPropertyName", "timeOffs");
+                });
+
+            modelBuilder.Entity("PosShared.Models.TimeSlot", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("EndTime")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<bool>("IsAvailable")
+                        .HasColumnType("boolean");
+
+                    b.Property<int?>("ReservationId")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime>("StartTime")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ReservationId");
+
+                    b.ToTable("TimeSlot");
                 });
 
             modelBuilder.Entity("PosShared.Models.User", b =>
@@ -1017,9 +1050,7 @@ namespace PosAPI.Migrations
                 {
                     b.HasOne("PosShared.Models.Customer", "Customer")
                         .WithMany("Reservations")
-                        .HasForeignKey("CustomerId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .HasForeignKey("CustomerId");
 
                     b.HasOne("PosShared.Models.User", "Employee")
                         .WithMany("Reservations")
@@ -1069,7 +1100,9 @@ namespace PosAPI.Migrations
 
                     b.HasOne("PosShared.Models.User", "Employee")
                         .WithMany("Services")
-                        .HasForeignKey("EmployeeId");
+                        .HasForeignKey("EmployeeId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
 
                     b.Navigation("Business");
 
@@ -1096,6 +1129,13 @@ namespace PosAPI.Migrations
                         .IsRequired();
 
                     b.Navigation("User");
+                });
+
+            modelBuilder.Entity("PosShared.Models.TimeSlot", b =>
+                {
+                    b.HasOne("PosShared.Models.Reservation", null)
+                        .WithMany("TimeSlots")
+                        .HasForeignKey("ReservationId");
                 });
 
             modelBuilder.Entity("PosShared.Models.User", b =>
@@ -1176,6 +1216,8 @@ namespace PosAPI.Migrations
             modelBuilder.Entity("PosShared.Models.Reservation", b =>
                 {
                     b.Navigation("Notifications");
+
+                    b.Navigation("TimeSlots");
                 });
 
             modelBuilder.Entity("PosShared.Models.Service", b =>

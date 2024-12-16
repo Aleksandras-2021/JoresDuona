@@ -5,7 +5,7 @@ using PosAPI.Repositories;
 using PosAPI.Services;
 using PosShared.DTOs;
 using PosShared.Models;
-using PosShared.Ultilities;
+using PosShared.Utilities;
 using PosShared.ViewModels;
 
 namespace PosAPI.Controllers;
@@ -205,7 +205,8 @@ public class ItemsController : ControllerBase
         }
         catch (UnauthorizedAccessException ex)
         {
-            return Unauthorized(ex.Message);
+            _logger.LogWarning($"403 Status, User {sender.Id}. {ex.Message}");
+            return StatusCode(403, $"Forbidden {ex.Message}");
         }
         catch (KeyNotFoundException ex)
         {
@@ -242,7 +243,8 @@ public class ItemsController : ControllerBase
         }
         catch (UnauthorizedAccessException ex)
         {
-            return Unauthorized(ex.Message);
+            _logger.LogWarning($"403 Status, User {sender.Id}. {ex.Message}");
+            return StatusCode(403, $"Forbidden {ex.Message}");
         }
         catch (KeyNotFoundException ex)
         {
@@ -284,7 +286,8 @@ public class ItemsController : ControllerBase
         }
         catch (UnauthorizedAccessException ex)
         {
-            return Unauthorized(ex.Message);
+            _logger.LogWarning($"403 Status, User {sender.Id}. {ex.Message}");
+            return StatusCode(403, $"Forbidden {ex.Message}");
         }
         catch (KeyNotFoundException ex)
         {
@@ -314,7 +317,8 @@ public class ItemsController : ControllerBase
         }
         catch (UnauthorizedAccessException ex)
         {
-            return Unauthorized(ex.Message);
+            _logger.LogWarning($"403 Status, User {sender.Id}. {ex.Message}");
+            return StatusCode(403, $"Forbidden {ex.Message}");
         }
         catch (KeyNotFoundException ex)
         {
@@ -331,11 +335,9 @@ public class ItemsController : ControllerBase
     [HttpPut("Variations/{id}")]
     public async Task<IActionResult> UpdateVariation(int id, VariationsDTO variation)
     {
+        User? sender = await GetUserFromToken();
         try
         {
-            User? sender = await GetUserFromToken();
-            if (sender == null)
-                return Unauthorized();
 
             ItemVariation? existingVariation = await _itemService.GetAuthorizedItemVariationForModificationByIdAsync(id,sender);
 
@@ -355,7 +357,8 @@ public class ItemsController : ControllerBase
         }
         catch (UnauthorizedAccessException ex)
         {
-            return Unauthorized(ex.Message);
+            _logger.LogWarning($"403 Status, User {sender.Id}. {ex.Message}");
+            return StatusCode(403, $"Forbidden {ex.Message}");
         }
         catch (Exception ex)
         {

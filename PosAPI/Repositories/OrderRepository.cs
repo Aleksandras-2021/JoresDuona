@@ -269,9 +269,10 @@ public class OrderRepository : IOrderRepository
 
     public async Task<List<OrderItemVariation>> GetOrderItemVariationsByOrderIdAsync(int orderId)
     {
-        var orderItemsVariations = await _context.Set<OrderItemVariation>()
-            .Where(orderItemVar => orderItemVar.OrderItem.OrderId == orderId)
-            .OrderBy(orderItem => orderItem.Id)
+        return await _context.OrderItemVariations
+            .Include(oiv => oiv.OrderItem) // Eagerly load the OrderItem navigation property
+            .Where(oiv => oiv.OrderItem.OrderId == orderId)
+            .OrderBy(oiv => oiv.Id)
             .ToListAsync();
 
         return orderItemsVariations;
@@ -298,6 +299,7 @@ public class OrderRepository : IOrderRepository
         // Save changes to the database
         await _context.SaveChangesAsync();
     }
+
 
     public async Task DeleteOrderItemVariationAsync(int varId)
     {
@@ -341,18 +343,19 @@ public class OrderRepository : IOrderRepository
                             .Any(oiv => oiv.ItemVariationId == iv.Id && oiv.OrderItemId == orderItemId))
             .ToListAsync();
     }
-    public async Task<Order> GetByIdAsync(int id)
+    
+    public async Task AddOrderServiceAsync(OrderService orderService)
     {
-        return await _context.Orders
-            .Include(o => o.Discount) // Include the Discount relationship
-            .FirstOrDefaultAsync(o => o.Id == id);
+        await _context.OrderServices.AddAsync(orderService);
+        await _context.SaveChangesAsync(); 
+    }
+    
+    public async Task<List<OrderService>> GetAllOrderServices(int orderId)
+    {
+        return await _context.OrderServices
+            .Where(os => os.OrderId == orderId)
+            .ToListAsync();
     }
 
-
-    public async Task UpdateAsync(Order order)
-    {
-        _context.Orders.Update(order);
-        await _context.SaveChangesAsync();
-    }
-
+    
 }

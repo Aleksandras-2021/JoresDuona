@@ -78,7 +78,7 @@ public class PaymentController : Controller
         if (response.IsSuccessStatusCode)
         {
             var paymentData = await response.Content.ReadAsStringAsync();
-            var payments = JsonSerializer.Deserialize<List<Payment>>(paymentData, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+            var payments = JsonSerializer.Deserialize<List<Payment>>(paymentData,JsonOptions.Default);
 
             if (payments != null && payments.Any())
             {
@@ -112,39 +112,69 @@ public class PaymentController : Controller
         try
         {
             // Get Order Items
+            var orderApiUrl = ApiRoutes.Order.GetById(orderId);
+            var orderResponse = await _httpClient.GetAsync(orderApiUrl);
+            Order? order = null;
+
+            if (orderResponse.IsSuccessStatusCode)
+            {
+                var orderData = await orderResponse.Content.ReadAsStringAsync();
+                order = JsonSerializer.Deserialize<Order>(orderData, JsonOptions.Default);
+            }
+            else
+            {
+                TempData["Error"] = "Couldn't retrieve order.";
+
+            }
+            
+            
+            
+            // Get Order Items
             var orderItemsApiUrl = ApiRoutes.OrderItems.GetOrderItems(orderId);
             var orderItemsResponse = await _httpClient.GetAsync(orderItemsApiUrl);
 
-            if (!orderItemsResponse.IsSuccessStatusCode)
+            List<OrderItem>? orderItems = null;
+
+            if (orderItemsResponse.IsSuccessStatusCode)
             {
-                TempData["Error"] = "Unable to fetch order items.";
-                return View("Receipt", new ReceiptViewModel() { OrderId = orderId });
+                var orderItemsData = await orderItemsResponse.Content.ReadAsStringAsync();
+                 orderItems = JsonSerializer.Deserialize<List<OrderItem>>(orderItemsData, JsonOptions.Default);
             }
-
-            var orderItemsData = await orderItemsResponse.Content.ReadAsStringAsync();
-            List<OrderItem>? orderItems = JsonSerializer.Deserialize<List<OrderItem>>(orderItemsData, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
-
-            if (orderItems == null || !orderItems.Any())
+            else
             {
-                TempData["Error"] = "No order items found.";
                 orderItems = new List<OrderItem>();
             }
 
             // Get Order Item Variations
-            var orderItemVariationsApiUrl = ApiRoutes.Orders.GetOrderVariations(orderId);
+            var orderItemVariationsApiUrl = ApiRoutes.Order.GetOrderVariations(orderId);
             var orderItemVariationsResponse = await _httpClient.GetAsync(orderItemVariationsApiUrl);
 
             List<OrderItemVariation>? orderItemVariations = null;
             if (orderItemVariationsResponse.IsSuccessStatusCode)
             {
                 var orderItemVariationsData = await orderItemVariationsResponse.Content.ReadAsStringAsync();
-                orderItemVariations = JsonSerializer.Deserialize<List<OrderItemVariation>>(orderItemVariationsData, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+                orderItemVariations = JsonSerializer.Deserialize<List<OrderItemVariation>>(orderItemVariationsData, JsonOptions.Default);
             }
             else
             {
                 orderItemVariations = new List<OrderItemVariation>();
-
             }
+            
+            var orderServicesApiUrl = ApiRoutes.Order.GetOrderServices(orderId);
+            var orderServicesResponse = await _httpClient.GetAsync(orderServicesApiUrl);
+
+            List<OrderService>? orderServices = null;
+            if (orderServicesResponse.IsSuccessStatusCode)
+            {
+                var orderServicesData = await orderServicesResponse.Content.ReadAsStringAsync();
+                orderServices = JsonSerializer.Deserialize<List<OrderService>>(orderServicesData,JsonOptions.Default);
+            }
+            else
+            {
+                orderServices = new List<OrderService>();
+            }
+            
+            
             decimal totalTax = 0;
             decimal totalCharge = 0;
             decimal total = 0;
@@ -161,15 +191,25 @@ public class PaymentController : Controller
                 totalCharge += variation.AdditionalPrice * variation.Quantity;
                 totalTax += variation.TaxedAmount * variation.Quantity;
             }
-            total = totalTax + totalCharge;
+            foreach (var service in orderServices)
+            {
+                totalCharge += service.Charge;
+                totalTax += service.Tax;
+            }
+            
+            total = totalTax + totalCharge + order.TipAmount;
 
             var model = new ReceiptViewModel()
             {
                 OrderId = orderId,
+                EmployeeId = order.UserId,
+                ClosedAt = order.ClosedAt,
                 OrderItems = orderItems,
                 OrderItemVariatons = orderItemVariations,
+                OrderServices = orderServices,
                 Total = total,
                 TotalCharge = totalCharge,
+                Tips = order.TipAmount,
                 TotalTax = totalTax,
             };
 

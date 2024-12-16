@@ -14,16 +14,8 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="fe899842-ea22-4e77-98e6-59d0bab7b320" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/PosAPI/Middlewares/AuthorizationHelper.cs" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/PosAPI/Middlewares/RolePermissions.cs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/.idea.JoresDuona/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/.idea.JoresDuona/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/PosAPI/Controllers/BusinessesController.cs" beforeDir="false" afterPath="$PROJECT_DIR$/PosAPI/Controllers/BusinessesController.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/PosAPI/Controllers/ItemsController.cs" beforeDir="false" afterPath="$PROJECT_DIR$/PosAPI/Controllers/ItemsController.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/PosAPI/Repositories/ItemRepository.cs" beforeDir="false" afterPath="$PROJECT_DIR$/PosAPI/Repositories/ItemRepository.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/PosAPI/Services/BusinessService.cs" beforeDir="false" afterPath="$PROJECT_DIR$/PosAPI/Services/BusinessService.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/PosAPI/Services/Interfaces/IItemService.cs" beforeDir="false" afterPath="$PROJECT_DIR$/PosAPI/Services/Interfaces/IItemService.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/PosAPI/Services/ItemService.cs" beforeDir="false" afterPath="$PROJECT_DIR$/PosAPI/Services/ItemService.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/PosClient/Controllers/BusinessController.cs" beforeDir="false" afterPath="$PROJECT_DIR$/PosClient/Controllers/BusinessController.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/PosShared/Models/User/User.cs" beforeDir="false" afterPath="$PROJECT_DIR$/PosShared/Models/User/User.cs" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -35,6 +27,9 @@
   </component>
   <component name="MarkdownSettingsMigration">
     <option name="stateVersion" value="1" />
+  </component>
+  <component name="ProblemsViewState">
+    <option name="selectedTabId" value="CurrentFile" />
   </component>
   <component name="ProjectColorInfo">{
   &quot;associatedIndex&quot;: 3
@@ -49,7 +44,7 @@
     "RunOnceActivity.OpenProjectViewOnStart": "true",
     "RunOnceActivity.ShowReadmeOnStart": "true",
     "WebServerToolWindowFactoryState": "false",
-    "git-widget-placeholder": "refactor/roles",
+    "git-widget-placeholder": "main",
     "node.js.detected.package.eslint": "true",
     "node.js.selected.package.eslint": "(autodetect)",
     "node.js.selected.package.tslint": "(autodetect)",
@@ -96,6 +91,10 @@
       <workItem from="1734019440105" duration="3380000" />
       <workItem from="1734023136028" duration="76000" />
       <workItem from="1734030494081" duration="9657000" />
+      <workItem from="1734179569301" duration="34459000" />
+      <workItem from="1734217156837" duration="177000" />
+      <workItem from="1734217371523" duration="11912000" />
+      <workItem from="1734262479046" duration="1309000" />
     </task>
     <servers />
   </component>
@@ -104,6 +103,25 @@
   </component>
   <component name="VcsManagerConfiguration">
     <option name="CLEAR_INITIAL_COMMIT_MESSAGE" value="true" />
+  </component>
+  <component name="XDebuggerManager">
+    <breakpoint-manager>
+      <breakpoints>
+        <line-breakpoint enabled="true" type="DotNet Breakpoints">
+          <url>file://$PROJECT_DIR$/PosShared/Models/Service/Reservation/TimeSlot.cs</url>
+          <line>18</line>
+          <properties documentPath="C:\Users\Lex\Desktop\repos\JoresDuona\PosShared\Models\Service\Reservation\TimeSlot.cs" initialLine="18" containingFunctionPresentation="Method 'OverlapsWith'">
+            <startOffsets>
+              <option value="530" />
+            </startOffsets>
+            <endOffsets>
+              <option value="531" />
+            </endOffsets>
+          </properties>
+          <option name="timeStamp" value="2" />
+        </line-breakpoint>
+      </breakpoints>
+    </breakpoint-manager>
   </component>
   <component name="XSLT-Support.FileAssociations.UIState">
     <expand />

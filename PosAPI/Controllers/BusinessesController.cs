@@ -1,6 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
-using PosShared.Ultilities;
+using PosShared.Utilities;
 using PosAPI.Repositories;
 using PosAPI.Services;
 using PosAPI.Services.Interfaces;
@@ -43,7 +43,8 @@ public class BusinessesController : ControllerBase
         }
         catch (UnauthorizedAccessException ex)
         {
-            return Unauthorized(ex.Message);
+            _logger.LogWarning($"403 Status, User {sender.Id}. {ex.Message}");
+            return StatusCode(403, $"Forbidden {ex.Message}");
         }
         catch (KeyNotFoundException ex)
         {
@@ -68,7 +69,8 @@ public class BusinessesController : ControllerBase
         }
         catch (UnauthorizedAccessException ex)
         {
-            return Unauthorized(ex.Message);
+            _logger.LogWarning($"403 Status, User {sender.Id}. {ex.Message}");
+            return StatusCode(403, $"Forbidden {ex.Message}");
         }
         catch (KeyNotFoundException ex)
         {
@@ -103,7 +105,8 @@ public class BusinessesController : ControllerBase
         }
         catch (UnauthorizedAccessException ex)
         {
-            return Unauthorized(ex.Message);
+            _logger.LogWarning($"403 Status, User {sender.Id}. {ex.Message}");
+            return StatusCode(403, $"Forbidden {ex.Message}");
         }
         catch (KeyNotFoundException ex)
         {
@@ -154,7 +157,8 @@ public class BusinessesController : ControllerBase
         }
         catch (UnauthorizedAccessException ex)
         {
-            return Unauthorized(ex.Message);
+            _logger.LogWarning($"403 Status, User {sender.Id}. {ex.Message}");
+            return StatusCode(403, $"Forbidden {ex.Message}");
         }
         catch (KeyNotFoundException ex)
         {

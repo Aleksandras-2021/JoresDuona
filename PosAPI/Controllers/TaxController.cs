@@ -5,7 +5,7 @@ using Microsoft.EntityFrameworkCore;
 using PosAPI.Repositories;
 using PosShared.DTOs;
 using PosShared.Models;
-using PosShared.Ultilities;
+using PosShared.Utilities;
 using PosShared.ViewModels;
 
 namespace PosAPI.Controllers;
@@ -56,6 +56,11 @@ public class TaxController : ControllerBase
 
             return Ok(taxes);
         }
+        catch (UnauthorizedAccessException ex)
+        {
+            _logger.LogWarning($"403 Status, User {sender.Id}. {ex.Message}");
+            return StatusCode(403, $"Forbidden {ex.Message}");
+        }
         catch (Exception ex)
         {
             _logger.LogError($"Error retrieving all taxes: {ex.Message}");
@@ -103,6 +108,16 @@ public class TaxController : ControllerBase
 
             return Ok(tax);
         }
+        catch (KeyNotFoundException ex)
+        {
+            _logger.LogWarning($"Tax with id  {id} not found. {ex.Message}");
+            return NotFound(ex.Message);
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            _logger.LogWarning($"403 Status, User {sender.Id}. {ex.Message}");
+            return StatusCode(403, $"Forbidden {ex.Message}");
+        }
         catch (Exception ex)
         {
             _logger.LogError($"Error retrieving user with ID {id}: {ex.Message}");
@@ -142,7 +157,17 @@ public class TaxController : ControllerBase
 
             return CreatedAtAction(nameof(GetTaxById), new { id = newTax.Id }, newTax);
         }
-        catch (DbUpdateException e)
+        catch (UnauthorizedAccessException ex)
+        {
+            _logger.LogWarning($"403 Status, User {sender.Id}. {ex.Message}");
+            return StatusCode(403, $"Forbidden {ex.Message}");
+        }
+        catch (ArgumentNullException ex)
+        {
+            _logger.LogWarning($"{ex.Message}");
+            return Unauthorized(ex.Message);
+        }
+        catch (Exception e)
         {
             return StatusCode(500, $"Internal server error: {e.Message}");
         }
@@ -180,6 +205,11 @@ public class TaxController : ControllerBase
             await _taxRepository.UpdateTaxAsync(existingTax);
 
             return NoContent();
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            _logger.LogWarning($"403 Status, User {sender.Id}. {ex.Message}");
+            return StatusCode(403, $"Forbidden {ex.Message}");
         }
         catch (KeyNotFoundException ex)
         {
@@ -229,6 +259,16 @@ public class TaxController : ControllerBase
             _logger.LogInformation($"User with id {sender.Id} deleted Tax with id {tax.Id} at {DateTime.Now}");
 
             return NoContent();
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            _logger.LogWarning($"403 Status, User {sender.Id}. {ex.Message}");
+            return StatusCode(403, $"Forbidden {ex.Message}");
+        }
+        catch (KeyNotFoundException ex)
+        {
+            _logger.LogWarning($"Tax with ID {id} not found: {ex.Message}");
+            return NotFound(ex.Message);
         }
         catch (Exception ex)
         {

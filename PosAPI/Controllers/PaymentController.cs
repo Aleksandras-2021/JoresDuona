@@ -5,7 +5,7 @@ using Microsoft.EntityFrameworkCore;
 using PosAPI.Repositories;
 using PosShared.DTOs;
 using PosShared.Models;
-using PosShared.Ultilities;
+using PosShared.Utilities;
 using PosShared.ViewModels;
 
 namespace PosAPI.Controllers;
@@ -61,9 +61,19 @@ public class PaymentController : ControllerBase
 
             return Ok(payments);
         }
+        catch (KeyNotFoundException ex)
+        {
+            _logger.LogError($"{ex.Message}");
+            return NotFound(ex.Message);
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            _logger.LogWarning($"403 Status, User {sender.Id}. {ex.Message}");
+            return StatusCode(403, $"Forbidden {ex.Message}");
+        }
         catch (Exception ex)
         {
-            _logger.LogError($"Error retrieving all payments: {ex.Message}");
+            _logger.LogError($"Error deleting reservation: {ex.Message}");
             return StatusCode(500, "Internal server error");
         }
     }
@@ -106,9 +116,19 @@ public class PaymentController : ControllerBase
 
             return Ok(payment);
         }
+        catch (KeyNotFoundException ex)
+        {
+            _logger.LogError($"{ex.Message}");
+            return NotFound(ex.Message);
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            _logger.LogWarning($"403 Status, User {senderUser.Id}. {ex.Message}");
+            return StatusCode(403, $"Forbidden {ex.Message}");
+        }
         catch (Exception ex)
         {
-            _logger.LogError($"Error retrieving Payment with ID {id}: {ex.Message}");
+            _logger.LogError($"Error deleting reservation: {ex.Message}");
             return StatusCode(500, "Internal server error");
         }
     }
@@ -153,9 +173,19 @@ public class PaymentController : ControllerBase
 
             return Ok(payments);
         }
+        catch (KeyNotFoundException ex)
+        {
+            _logger.LogError($"{ex.Message}");
+            return NotFound(ex.Message);
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            _logger.LogWarning($"403 Status, User {senderUser.Id}. {ex.Message}");
+            return StatusCode(403, $"Forbidden {ex.Message}");
+        }
         catch (Exception ex)
         {
-            _logger.LogError($"Error retrieving order with ID {orderId}: {ex.Message}");
+            _logger.LogError($"Error deleting reservation: {ex.Message}");
             return StatusCode(500, "Internal server error");
         }
     }
@@ -222,6 +252,21 @@ public class PaymentController : ControllerBase
         catch (DbUpdateException e)
         {
             return StatusCode(500, $"Internal server error: {e.Message}");
+        }
+        catch (KeyNotFoundException ex)
+        {
+            _logger.LogError($"{ex.Message}");
+            return NotFound(ex.Message);
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            _logger.LogWarning($"403 Status, User {sender.Id}. {ex.Message}");
+            return StatusCode(403, $"Forbidden {ex.Message}");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError($"Error deleting reservation: {ex.Message}");
+            return StatusCode(500, "Internal server error");
         }
     }
 

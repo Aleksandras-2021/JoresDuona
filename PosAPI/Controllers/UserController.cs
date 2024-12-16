@@ -4,7 +4,7 @@ using Microsoft.EntityFrameworkCore.Metadata.Conventions.Infrastructure;
 using Microsoft.Extensions.Logging;
 using PosAPI.Repositories;
 using PosShared.Models;
-using PosShared.Ultilities;
+using PosShared.Utilities;
 using PosShared.ViewModels;
 using System;
 using System.Collections.Generic;
@@ -60,6 +60,16 @@ public class UsersController : ControllerBase
 
             return Ok(users);
         }
+        catch (UnauthorizedAccessException ex)
+        {
+            _logger.LogWarning($"{ex.Message}");
+            return Forbid(ex.Message);
+        }
+        catch (KeyNotFoundException ex)
+        {
+            _logger.LogWarning($"{ex.Message}");
+            return NotFound(ex.Message);
+        }
         catch (Exception ex)
         {
             _logger.LogError($"Error retrieving all users: {ex.Message}");
@@ -80,30 +90,17 @@ public class UsersController : ControllerBase
         {
             User? user;
 
-            if (senderUser.Role == UserRole.SuperAdmin)
-            {
-                user = await _userRepository.GetUserByIdAsync(id);
-            }
-            else if (senderUser.Role == UserRole.Manager || senderUser.Role == UserRole.Owner)
-            {
-                user = await _userRepository.GetUserByIdAsync(id);
-
-                if (user.BusinessId != senderUser.BusinessId)
-                {
-                    return Unauthorized();
-                }
-            }
-            else
-            {
-                return Unauthorized();
-            }
-
-            if (user == null)
-            {
-                return NotFound($"User with ID {id} not found.");
-            }
-
-            return Ok(user);
+            return Ok(dto);
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            _logger.LogWarning($"403 Status, User {sender.Id}. {ex.Message}");
+            return StatusCode(403, $"Forbidden {ex.Message}");
+        }
+        catch (KeyNotFoundException ex)
+        {
+            _logger.LogWarning($"{ex.Message}");
+            return NotFound(ex.Message);
         }
         catch (Exception ex)
         {
@@ -114,7 +111,7 @@ public class UsersController : ControllerBase
 
     // POST: api/Users
     [HttpPost]
-    public async Task<IActionResult> CreateUser([FromBody] User user)
+    public async Task<IActionResult> CreateUser([FromBody] CreateUserDTO user)
     {
         User? sender = await GetUserFromToken();
 
@@ -156,6 +153,20 @@ public class UsersController : ControllerBase
         {
             await _userRepository.AddUserAsync(newUser);
             return CreatedAtAction(nameof(GetUserById), new { id = newUser.Id }, newUser);
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            _logger.LogWarning($"403 Status, User {sender.Id}. {ex.Message}");
+            return StatusCode(403, $"Forbidden {ex.Message}");
+        }
+        catch (KeyNotFoundException ex)
+        {
+            _logger.LogWarning($"{ex.Message}");
+            return NotFound(ex.Message);
+        }
+        catch (MissingFieldException ex)
+        {
+            return BadRequest(ex.Message);
         }
         catch (Exception ex)
         {
@@ -214,15 +225,20 @@ public class UsersController : ControllerBase
             await _userRepository.UpdateUserAsync(existingUser);
             return NoContent();
         }
+        catch (UnauthorizedAccessException ex)
+        {
+            _logger.LogWarning($"403 Status, User {sender.Id}. {ex.Message}");
+            return StatusCode(403, $"Forbidden {ex.Message}");
+        }
         catch (KeyNotFoundException ex)
         {
-            _logger.LogWarning($"User with ID {id} not found: {ex.Message}");
+            _logger.LogWarning($"{ex.Message}");
             return NotFound(ex.Message);
         }
         catch (Exception ex)
         {
-            _logger.LogError($"Error updating user with ID {id}: {ex.Message}");
-            return StatusCode(500, "Internal server error");
+            _logger.LogError($"Internal server error {ex.Message}");
+            return StatusCode(500, $"Internal server error {ex.Message}");
         }
     }
 
@@ -261,10 +277,20 @@ public class UsersController : ControllerBase
 
             return NoContent();
         }
+        catch (UnauthorizedAccessException ex)
+        {
+            _logger.LogWarning($"403 Status, User {sender.Id}. {ex.Message}");
+            return StatusCode(403, $"Forbidden {ex.Message}");
+        }
+        catch (KeyNotFoundException ex)
+        {
+            _logger.LogWarning($"{ex.Message}");
+            return NotFound(ex.Message);
+        }
         catch (Exception ex)
         {
-            _logger.LogError($"Error deleting user with ID {id}: {ex.Message}");
-            return StatusCode(500, "Internal server error");
+            _logger.LogError($"Internal server error {ex.Message}");
+            return StatusCode(500, $"Internal server error {ex.Message}");
         }
     }
 

@@ -9,10 +9,11 @@ public static class ApiRoutes
     public const string ClientBaseUrl = "https://localhost:5001";
 
 
-    public static class Orders
+    public static class Order
     {
         public static string GetPaginated(int pageNumber, int pageSize) => $"{ApiBaseUrl}/api/Order?pageNumber={pageNumber}&pageSize={pageSize}";
         public static string GetOrderVariations(int orderId) => $"{ApiBaseUrl}/api/Order/{orderId}/Variations";
+        public static string GetOrderServices(int orderId) => $"{ApiBaseUrl}/api/Order/{orderId}/Services";
         public static string Create => $"{ApiBaseUrl}/api/Order";
         public static string GetById(int id) => $"{ApiBaseUrl}/api/Order/{id}";
         public static string Update(int id) => $"{ApiBaseUrl}/api/Order/{id}";
@@ -38,18 +39,37 @@ public static class ApiRoutes
         public static string CreateItem => $"{ApiBaseUrl}/api/Items";
         public static string UpdateItem(int itemId) => $"{ApiBaseUrl}/api/Items/{itemId}";
         public static string DeleteItem(int itemId) => $"{ApiBaseUrl}/api/Items/{itemId}";
-
         public static string GetItemVariations(int itemId) => $"{ApiBaseUrl}/api/Items/{itemId}/Variations";
-        public static string GetItemVariationById(int itemId) => $"{ApiBaseUrl}/api/Items/{itemId}/Variations";
+        public static string GetItemVariationById(int varId) => $"{ApiBaseUrl}/api/Items/Variations/{varId}";
         public static string CreateVariation(int itemId) => $"{ApiBaseUrl}/api/Items/{itemId}/Variations";
-        public static string UpdateVariation(int variationId) => $"{ApiBaseUrl}/api/Items/Variations{variationId}";
-        public static string DeleteVariations(int variationId) => $"{ApiBaseUrl}/api/Items/Variations{variationId}";
+        public static string UpdateVariation(int variationId) => $"{ApiBaseUrl}/api/Items/Variations/{variationId}";
+        public static string DeleteVariations(int variationId) => $"{ApiBaseUrl}/api/Items/Variations/{variationId}";
     }
 
     public static class Business
     {
         public static string GetPaginated(int pageNumber,int pageSize) =>  $"{ApiBaseUrl}/api/Businesses?pageNumber={pageNumber}&pageSize={pageSize}";
         public static string Create =>  $"{ApiBaseUrl}/api/Businesses";
+        
+    }
+    
+    public static class Reservation
+    {
+        public static string Get =>  $"{ApiBaseUrl}/api/Reservation";
+        public static string Create =>  $"{ApiBaseUrl}/api/Reservation";
+        public static string GetById(int id) =>  $"{ApiBaseUrl}/api/Reservation/{id}";
+        public static string Update(int id) =>  $"{ApiBaseUrl}/api/Reservation/{id}";
+        public static string Delete(int id) =>  $"{ApiBaseUrl}/api/Reservation/{id}";
+        
+    }
+    
+    public static class Service
+    {
+        public static string Get =>  $"{ApiBaseUrl}/api/Service";
+        public static string Create =>  $"{ApiBaseUrl}/api/Service";
+        public static string GetById(int id) =>  $"{ApiBaseUrl}/api/Service/{id}";
+        public static string Update(int id) =>  $"{ApiBaseUrl}/api/Service/{id}";
+        public static string Delete(int id) =>  $"{ApiBaseUrl}/api/Service/{id}";
         
     }
 

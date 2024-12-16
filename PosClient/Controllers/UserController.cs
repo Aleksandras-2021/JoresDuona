@@ -47,12 +47,12 @@ public class UserController : Controller
     // GET: User/Create
     public IActionResult Create()
     {
-        return View(new User());
+        return View(new CreateUserDTO());
     }
 
     // POST: User/Create
     [HttpPost]
-    public async Task<IActionResult> Create(User newUser)
+    public async Task<IActionResult> Create(CreateUserDTO newUser)
     {
         string? token = Request.Cookies["authToken"];
         _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
