@@ -1,3 +1,4 @@
+using Microsoft.EntityFrameworkCore;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using PosAPI.Middlewares;
 using PosAPI.Repositories;
@@ -172,7 +173,7 @@ public class ServiceService: IServiceService
         }
 
         if (customer == null)
-            throw new Exception("Failed to create or retrieve customer.");
+            throw new DbUpdateException("Failed to create or retrieve customer.");
         
         // 2. Calculate the end time for the reservation
         var startTime = reservation.ReservationTime;
@@ -182,8 +183,8 @@ public class ServiceService: IServiceService
         // Check for overlapping reservations (it Does not check user schedule)
         var isOverlapping = await _reservationRepository.IsReservationOverlappingAsync(reservation.ServiceId, startTime, endTime);
         
-        if (isOverlapping)
-            throw new Exception($"The selected time slot from {startTime} to {endTime} overlaps with an existing reservation.");
+        if (isOverlapping || startTime < DateTime.Today) //Add if employee is unavailable at that time check
+            throw new BusinessRuleViolationException($"The selected time slot from {startTime} to {endTime} are invalid");
         
         //3. Create new reservation
         Reservation newReservation = new Reservation

@@ -41,14 +41,12 @@ public class PaymentService: IPaymentService
         Order? order = await _orderRepository.GetOrderByIdWithPaymentsAsync(payment.OrderId);
         AuthorizationHelper.ValidateOwnershipOrRole(sender, order.BusinessId, sender.BusinessId, "List");
 
-        DateTime today = DateTime.UtcNow;
-        today = DateTime.SpecifyKind(today,DateTimeKind.Utc);
 
         var newPayment = new Payment()
         {
             OrderId = payment.OrderId,
             PaymentMethod = payment.PaymentMethod,
-            PaymentDate = today,
+            PaymentDate = DateTime.UtcNow.AddHours(2),
             Amount = payment.Amount,
             PaymentGateway = PaymentGateway.Stripe, // Always Stripe
             TransactionId = null,
