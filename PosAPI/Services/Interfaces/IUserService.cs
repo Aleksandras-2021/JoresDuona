@@ -12,5 +12,4 @@ public interface IUserService
     Task UpdateAuthorizedUser(int userId, UserDTO updatedUser, User? sender);
     Task DeleteAuthorizedUser(int userId, User? sender);
 
-
 }

@@ -1,8 +1,10 @@
+using Microsoft.AspNetCore.Razor.Hosting;
 using PosAPI.Middlewares;
 using PosAPI.Repositories;
 using PosShared;
 using PosShared.DTOs;
 using PosShared.Models;
+using PosShared.ViewModels;
 
 namespace PosAPI.Services;
 
@@ -15,10 +17,10 @@ public class ItemService: IItemService
         _itemRepository = itemRepository;
     }
     
-    public async Task<PaginatedResult<Item>> GetAuthorizedItemsAsync(User sender, 
-        int pageNumber = 1,
-        int pageSize = 10)
+    public async Task<PaginatedResult<Item>> GetAuthorizedItemsAsync(User sender, int pageNumber = 1, int pageSize = 10)
     {
+        AuthorizationHelper.Authorize("Items", "List", sender);
+        
         PaginatedResult<Item> items = null;
 
         if (sender.Role == UserRole.SuperAdmin)
@@ -32,37 +34,44 @@ public class ItemService: IItemService
 
         return items;
     }
-
-
-
-
+    
     public async Task<Item?> GetAuthorizedItemByIdAsync(int id, User sender)
     {
+        AuthorizationHelper.Authorize("Items", "Read", sender);
+        
         var item = await _itemRepository.GetItemByIdAsync(id);
 
-        if (sender.Role != UserRole.SuperAdmin && item.BusinessId != sender.BusinessId)
-            throw new UnauthorizedAccessException();
-
-        if (item == null)
-            throw new KeyNotFoundException($"Item with ID {id} not found.");
+        AuthorizationHelper.ValidateOwnershipOrRole(sender,item.BusinessId,sender.BusinessId,"Read");
 
         return item;
     }
-    
-    public async Task<Item?> GetAuthorizedItemForModificationByIdAsync(int id, User sender)
+
+    public async Task<Item> CreateAuthorizedItemAsync(ItemViewModel item, User sender)
     {
-        var item = await _itemRepository.GetItemByIdAsync(id);
-
-        if (sender.Role != UserRole.SuperAdmin && item.BusinessId != sender.BusinessId)
-            throw new UnauthorizedAccessException();
+        AuthorizationHelper.Authorize("Items", "Create", sender);
         
-        if(sender.Role == UserRole.Worker || sender.Role == UserRole.Manager)
-            throw new UnauthorizedAccessException();
+        Item newItem = new Item();
 
-        if (item == null)
-            throw new KeyNotFoundException($"Item with ID {id} not found.");
+        newItem.BusinessId = sender.BusinessId;
+        newItem.Name = item.Name;
+        newItem.Description = item.Description;
+        newItem.Price = item.Price;
+        newItem.BasePrice = item.BasePrice;
+        newItem.Category = item.Category;
+        newItem.Quantity = item.Quantity;
 
-        return item;
+        await _itemRepository.AddItemAsync(newItem);
+
+        return newItem;
+    }
+
+    public async Task UpdateAuthorizedItemAsync(int id,ItemViewModel item, User sender)
+    {
+        AuthorizationHelper.Authorize("Items", "Update", sender);
+
+        var existingItem = await _itemRepository.GetItemByIdAsync(id);
+        AuthorizationHelper.ValidateOwnershipOrRole(sender,existingItem.BusinessId ,sender.BusinessId, "Update");
+
         
         existingItem.Price = item.Price;
         existingItem.Name = item.Name;
@@ -133,37 +142,13 @@ public class ItemService: IItemService
         
         return variation;
     }
-
-    public async Task<ItemVariation?> GetAuthorizedItemVariationForModificationByIdAsync(int varId, User sender)
-    {
-        var variation = await _itemRepository.GetItemVariationByIdAsync(varId);
-        var item = await  _itemRepository.GetItemByIdAsync(variation.ItemId);
-        
-        if (sender.Role != UserRole.SuperAdmin && item.BusinessId != sender.BusinessId)
-            throw new UnauthorizedAccessException();
-        if(sender.Role == UserRole.Worker || sender.Role == UserRole.Manager)
-            throw new UnauthorizedAccessException();
-
-
-        if (variation == null)
-            throw new KeyNotFoundException($"Variation with ID {varId} not found.");
-
-        if (item == null)
-            throw new KeyNotFoundException($"Item with ID {variation.ItemId} not found.");
-
-        return variation;
-    }
-
+    
     public async Task<List<ItemVariation>> GetAuthorizedItemVariationsAsync(int id, User sender)
     {
+        AuthorizationHelper.Authorize("Items", "List", sender);
         var item = await _itemRepository.GetItemByIdAsync(id);
-
-        if (item == null)
-            throw new KeyNotFoundException($"Item with ID {id} not found.");
-
-        if (item.BusinessId != sender.BusinessId && sender.Role != UserRole.SuperAdmin)
-            throw new UnauthorizedAccessException("You are not authorized to access this item.");
-
+        AuthorizationHelper.ValidateOwnershipOrRole(sender,item.BusinessId ,sender.BusinessId, "List");
+        
         var variations = await _itemRepository.GetItemVariationsAsync(id);
         
         if(!variations.Any())

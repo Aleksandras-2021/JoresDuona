@@ -283,7 +283,7 @@ public class OrderController : ControllerBase
         Console.WriteLine($"Discount retrieved: Name={discount.Description}, Amount={discount.Amount}, IsPercentage={discount.IsPercentage}");
 
         Console.WriteLine($"Fetching order with ID {orderId}...");
-        var order = await _orderRepository.GetByIdAsync(orderId);
+        var order = await _orderRepository.GetOrderByIdAsync(orderId);
 
         if (order == null)
         {
@@ -310,7 +310,7 @@ public class OrderController : ControllerBase
 
         try
         {
-            await _orderRepository.UpdateAsync(order);
+            await _orderRepository.UpdateOrderAsync(order);
             Console.WriteLine($"Order with ID {order.Id} updated successfully.");
         }
         catch (Exception ex)
