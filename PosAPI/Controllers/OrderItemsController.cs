@@ -34,28 +34,8 @@ public class OrderItemsController : ControllerBase
     public async Task<IActionResult> GetOrderItems(int orderId)
     {
         User? sender = await GetUserFromToken();
-
-        try
-        {
-            var orderItems = await _orderService.GetAuthorizedOrderItems(orderId, sender);
-
-            return Ok(orderItems);
-        }
-        catch (UnauthorizedAccessException ex)
-        {
-            _logger.LogWarning($"403 Status, User {sender.Id}. {ex.Message}");
-            return StatusCode(403, $"Forbidden {ex.Message}");
-        }
-        catch (KeyNotFoundException ex)
-        {
-            _logger.LogError($"{ex.Message}");
-            return NotFound(ex.Message);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError($"Error retrieving items for order ID {orderId}: {ex.Message}");
-            return StatusCode(500, "Internal server error.");
-        }
+        var orderItems = await _orderService.GetAuthorizedOrderItems(orderId, sender);
+        return Ok(orderItems);
     }
 
     // GET: api/Order/{OrderId}/Items/{id}
@@ -63,27 +43,8 @@ public class OrderItemsController : ControllerBase
     public async Task<IActionResult> GetOrderItem(int id)
     {
         User? sender = await GetUserFromToken();
-        
-        try
-        {
-            var orderItem = await _orderService.GetAuthorizedOrderItem(id, sender);
-
-            return Ok(orderItem);
-        }
-        catch (UnauthorizedAccessException ex)
-        {
-            _logger.LogWarning($"403 Status, User {sender.Id}. {ex.Message}");
-            return StatusCode(403, $"Forbidden {ex.Message}");
-        }
-        catch (KeyNotFoundException ex)
-        {
-            return NotFound(ex.Message);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError($"Error retrieving order item with ID {id}: {ex.Message}");
-            return StatusCode(500, "Internal server error.");
-        }
+        var orderItem = await _orderService.GetAuthorizedOrderItem(id, sender);
+        return Ok(orderItem);
     }
 
     // POST: api/Order/{orderId}/Items
@@ -91,28 +52,8 @@ public class OrderItemsController : ControllerBase
     public async Task<IActionResult> AddItemToOrder(int orderId, [FromBody] AddItemDTO addItemDTO)
     {
         User? sender = await GetUserFromToken();
-        
-        try
-        {
-            var orderItem = await _orderService.CreateAuthorizedOrderItem(orderId, addItemDTO, sender);
-
-            return CreatedAtRoute("GetOrderById", new { id = orderId }, orderItem);
-        }
-        catch (KeyNotFoundException ex)
-        {
-            _logger.LogError(ex.Message);
-            return NotFound(ex.Message);
-        }
-        catch (UnauthorizedAccessException ex)
-        {
-            _logger.LogWarning($"403 Status, User {sender.Id}. {ex.Message}");
-            return StatusCode(403, $"Forbidden {ex.Message}");
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex.Message);
-            return StatusCode(500, $"Internal server error: {ex.Message}");
-        }
+        var orderItem = await _orderService.CreateAuthorizedOrderItem(orderId, addItemDTO, sender);
+        return CreatedAtRoute("GetOrderById", new { id = orderId }, orderItem);
     }
 
     // POST: api/Order/{orderId}/Items/{orderItemId}
@@ -120,28 +61,8 @@ public class OrderItemsController : ControllerBase
     public async Task<IActionResult> DeleteOrderItem(int orderId, int orderItemId)
     {
         User? sender = await GetUserFromToken();
-        
-        try
-        {
-            await _orderService.DeleteAuthorizedOrderItem(orderId,orderItemId,sender);
-            
-            return Ok("Order item deleted successfully.");
-        }
-        catch (UnauthorizedAccessException ex)
-        {
-            _logger.LogWarning($"403 Status, User {sender.Id}. {ex.Message}");
-            return StatusCode(403, $"Forbidden {ex.Message}");
-        }
-        catch (KeyNotFoundException ex)
-        {
-            _logger.LogError(ex.Message);
-            return NotFound(ex.Message);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError($"Error deleting order item with ID {orderItemId}: {ex.Message}");
-            return StatusCode(500, "Internal server error.");
-        }
+        await _orderService.DeleteAuthorizedOrderItem(orderId,orderItemId,sender);
+        return Ok("Order item deleted successfully.");
     }
 
     #region HelperMethods

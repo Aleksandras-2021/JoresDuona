@@ -39,46 +39,23 @@ public class PaymentController : ControllerBase
     public async Task<IActionResult> GetAllPayments()
     {
         User? sender = await GetUserFromToken();
-
-        if (sender == null)
-            return Unauthorized();
-
-        try
+        
+        List<Payment> payments;
+        if (sender.Role == UserRole.SuperAdmin)
         {
-            List<Payment> payments;
-            if (sender.Role == UserRole.SuperAdmin)
-            {
-                payments = await _paymentRepository.GetAllPaymentsAsync();
-            }
-            else
-            {
-                payments = await _paymentRepository.GetAllBusinessPaymentsAsync(sender.BusinessId);
-            }
-
-
-            if (payments == null || payments.Count == 0)
-            {
-                return NotFound("No items found.");
-            }
-
-
-            return Ok(payments);
+            payments = await _paymentRepository.GetAllPaymentsAsync();
         }
-        catch (KeyNotFoundException ex)
+        else
         {
-            _logger.LogError($"{ex.Message}");
-            return NotFound(ex.Message);
+            payments = await _paymentRepository.GetAllBusinessPaymentsAsync(sender.BusinessId);
         }
-        catch (UnauthorizedAccessException ex)
+        
+        if (payments == null || payments.Count == 0)
         {
-            _logger.LogWarning($"403 Status, User {sender.Id}. {ex.Message}");
-            return StatusCode(403, $"Forbidden {ex.Message}");
+            return NotFound("No items found.");
         }
-        catch (Exception ex)
-        {
-            _logger.LogError($"Error deleting reservation: {ex.Message}");
-            return StatusCode(500, "Internal server error");
-        }
+
+        return Ok(payments);
     }
 
     // GET: api/Payment/{id}
@@ -86,28 +63,8 @@ public class PaymentController : ControllerBase
     public async Task<IActionResult> GetPaymentById(int id)
     {
         User? sender = await GetUserFromToken();
-        
-        try
-        {
-            var payment = _paymentService.GetAuthorizedPaymentById(id, sender);
-
-            return Ok(payment);
-        }
-        catch (KeyNotFoundException ex)
-        {
-            _logger.LogError($"{ex.Message}");
-            return NotFound(ex.Message);
-        }
-        catch (UnauthorizedAccessException ex)
-        {
-            _logger.LogWarning($"403 Status, User {sender.Id}. {ex.Message}");
-            return StatusCode(403, $"Forbidden {ex.Message}");
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError($"Error deleting reservation: {ex.Message}");
-            return StatusCode(500, "Internal server error");
-        }
+        var payment = _paymentService.GetAuthorizedPaymentById(id, sender);
+        return Ok(payment);
     }
 
     // GET: api/Payment/Order/{orderId}
@@ -115,29 +72,8 @@ public class PaymentController : ControllerBase
     public async Task<IActionResult> GetAllOrderPayments(int orderId)
     {
         User? senderUser = await GetUserFromToken();
-
-        try
-        {
-            var payments = await _paymentService.GetAuthorizedOrderPayments(orderId,senderUser);
-            
-
-            return Ok(payments);
-        }
-        catch (KeyNotFoundException ex)
-        {
-            _logger.LogError($"{ex.Message}");
-            return NotFound(ex.Message);
-        }
-        catch (UnauthorizedAccessException ex)
-        {
-            _logger.LogWarning($"403 Status, User {senderUser.Id}. {ex.Message}");
-            return StatusCode(403, $"Forbidden {ex.Message}");
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError($"Error deleting reservation: {ex.Message}");
-            return StatusCode(500, "Internal server error");
-        }
+        var payments = await _paymentService.GetAuthorizedOrderPayments(orderId,senderUser);
+        return Ok(payments);
     }
 
     // POST: api/Payment
@@ -145,32 +81,8 @@ public class PaymentController : ControllerBase
     public async Task<IActionResult> CreatePayment([FromBody] AddPaymentDTO payment)
     {
         User? sender = await GetUserFromToken();
-        
-        try
-        {
-            var newPayment = await _paymentService.CreateAuthorizedOrderPayment(payment, sender);           
-
-            return CreatedAtAction(nameof(GetPaymentById), new { id = newPayment.Id }, newPayment);
-        }
-        catch (DbUpdateException e)
-        {
-            return StatusCode(500, $"Internal server error: {e.Message}");
-        }
-        catch (KeyNotFoundException ex)
-        {
-            _logger.LogError($"{ex.Message}");
-            return NotFound(ex.Message);
-        }
-        catch (UnauthorizedAccessException ex)
-        {
-            _logger.LogWarning($"403 Status, User {sender.Id}. {ex.Message}");
-            return StatusCode(403, $"Forbidden {ex.Message}");
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError($"Error deleting reservation: {ex.Message}");
-            return StatusCode(500, "Internal server error");
-        }
+        var newPayment = await _paymentService.CreateAuthorizedOrderPayment(payment, sender);
+        return CreatedAtAction(nameof(GetPaymentById), new { id = newPayment.Id }, newPayment);
     }
     
     // POST: api/Payment/Refund
@@ -179,31 +91,9 @@ public class PaymentController : ControllerBase
     {
         User? sender = await GetUserFromToken();
         
-        try
-        {
-            var refundPayment  = await _paymentService.CreateAuthorizedRefund(refund, sender);           
+        var refundPayment  = await _paymentService.CreateAuthorizedRefund(refund, sender);           
 
-            return CreatedAtAction(nameof(GetPaymentById), new { id = refundPayment.Id }, refundPayment);
-        }
-        catch (DbUpdateException e)
-        {
-            return StatusCode(500, $"Internal server error: {e.Message}");
-        }
-        catch (KeyNotFoundException ex)
-        {
-            _logger.LogError($"{ex.Message}");
-            return NotFound(ex.Message);
-        }
-        catch (UnauthorizedAccessException ex)
-        {
-            _logger.LogWarning($"403 Status, User {sender.Id}. {ex.Message}");
-            return StatusCode(403, $"Forbidden {ex.Message}");
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError($"Error deleting reservation: {ex.Message}");
-            return StatusCode(500, "Internal server error");
-        }
+        return CreatedAtAction(nameof(GetPaymentById), new { id = refundPayment.Id }, refundPayment);
     }
 
 

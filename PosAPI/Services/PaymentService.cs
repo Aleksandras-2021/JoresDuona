@@ -84,7 +84,7 @@ public class PaymentService: IPaymentService
         AuthorizationHelper.ValidateOwnershipOrRole(sender, order.BusinessId, sender.BusinessId, "List");
         if (refund.Amount < 0)
         {
-            throw new Exception("Refund must be higher than 0");
+            throw new BusinessRuleViolationException("Refund must be higher than 0");
         }
     
 

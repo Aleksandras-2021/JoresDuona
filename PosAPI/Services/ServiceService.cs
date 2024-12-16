@@ -78,7 +78,6 @@ public class ServiceService: IServiceService
         };
         
         await _serviceRepository.AddServiceAsync(newService);
-
         
         return newService;
     }

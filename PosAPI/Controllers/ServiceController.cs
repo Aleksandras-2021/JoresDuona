@@ -31,27 +31,8 @@ namespace PosAPI.Controllers
         public async Task<IActionResult> GetAllServices()
         {
             User? sender = await GetUserFromToken();
-            try
-            {
-                
-                List<Service> services = await _serviceService.GetAuthorizedServices(sender);
-                return Ok(services);
-            }
-            catch (UnauthorizedAccessException ex)
-            {
-                _logger.LogWarning($"403 Status, User {sender.Id}. {ex.Message}");
-                return StatusCode(403, $"Forbidden {ex.Message}");
-            }
-            catch (KeyNotFoundException ex)
-            {
-                _logger.LogWarning($"{ex.Message}");
-                return NotFound(ex.Message);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError($"Internal server error {ex.Message}");
-                return StatusCode(500, $"Internal server error {ex.Message}");
-            }
+            List<Service> services = await _serviceService.GetAuthorizedServices(sender);
+            return Ok(services);
         }
 
         // GET: api/Service/{id}
@@ -59,28 +40,8 @@ namespace PosAPI.Controllers
         public async Task<IActionResult> GetServiceById(int id)
         {
             User? sender = await GetUserFromToken();
-
-            try
-            {
-                Service? service = await _serviceService.GetAuthorizedService(id, sender);
-                return Ok(service);
-            }
-            catch (UnauthorizedAccessException ex)
-            {
-                _logger.LogWarning($"403 Status, User {sender.Id}. {ex.Message}");
-                return StatusCode(403, $"Forbidden {ex.Message}");
-            }
-            catch (KeyNotFoundException ex)
-            {
-                _logger.LogWarning($"{ex.Message}");
-                return NotFound(ex.Message);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError($"Internal server error {ex.Message}");
-                return StatusCode(500, $"Internal server error {ex.Message}");
-            }
-
+            Service? service = await _serviceService.GetAuthorizedService(id, sender);
+            return Ok(service);
         }
 
         // POST: api/Service
@@ -88,28 +49,8 @@ namespace PosAPI.Controllers
         public async Task<IActionResult> CreateService([FromBody] ServiceCreateDTO service)
         {
             User? sender = await GetUserFromToken();
-            
-            try
-            {
-                var newService = _serviceService.CreateAuthorizedService(service,sender);
-
-                return CreatedAtAction(nameof(GetServiceById), new { id = newService.Id }, newService);
-            }
-            catch (UnauthorizedAccessException ex)
-            {
-                _logger.LogWarning($"403 Status, User {sender.Id}. {ex.Message}");
-                return StatusCode(403, $"Forbidden {ex.Message}");
-            }
-            catch (KeyNotFoundException ex)
-            {
-                _logger.LogWarning($"{ex.Message}");
-                return NotFound(ex.Message);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError($"Internal server error {ex.Message}");
-                return StatusCode(500, $"Internal server error {ex.Message}");
-            }
+            var newService = await  _serviceService.CreateAuthorizedService(service,sender);
+            return CreatedAtAction(nameof(GetServiceById), new { id = newService.Id }, newService);
         }
 
         // PUT: api/Service/{id}
@@ -117,27 +58,8 @@ namespace PosAPI.Controllers
         public async Task<IActionResult> UpdateService(int id, [FromBody] ServiceCreateDTO service)
         {
             User? sender = await GetUserFromToken();
-
-            try
-            {
-                await _serviceService.UpdateAuthorizedService(id, service, sender);
-                return Ok();
-            }
-            catch (UnauthorizedAccessException ex)
-            {
-                _logger.LogWarning($"403 Status, User {sender.Id}. {ex.Message}");
-                return StatusCode(403, $"Forbidden {ex.Message}");
-            }
-            catch (KeyNotFoundException ex)
-            {
-                _logger.LogWarning($"{ex.Message}");
-                return NotFound(ex.Message);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError($"Error updating service with ID {id}: {ex.Message}");
-                return StatusCode(500, "Internal server error");
-            }
+            await _serviceService.UpdateAuthorizedService(id, service, sender);
+            return Ok();
         }
 
         // DELETE: api/Service/{id}
@@ -145,32 +67,9 @@ namespace PosAPI.Controllers
         public async Task<IActionResult> DeleteService(int id)
         {
             User? sender = await GetUserFromToken();
-
-            try
-            {
-                 await _serviceService.DeleteAuthorizedService(id,sender);
-                 
-                return Ok();
-            }
-            catch (UnauthorizedAccessException ex)
-            {
-                _logger.LogWarning($"403 Status, User {sender.Id}. {ex.Message}");
-                return StatusCode(403, $"Forbidden {ex.Message}");
-            }
-            catch (KeyNotFoundException ex)
-            {
-                _logger.LogWarning($"{ex.Message}");
-                return NotFound(ex.Message);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError($"Internal server error {ex.Message}");
-                return StatusCode(500, $"Internal server error {ex.Message}");
-            }
+            await _serviceService.DeleteAuthorizedService(id,sender);
+            return Ok();
         }
-
-
-
         #region HelperMethods
         private async Task<User?> GetUserFromToken()
         {

@@ -37,27 +37,8 @@ public class UsersController : ControllerBase
     public async Task<IActionResult> GetAllUsers(int pageNumber = 1, int pageSize = 10)
     {
         User? sender = await GetUserFromToken();
-        try
-        {
-            var users = await _userService.GetAuthorizedUsers(sender,pageNumber,pageSize);
-
-            return Ok(users);
-        }
-        catch (UnauthorizedAccessException ex)
-        {
-            _logger.LogWarning($"{ex.Message}");
-            return Forbid(ex.Message);
-        }
-        catch (KeyNotFoundException ex)
-        {
-            _logger.LogWarning($"{ex.Message}");
-            return NotFound(ex.Message);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError($"Internal server error {ex.Message}");
-            return StatusCode(500, $"Internal server error {ex.Message}");
-        }
+        var users = await _userService.GetAuthorizedUsers(sender,pageNumber,pageSize);
+        return Ok(users);
     }
 
     // GET: api/Users/{id}
@@ -65,40 +46,25 @@ public class UsersController : ControllerBase
     public async Task<IActionResult> GetUserById(int id)
     {
         User? sender = await GetUserFromToken();
+        User? user = await _userService.GetAuthorizedUserById(id,sender);
 
-        try
+        if (user == null)
+            throw new KeyNotFoundException($"Could not find the user with id {id}");
+        
+        var dto = new UserDTO
         {
-            User? user = await _userService.GetAuthorizedUserById(id,sender);
-            var dto = new UserDTO
-            {
-                Id = user.Id,
-                BusinessId = user.BusinessId,
-                Username = user.Username,
-                Name = user.Name,
-                Email = user.Email,
-                Phone = user.Phone,
-                Address = user.Address,
-                Role = user.Role,
-                EmploymentStatus = user.EmploymentStatus
-            };
+            Id = user.Id,
+            BusinessId = user.BusinessId,
+            Username = user.Username,
+            Name = user.Name,
+            Email = user.Email,
+            Phone = user.Phone,
+            Address = user.Address,
+            Role = user.Role,
+            EmploymentStatus = user.EmploymentStatus
+        };
 
-            return Ok(dto);
-        }
-        catch (UnauthorizedAccessException ex)
-        {
-            _logger.LogWarning($"403 Status, User {sender.Id}. {ex.Message}");
-            return StatusCode(403, $"Forbidden {ex.Message}");
-        }
-        catch (KeyNotFoundException ex)
-        {
-            _logger.LogWarning($"{ex.Message}");
-            return NotFound(ex.Message);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError($"Internal server error {ex.Message}");
-            return StatusCode(500, $"Internal server error {ex.Message}");
-        }
+        return Ok(dto);
     }
 
     // POST: api/Users
@@ -107,32 +73,10 @@ public class UsersController : ControllerBase
     {
         User? sender = await GetUserFromToken();
         
-        try
-        {
-            var newUser = await _userService.CreateAuthorizedUser(user, sender);
-            
-            await _userRepository.AddUserAsync(newUser);
-            return CreatedAtAction(nameof(GetUserById), new { id = newUser.Id }, newUser);
-        }
-        catch (UnauthorizedAccessException ex)
-        {
-            _logger.LogWarning($"403 Status, User {sender.Id}. {ex.Message}");
-            return StatusCode(403, $"Forbidden {ex.Message}");
-        }
-        catch (KeyNotFoundException ex)
-        {
-            _logger.LogWarning($"{ex.Message}");
-            return NotFound(ex.Message);
-        }
-        catch (MissingFieldException ex)
-        {
-            return BadRequest(ex.Message);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError($"Error creating user: {ex.Message}");
-            return StatusCode(500, "Internal server error");
-        }
+        var newUser = await _userService.CreateAuthorizedUser(user, sender);
+        
+        await _userRepository.AddUserAsync(newUser);
+        return CreatedAtAction(nameof(GetUserById), new { id = newUser.Id }, newUser);
     }
 
     // PUT: api/Users/{id}
@@ -140,27 +84,8 @@ public class UsersController : ControllerBase
     public async Task<IActionResult> UpdateUser(int id, [FromBody] UserDTO user)
     {
         User? sender = await GetUserFromToken();
-
-        try
-        {
-            await _userService.UpdateAuthorizedUser(id, user, sender);
-            return NoContent();
-        }
-        catch (UnauthorizedAccessException ex)
-        {
-            _logger.LogWarning($"403 Status, User {sender.Id}. {ex.Message}");
-            return StatusCode(403, $"Forbidden {ex.Message}");
-        }
-        catch (KeyNotFoundException ex)
-        {
-            _logger.LogWarning($"{ex.Message}");
-            return NotFound(ex.Message);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError($"Internal server error {ex.Message}");
-            return StatusCode(500, $"Internal server error {ex.Message}");
-        }
+        await _userService.UpdateAuthorizedUser(id, user, sender);
+        return Ok();
     }
 
     // DELETE: api/Users/{id}
@@ -168,29 +93,9 @@ public class UsersController : ControllerBase
     public async Task<IActionResult> DeleteUser(int id)
     {
         User? sender = await GetUserFromToken();
-
-        try
-        {
-            await _userService.DeleteAuthorizedUser(id, sender);
-
-            _logger.LogInformation($"User with id {id} deleted at {DateTime.Now} by {sender.Id}");
-            return NoContent();
-        }
-        catch (UnauthorizedAccessException ex)
-        {
-            _logger.LogWarning($"403 Status, User {sender.Id}. {ex.Message}");
-            return StatusCode(403, $"Forbidden {ex.Message}");
-        }
-        catch (KeyNotFoundException ex)
-        {
-            _logger.LogWarning($"{ex.Message}");
-            return NotFound(ex.Message);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError($"Internal server error {ex.Message}");
-            return StatusCode(500, $"Internal server error {ex.Message}");
-        }
+        await _userService.DeleteAuthorizedUser(id, sender);
+        _logger.LogInformation($"User with id {id} deleted at {DateTime.Now} by {sender.Id}");
+        return Ok();
     }
 
     #region HelperMethods
@@ -217,6 +122,4 @@ public class UsersController : ControllerBase
 
     }
     #endregion
-
-
 }

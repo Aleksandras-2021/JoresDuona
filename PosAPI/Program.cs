@@ -184,6 +184,7 @@ using (var scope = app.Services.CreateScope())
 }
 
 
+app.UseMiddleware<ExceptionHandlingMiddleware>();
 
 app.UseHttpsRedirection();
 

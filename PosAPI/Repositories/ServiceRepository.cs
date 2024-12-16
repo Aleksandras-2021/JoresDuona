@@ -59,7 +59,7 @@ public class ServiceRepository : IServiceRepository
         }
         catch (DbUpdateException ex)
         {
-            throw new Exception("An error occurred while updating the service in the database.", ex);
+            throw new DbUpdateException("An error occurred while updating the service in the database.", ex);
         }
     }
 
@@ -79,7 +79,7 @@ public class ServiceRepository : IServiceRepository
         }
         catch (DbUpdateException ex)
         {
-            throw new Exception("An error occurred while deleting the service from the database.", ex);
+            throw new DbUpdateException("An error occurred while deleting the service from the database.", ex);
         }
     }
 

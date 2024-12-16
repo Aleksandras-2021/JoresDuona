@@ -57,7 +57,7 @@ namespace PosAPI.Repositories
             }
             catch (DbUpdateException ex)
             {
-                throw new Exception("An error occurred while adding the shift pattern to the database.", ex);
+                throw new DbUpdateException("An error occurred while adding the shift pattern to the database.", ex);
             }
         }
 
@@ -72,7 +72,7 @@ namespace PosAPI.Repositories
             }
             catch (DbUpdateException ex)
             {
-                throw new Exception("An error occurred while updating the shift pattern in the database.", ex);
+                throw new DbUpdateException("An error occurred while updating the shift pattern in the database.", ex);
             }
         }
 
@@ -88,7 +88,7 @@ namespace PosAPI.Repositories
                 }
                 catch (DbUpdateException ex)
                 {
-                    throw new Exception("An error occurred while deleting the shift pattern from the database.", ex);
+                    throw new DbUpdateException("An error occurred while deleting the shift pattern from the database.", ex);
                 }
             }
         }

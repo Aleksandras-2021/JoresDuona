@@ -32,28 +32,12 @@ public class OrderController : ControllerBase
     {
         User? sender = await GetUserFromToken();
 
-        try
-        {
-            var paginatedOrders = await _orderService.GetAuthorizedOrders(sender, pageNumber, pageSize);
+        var paginatedOrders = await _orderService.GetAuthorizedOrders(sender, pageNumber, pageSize);
 
-            if (paginatedOrders.Items.Count > 0)
-                return Ok(paginatedOrders);
-            else
-                return NotFound("No Orders found.");
-        }
-        catch (UnauthorizedAccessException ex)
-        {
-            return Unauthorized(ex.Message);
-        }
-        catch (KeyNotFoundException ex)
-        {
-            return NotFound(ex.Message);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError($"Error retrieving orders: {ex.Message}");
-            return StatusCode(500, "Internal server error");
-        }
+        if (paginatedOrders.Items.Count > 0)
+            return Ok(paginatedOrders);
+        else
+            return NotFound("No Orders found.");
     }
 
 
@@ -62,29 +46,8 @@ public class OrderController : ControllerBase
     public async Task<IActionResult> GetOrderById(int id)
     {
         User? sender = await GetUserFromToken();
-        
-        try
-        {
-            Order? order = await _orderService.GetAuthorizedOrder(id, sender);
-
-            //await _orderService.RecalculateOrderCharge(id);
-
-            return Ok(order);
-        }
-        catch (UnauthorizedAccessException ex)
-        {
-            _logger.LogWarning($"403 Status, User {sender.Id}. {ex.Message}");
-            return StatusCode(403, $"Forbidden {ex.Message}");
-        }
-        catch (KeyNotFoundException ex)
-        {
-            return NotFound(ex.Message);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError($"Error retrieving order with ID {id}: {ex.Message}");
-            return StatusCode(500, "Internal server error");
-        }
+        Order? order = await _orderService.GetAuthorizedOrder(id, sender);
+        return Ok(order);
     }
 
     // POST: api/Order
@@ -92,27 +55,8 @@ public class OrderController : ControllerBase
     public async Task<IActionResult> CreateOrder()
     {
         User? sender = await GetUserFromToken();
-        
-        try
-        {
-            int orderId = await _orderService.CreateAuthorizedOrder(sender);
-
-            return CreatedAtAction(nameof(GetOrderById), new { id = orderId }, new { Id = orderId });
-        }
-        catch (UnauthorizedAccessException ex)
-        {
-            _logger.LogWarning($"403 Status, User {sender.Id}. {ex.Message}");
-            return StatusCode(403, $"Forbidden {ex.Message}");
-        }
-        catch (KeyNotFoundException ex)
-        {
-            return NotFound(ex.Message);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError($"Error creating order: {ex.Message}");
-            return StatusCode(500, "Internal server error.");
-        }
+        int orderId = await _orderService.CreateAuthorizedOrder(sender);
+        return CreatedAtAction(nameof(GetOrderById), new { id = orderId }, new { Id = orderId });
     }
     // /api/Order/{id}/UpdateStatus
     [HttpPost("{orderId}/UpdateStatus/{status}")]
@@ -121,38 +65,17 @@ public class OrderController : ControllerBase
         User? sender = await GetUserFromToken();
         
         _logger.LogInformation($"User with id: {sender.Id} is updating an order at {DateTime.Now}, orderId:{orderId}");
+        
+        Order? order = await _orderService.GetAuthorizedOrder(orderId, sender);
 
-        try
-        {
-            Order? order = await _orderService.GetAuthorizedOrder(orderId, sender);
+        order.Status = status;
 
-            // Update the status
-            order.Status = status;
+        if (order.Status == OrderStatus.Closed)
+            order.ClosedAt = DateTime.UtcNow.AddHours(2);
+            
+        await _orderRepository.UpdateOrderAsync(order);
 
-            if (order.Status == OrderStatus.Closed)
-                order.ClosedAt = DateTime.UtcNow.AddHours(2);
-
-                // if (order.Status == OrderStatus.Refunded)
-                //_orderService.RefundAuthorizedOrder();
-                
-            await _orderRepository.UpdateOrderAsync(order);
-
-            return Ok(new { message = "Order status updated successfully.", status });
-        }
-        catch (UnauthorizedAccessException ex)
-        {
-            _logger.LogWarning($"403 Status, User {sender.Id}. {ex.Message}");
-            return StatusCode(403, $"Forbidden {ex.Message}");
-        }
-        catch (KeyNotFoundException ex)
-        {
-            return NotFound(ex.Message);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError($"Error updating order status: {ex.Message}");
-            return StatusCode(500, "Internal server error.");
-        }
+        return Ok(new { message = "Order status updated successfully.", status });
     }
 
 
@@ -166,44 +89,26 @@ public class OrderController : ControllerBase
 
         if (order.Status == OrderStatus.Closed)
         {
-            return Unauthorized("Cannot modify closed order.");
+            return Forbid("Cannot modify closed order.");
         }
         User? sender = await GetUserFromToken();
+        
+        if (sender == null)
+            return Unauthorized();
 
-        try
-        {
+        Order? existingOrder = await _orderService.GetAuthorizedOrderForModification(order.Id, sender);
 
-            if (sender == null)
-                return Unauthorized();
+        existingOrder.UserId = sender.Id; //Whoever updates order, takes over the ownership of it
+        existingOrder.User = sender;
+        existingOrder.Status = order.Status;
+        existingOrder.ChargeAmount = order.ChargeAmount;
+        existingOrder.DiscountAmount = order.DiscountAmount;
+        existingOrder.TaxAmount = order.TaxAmount;
+        existingOrder.TipAmount = order.TipAmount;
 
-            Order? existingOrder = await _orderService.GetAuthorizedOrderForModification(order.Id, sender);
+        await _orderRepository.UpdateOrderAsync(existingOrder);
 
-            existingOrder.UserId = sender.Id; //Whoever updates order, takes over the ownership of it
-            existingOrder.User = sender;
-            existingOrder.Status = order.Status;
-            existingOrder.ChargeAmount = order.ChargeAmount;
-            existingOrder.DiscountAmount = order.DiscountAmount;
-            existingOrder.TaxAmount = order.TaxAmount;
-            existingOrder.TipAmount = order.TipAmount;
-
-            await _orderRepository.UpdateOrderAsync(existingOrder);
-
-            return NoContent();
-        }
-        catch (KeyNotFoundException ex)
-        {
-            return NotFound(ex.Message);
-        }
-        catch (UnauthorizedAccessException ex)
-        {
-            _logger.LogWarning($"403 Status, User {sender.Id}. {ex.Message}");
-            return StatusCode(403, $"Forbidden {ex.Message}");
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError($"Error updating Item with ID {order.Id}: {ex.Message}");
-            return StatusCode(500, "Internal server error");
-        }
+        return Ok();
     }
 
     [HttpDelete("{orderId}")]
@@ -242,58 +147,16 @@ public class OrderController : ControllerBase
     public async Task<IActionResult> GetAllOrderVariations(int orderId)
     {
         User? sender = await GetUserFromToken();
-
-        if (sender == null)
-            return Unauthorized();
-
-        try
-        {
-            var orderVariations = await _orderService.GetAuthorizedOrderVariations(orderId, sender);
-
-            return Ok(orderVariations);
-        }
-        catch (UnauthorizedAccessException ex)
-        {
-            return Unauthorized(ex.Message);
-        }
-        catch (KeyNotFoundException ex)
-        {
-            return NotFound(ex.Message);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError($"Error retrieving order item variations: {ex.Message}");
-            return StatusCode(500, "Internal server error.");
-        }
+        var orderVariations = await _orderService.GetAuthorizedOrderVariations(orderId, sender);
+        return Ok(orderVariations);
     }
     
             [HttpGet("{orderId}/Services")]
     public async Task<IActionResult> GetAllOrderServices(int orderId)
     {
         User? sender = await GetUserFromToken();
-
-        try
-        {
-            var orderServices = await _orderService.GetAuthorizedOrderServices(orderId, sender);
-
-            return Ok(orderServices);
-        }
-        catch (UnauthorizedAccessException ex)
-        {
-            _logger.LogError($"{ex.Message}");
-            return Unauthorized(ex.Message);
-        }
-        catch (KeyNotFoundException ex)
-        {
-            _logger.LogError($"{ex.Message}");
-
-            return NotFound(ex.Message);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError($"Error retrieving order item variations: {ex.Message}");
-            return StatusCode(500, "Internal server error.");
-        }
+        var orderServices = await _orderService.GetAuthorizedOrderServices(orderId, sender);
+        return Ok(orderServices);
     }
 
 

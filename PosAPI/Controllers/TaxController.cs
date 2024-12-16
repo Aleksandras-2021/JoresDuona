@@ -34,23 +34,8 @@ public class TaxController : ControllerBase
     public async Task<IActionResult> GetAllTaxes()
     {
         User? sender = await GetUserFromToken();
-
-        try
-        {
-            List<Tax> taxes = await _taxService.GetAuthorizedTaxesAsync(sender);
-
-            return Ok(taxes);
-        }
-        catch (UnauthorizedAccessException ex)
-        {
-            _logger.LogWarning($"403 Status, User {sender.Id}. {ex.Message}");
-            return StatusCode(403, $"Forbidden {ex.Message}");
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError($"Error retrieving all taxes: {ex.Message}");
-            return StatusCode(500, "Internal server error");
-        }
+        List<Tax> taxes = await _taxService.GetAuthorizedTaxesAsync(sender);
+        return Ok(taxes);
     }
     
     // GET: api/Items/{id}
@@ -58,27 +43,8 @@ public class TaxController : ControllerBase
     public async Task<IActionResult> GetTaxById(int id)
     {
         User? sender = await GetUserFromToken();
-        
-        try
-        {
-            Tax? tax =  await _taxService.GetAuthorizedTaxByIdAsync(id,sender);
-            return Ok(tax);
-        }
-        catch (KeyNotFoundException ex)
-        {
-            _logger.LogWarning($"Tax with id  {id} not found. {ex.Message}");
-            return NotFound(ex.Message);
-        }
-        catch (UnauthorizedAccessException ex)
-        {
-            _logger.LogWarning($"403 Status, User {sender.Id}. {ex.Message}");
-            return StatusCode(403, $"Forbidden {ex.Message}");
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError($"Error retrieving user with ID {id}: {ex.Message}");
-            return StatusCode(500, "Internal server error");
-        }
+        Tax? tax =  await _taxService.GetAuthorizedTaxByIdAsync(id,sender);
+        return Ok(tax);
     }
 
     // POST: api/Tax
@@ -86,36 +52,19 @@ public class TaxController : ControllerBase
     public async Task<IActionResult> CreateTax([FromBody] TaxDTO tax)
     {
         User? sender = await GetUserFromToken();
+        
+        Tax newTax = new Tax()
+        {
+            BusinessId = sender.BusinessId,
+            Name = tax.Name,
+            IsPercentage = tax.IsPercentage,
+            Amount = tax.Amount,
+            Category = tax.Category,
+        };
+        
+        await _taxRepository.AddTaxAsync(newTax);
 
-        try
-        {
-            Tax newTax = new Tax()
-            {
-                BusinessId = sender.BusinessId,
-                Name = tax.Name,
-                IsPercentage = tax.IsPercentage,
-                Amount = tax.Amount,
-                Category = tax.Category,
-            };
-            
-            await _taxRepository.AddTaxAsync(newTax);
-
-            return CreatedAtAction(nameof(GetTaxById), new { id = newTax.Id }, newTax);
-        }
-        catch (UnauthorizedAccessException ex)
-        {
-            _logger.LogWarning($"403 Status, User {sender.Id}. {ex.Message}");
-            return StatusCode(403, $"Forbidden {ex.Message}");
-        }
-        catch (ArgumentNullException ex)
-        {
-            _logger.LogWarning($"{ex.Message}");
-            return Unauthorized(ex.Message);
-        }
-        catch (Exception e)
-        {
-            return StatusCode(500, $"Internal server error: {e.Message}");
-        }
+        return CreatedAtAction(nameof(GetTaxById), new { id = newTax.Id }, newTax);
     }
 
 
@@ -124,33 +73,16 @@ public class TaxController : ControllerBase
     public async Task<IActionResult> UpdateTax(int id, [FromBody] TaxDTO tax)
     {
         User? sender = await GetUserFromToken();
-
-        try
-        {
-            Tax? existingTax = await _taxService.GetAuthorizedTaxByIdAsync(id,sender);
-            existingTax.Name = tax.Name;
-            existingTax.IsPercentage = tax.IsPercentage;
-            existingTax.Amount = tax.Amount;
-            existingTax.Category = tax.Category;
-
-            await _taxService.UpdateAuthorizedTaxAsync(existingTax, sender);
-            return NoContent();
-        }
-        catch (UnauthorizedAccessException ex)
-        {
-            _logger.LogWarning($"403 Status, User {sender.Id}. {ex.Message}");
-            return StatusCode(403, $"Forbidden {ex.Message}");
-        }
-        catch (KeyNotFoundException ex)
-        {
-            _logger.LogWarning($"Tax with ID {id} not found: {ex.Message}");
-            return NotFound(ex.Message);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError($"Error updating Tax with ID {id}: {ex.Message}");
-            return StatusCode(500, "Internal server error");
-        }
+        Tax? existingTax = await _taxService.GetAuthorizedTaxByIdAsync(id,sender);
+        
+        existingTax.Name = tax.Name;
+        existingTax.IsPercentage = tax.IsPercentage;
+        existingTax.Amount = tax.Amount;
+        existingTax.Category = tax.Category;
+        
+        await _taxService.UpdateAuthorizedTaxAsync(existingTax, sender);
+        
+        return Ok();
     }
     
     // DELETE: api/Tax/{id}
@@ -158,28 +90,8 @@ public class TaxController : ControllerBase
     public async Task<IActionResult> DeleteTax(int id)
     {
         User? sender = await GetUserFromToken();
-        
-        try
-        {
-            await _taxService.DeleteAuthorizedTaxAsync(id,sender);
-            
-            return NoContent();
-        }
-        catch (UnauthorizedAccessException ex)
-        {
-            _logger.LogWarning($"403 Status, User {sender.Id}. {ex.Message}");
-            return StatusCode(403, $"Forbidden {ex.Message}");
-        }
-        catch (KeyNotFoundException ex)
-        {
-            _logger.LogWarning($"Tax with ID {id} not found: {ex.Message}");
-            return NotFound(ex.Message);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError($"Error deleting Tax with ID {id}: {ex.Message}");
-            return StatusCode(500, "Internal server error");
-        }
+        await _taxService.DeleteAuthorizedTaxAsync(id,sender);
+        return NoContent();
     }
     #region HelperMethods
     private async Task<User?> GetUserFromToken()

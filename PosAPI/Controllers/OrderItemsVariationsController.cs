@@ -30,28 +30,8 @@ public class OrderItemsVariationsController : ControllerBase
     public async Task<IActionResult> GetOrderItemVariations(int orderItemId)
     {
         User? sender = await GetUserFromToken();
-        
-        try
-        {
-            var orderItemVariations = await _orderService.GetAuthorizedOrderItemVariations(orderItemId, sender);
-
-            return Ok(orderItemVariations);
-        }
-        catch (UnauthorizedAccessException ex)
-        {
-            _logger.LogWarning($"403 Status, User {sender.Id}. {ex.Message}");
-            return StatusCode(403, $"Forbidden {ex.Message}");
-        }
-        catch (KeyNotFoundException ex)
-        {
-            _logger.LogWarning($"{ex.Message}");
-            return NotFound(ex.Message);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError($"Error retrieving order item variations: {ex.Message}");
-            return StatusCode(500, "Internal server error.");
-        }
+        var orderItemVariations = await _orderService.GetAuthorizedOrderItemVariations(orderItemId, sender);
+        return Ok(orderItemVariations);
     }
 
     // GET: api/Order/{orderId}/Items/{orderItemId}/Variations/{variationId}
@@ -59,28 +39,8 @@ public class OrderItemsVariationsController : ControllerBase
     public async Task<IActionResult> GetOrderItemVariationById(int orderId, int orderItemId, int variationId)
     {
         User? sender = await GetUserFromToken();
-        
-        try
-        {
-            var orderItemVariation = await _orderService.GetAuthorizedOrderItemVariation(variationId, orderItemId, sender);
-
-            return Ok(orderItemVariation);
-        }
-        catch (UnauthorizedAccessException ex)
-        {
-            _logger.LogWarning($"403 Status, User {sender.Id}. {ex.Message}");
-            return StatusCode(403, $"Forbidden {ex.Message}");
-        }
-        catch (KeyNotFoundException ex)
-        {
-            _logger.LogWarning($"{ex.Message}");
-            return NotFound(ex.Message);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError($"Error retrieving variation with ID {variationId} for OrderItem {orderItemId} in Order {orderId}: {ex.Message}");
-            return StatusCode(500, "Internal server error.");
-        }
+        var orderItemVariation = await _orderService.GetAuthorizedOrderItemVariation(variationId, orderItemId, sender);
+        return Ok(orderItemVariation);
     }
 
     [HttpPost("{orderId}/Items/{itemId}/Variations")]
@@ -88,31 +48,12 @@ public class OrderItemsVariationsController : ControllerBase
     {
         User? sender = await GetUserFromToken();
         
-        try
-        {
-            var orderItemVariation =
+        var orderItemVariation =
                 await _orderService.CreateAuthorizedOrderItemVariation(orderId, itemId, addVariationDTO, sender);
-            
-            
-            return CreatedAtAction(nameof(GetOrderItemVariationById),
+        
+        return CreatedAtAction(nameof(GetOrderItemVariationById),
                 new { orderId = orderId, orderItemId = itemId, variationId = orderItemVariation.Id },
                 orderItemVariation);
-        }
-        catch (UnauthorizedAccessException ex)
-        {
-            _logger.LogWarning($"403 Status, User {sender.Id}. {ex.Message}");
-            return StatusCode(403, $"Forbidden {ex.Message}");
-        }
-        catch (KeyNotFoundException ex)
-        {
-            _logger.LogWarning($"{ex.Message}");
-            return NotFound(ex.Message);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError($"Error adding order item variation: {ex.Message}");
-            return StatusCode(500, $"Internal server error: {ex.Message}");
-        }
     }
 
     // POST: api/Order/{orderId}/Items/{orderItemId}/Variations/{orderItemVariationId}
@@ -121,27 +62,9 @@ public class OrderItemsVariationsController : ControllerBase
     {
         User? sender = await GetUserFromToken();
         
-        try
-        {
-            await _orderService.DeleteAuthorizedOrderItemVariation(orderId, orderItemId, orderItemVariationId, sender);
+        await _orderService.DeleteAuthorizedOrderItemVariation(orderId, orderItemId, orderItemVariationId, sender);
 
-            return Ok("Order Item Variation deleted successfully.");
-        }
-        catch (UnauthorizedAccessException ex)
-        {
-            _logger.LogWarning($"403 Status, User {sender.Id}. {ex.Message}");
-            return StatusCode(403, $"Forbidden {ex.Message}");
-        }
-        catch (KeyNotFoundException ex)
-        {
-            _logger.LogWarning($"{ex.Message}");
-            return NotFound(ex.Message);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError($"Error deleting order variation with ID {orderItemVariationId}: {ex.Message}");
-            return StatusCode(500, "Internal server error.");
-        }
+        return Ok("Order Item Variation deleted successfully.");
     }
 
     #region HelperMethods

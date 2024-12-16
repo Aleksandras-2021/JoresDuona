@@ -30,69 +30,29 @@ public class BusinessesController : ControllerBase
     public async Task<IActionResult> GetAllBusinesses(int pageNumber = 1, int pageSize = 10)
     {
         User? sender = await GetUserFromToken();
-        
-        try
-        {
-            var paginatedBusinesses = await _businessService.GetAuthorizedBusinessesAsync
-                (sender, pageNumber, pageSize);
+        var paginatedBusinesses = await _businessService.GetAuthorizedBusinessesAsync
+            (sender, pageNumber, pageSize);
 
-            if (paginatedBusinesses.Items.Count > 0)
-                return Ok(paginatedBusinesses);
-            else
-                return NotFound("No businesses found.");
-        }
-        catch (UnauthorizedAccessException ex)
-        {
-            _logger.LogWarning($"403 Status, User {sender.Id}. {ex.Message}");
-            return StatusCode(403, $"Forbidden {ex.Message}");
-        }
-        catch (KeyNotFoundException ex)
-        {
-            return NotFound(ex.Message);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError($"Internal server error {ex.Message}");
-            return StatusCode(500, $"Internal server error {ex.Message}");
-        }
+        if (paginatedBusinesses.Items.Count > 0)
+            return Ok(paginatedBusinesses);
+        else
+            return NotFound("No businesses found.");
     }
 
     // GET: api/Businesses/{id}
     [HttpGet("{id}")]
     public async Task<IActionResult> GetBusinessById(int id)
     {
-        User? sender = await GetUserFromToken();
-        
-        try
-        {
+            User? sender = await GetUserFromToken();
             var business = await _businessService.GetAuthorizedBusinessByIdAsync(id,sender);
             return Ok(business);
-        }
-        catch (UnauthorizedAccessException ex)
-        {
-            _logger.LogWarning($"403 Status, User {sender.Id}. {ex.Message}");
-            return StatusCode(403, $"Forbidden {ex.Message}");
-        }
-        catch (KeyNotFoundException ex)
-        {
-            return NotFound(ex.Message);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError($"Internal server error {ex.Message}");
-
-            return StatusCode(500, $"Internal server error {ex.Message}");
-        }
     }
 
     // PUT: api/Businesses/{id}
     [HttpPut("{id}")]
     public async Task<IActionResult> EditBusiness([FromRoute]int id, [FromBody] Business updatedBusiness)
     {
-        User? sender = await GetUserFromToken();
-        
-        try
-        {
+            User? sender = await GetUserFromToken();
             Business? existingBusiness = await _businessService.GetAuthorizedBusinessByIdAsync(id,sender);
             // Update the properties of the existing business
             existingBusiness.Name = updatedBusiness.Name;
@@ -105,21 +65,6 @@ public class BusinessesController : ControllerBase
             await _businessService.UpdateAuthorizedBusinessAsync(existingBusiness, sender);
             
             return Ok(existingBusiness);
-        }
-        catch (UnauthorizedAccessException ex)
-        {
-            _logger.LogWarning($"403 Status, User {sender.Id}. {ex.Message}");
-            return StatusCode(403, $"Forbidden {ex.Message}");
-        }
-        catch (KeyNotFoundException ex)
-        {
-            return NotFound(ex.Message);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError($"Internal server error {ex.Message}");
-            return StatusCode(500, $"Internal server error {ex.Message}");
-        }
     }
 
     // POST: api/Businesses
@@ -127,29 +72,8 @@ public class BusinessesController : ControllerBase
     public async Task<IActionResult> CreateBusiness([FromBody] Business business)
     {
         User? sender = await GetUserFromToken();
-        
-        try
-        {
-            await _businessService.CreateAuthorizedBusinessAsync(business, sender);
-
-            return CreatedAtAction(nameof(GetBusinessById), new { id = business.Id }, business);
-        }
-        catch (UnauthorizedAccessException ex)
-        {
-            _logger.LogWarning($"403 Status, User {sender.Id}. {ex.Message}");
-            return StatusCode(403, $"Forbidden {ex.Message}");
-        }
-        catch (ArgumentNullException ex)
-        {
-            _logger.LogWarning($"{ex.Message}");
-
-            return BadRequest(ex.Message);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError($"Internal server error {ex.Message}");
-            return StatusCode(500, $"Internal server error {ex.Message}");
-        }
+        await _businessService.CreateAuthorizedBusinessAsync(business, sender);
+        return CreatedAtAction(nameof(GetBusinessById), new { id = business.Id }, business);
     }
 
     // DELETE: api/Businesses/{id}
@@ -157,25 +81,9 @@ public class BusinessesController : ControllerBase
     public async Task<IActionResult> DeleteBusiness(int id)
     {
         User? sender = await GetUserFromToken();
-        try
-        {
-            await _businessService.DeleteAuthorizedBusinessAsync(id, sender);
-            return Ok($"Business with ID {id} deleted.");
-        }
-        catch (UnauthorizedAccessException ex)
-        {
-            _logger.LogWarning($"403 Status, User {sender.Id}. {ex.Message}");
-            return StatusCode(403, $"Forbidden {ex.Message}");
-        }
-        catch (KeyNotFoundException ex)
-        {
-            return NotFound(ex.Message);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError($"Internal server error {ex.Message}");
-            return StatusCode(500, $"Internal server error {ex.Message}");
-        }
+
+        await _businessService.DeleteAuthorizedBusinessAsync(id, sender);
+        return Ok($"Business with ID {id} deleted.");
     }
     
     #region HelperMethods

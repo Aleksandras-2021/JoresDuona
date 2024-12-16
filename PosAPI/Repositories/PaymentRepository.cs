@@ -1,5 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using PosAPI.Data.DbContext;
+using PosAPI.Middlewares;
 using PosShared.Models;
 
 namespace PosAPI.Repositories
@@ -22,7 +23,7 @@ namespace PosAPI.Repositories
 
             if (order == null)
             {
-                throw new Exception($"Payment for Order with ID {payment.OrderId} is invalid. Order does not exist.");
+                throw new BusinessRuleViolationException($"Payment for Order with ID {payment.OrderId} is invalid. Order does not exist.");
             }
 
             try
@@ -39,7 +40,7 @@ namespace PosAPI.Repositories
             }
             catch (DbUpdateException ex)
             {
-                throw new Exception("An error occurred while adding the new payment to the database.", ex);
+                throw new DbUpdateException("An error occurred while adding the new payment to the database.", ex);
             }
         }
 

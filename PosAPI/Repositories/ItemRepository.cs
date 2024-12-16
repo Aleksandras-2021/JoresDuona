@@ -20,7 +20,7 @@ namespace PosAPI.Repositories
             var businessExists = await _context.Businesses.AnyAsync(b => b.Id == item.BusinessId);
 
             if (!businessExists)
-                throw new Exception($"Business with ID {item.BusinessId} does not exist.");
+                throw new KeyNotFoundException($"Business with ID {item.BusinessId} does not exist.");
 
             item.Business ??= await _context.Businesses.FindAsync(item.BusinessId);
 
@@ -31,7 +31,7 @@ namespace PosAPI.Repositories
             }
             catch (DbUpdateException ex)
             {
-                throw new Exception("An error occurred while adding the new item to the database.", ex);
+                throw new DbUpdateException("An error occurred while adding the new item to the database.", ex);
             }
         }
 

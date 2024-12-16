@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using PosAPI.Data.DbContext;
+using PosAPI.Middlewares;
 using PosShared;
 using PosShared.Models;
 
@@ -18,7 +19,7 @@ public class OrderRepository : IOrderRepository
     public async Task AddOrderAsync(Order order)
     {
         var user = await _context.Users.FindAsync(order.UserId) 
-                    ?? throw new Exception($"User with ID {order.UserId} does not exist for order creation.");
+                    ?? throw new KeyNotFoundException($"User with ID {order.UserId} does not exist for order creation.");
 
         order.User = user;
 
@@ -29,7 +30,7 @@ public class OrderRepository : IOrderRepository
         }
         catch (DbUpdateException ex)
         {
-            throw new Exception("An error occurred while adding the new order to the database.", ex);
+            throw new DbUpdateException("An error occurred while adding the new order to the database.", ex);
         }
     }
 
@@ -97,14 +98,14 @@ public class OrderRepository : IOrderRepository
     public async Task AddOrderItemAsync(OrderItem orderItem)
     {
         var order = await _context.Orders.FindAsync(orderItem.OrderId)
-                   ?? throw new Exception($"Order with ID {orderItem.OrderId} not found.");
+                   ?? throw new KeyNotFoundException($"Order with ID {orderItem.OrderId} not found.");
 
         var item = await _context.Items.FindAsync(orderItem.ItemId)
-                   ?? throw new Exception($"Item with ID {orderItem.ItemId} not found.");
+                   ?? throw new KeyNotFoundException($"Item with ID {orderItem.ItemId} not found.");
 
         if (item.Quantity < orderItem.Quantity)
         {
-            throw new Exception("Not enough stock available to fulfill the order.");
+            throw new BusinessRuleViolationException($"Not enough stock available to fulfill the order. for item {item.Id}");
         }
 
         item.Quantity -= orderItem.Quantity;
@@ -118,7 +119,7 @@ public class OrderRepository : IOrderRepository
         }
         catch (DbUpdateException ex)
         {
-            throw new Exception("An error occurred while adding the new order item to the database.", ex);
+            throw new DbUpdateException("An error occurred while adding the new order item to the database.", ex);
         }
     }
 
