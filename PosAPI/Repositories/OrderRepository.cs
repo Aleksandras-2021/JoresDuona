@@ -243,6 +243,19 @@ public class OrderRepository : IOrderRepository
             .Where(os => os.OrderId == orderId)
             .ToListAsync();
     }
+    public async Task<Order?> GetOrderByIdWithPaymentsAsync(int orderId)
+    {
+        return await _context.Orders
+                    .Include(o => o.Payments)
+                    .FirstOrDefaultAsync(o => o.Id == orderId);
+    }
+
+    public async Task<decimal> GetTotalPaymentsForOrderAsync(int orderId)
+    {
+        return await _context.Payments
+            .Where(p => p.OrderId == orderId)
+            .SumAsync(p => p.Amount);
+    }
 
     
 }

@@ -80,6 +80,16 @@
                                         </button>
                                     </form>
                                 </td>
+                                <td>
+                                        <form asp-action="Refund" asp-controller="Payment" method="get" class="m-0">
+                                            <input type="hidden" name="orderId" value="@order.Id" />
+                                            <input type="hidden" name="untaxedAmount" value="@order.ChargeAmount" />
+                                            <input type="hidden" name="tax" value="@order.TaxAmount" />
+                                            <button type="submit" class="btn btn-warning btn-sm">
+                                                <i class="bi bi-arrow-clockwise"></i> Refund Order
+                                            </button>
+                                        </form>
+                                </td>
                             }
                             else
                             {

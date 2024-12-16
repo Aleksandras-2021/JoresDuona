@@ -119,30 +119,6 @@ namespace PosClient.Controllers
             return View("~/Views/User/Schedule/Create.cshtml", model);
         }
 
-        // GET: Schedule/Delete/5
-        [HttpGet]
-        public async Task<IActionResult> Delete(int id)
-        {
-            string? token = Request.Cookies["authToken"];
-            _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
-
-            var apiUrl = $"{_apiUrl}/api/Schedule/{id}";
-            var response = await _httpClient.GetAsync(apiUrl);
-
-            if (response.IsSuccessStatusCode)
-            {
-                var scheduleData = await response.Content.ReadAsStringAsync();
-                var schedule = JsonSerializer.Deserialize<Schedule>(scheduleData);
-
-                if (schedule != null)
-                {
-                    return View(schedule);
-                }
-            }
-
-            return NotFound();
-        }
-
         // POST: Schedule/Delete/5
         [HttpPost, ActionName("Delete")]
         public async Task<IActionResult> DeleteConfirmed(int id, int userId)

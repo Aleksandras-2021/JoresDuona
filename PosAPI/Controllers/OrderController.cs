@@ -119,10 +119,7 @@ public class OrderController : ControllerBase
     public async Task<IActionResult> UpdateStatus([FromRoute] int orderId, OrderStatus status)
     {
         User? sender = await GetUserFromToken();
-
-        if (sender == null)
-            return Unauthorized();
-
+        
         _logger.LogInformation($"User with id: {sender.Id} is updating an order at {DateTime.Now}, orderId:{orderId}");
 
         try
@@ -135,6 +132,9 @@ public class OrderController : ControllerBase
             if (order.Status == OrderStatus.Closed)
                 order.ClosedAt = DateTime.UtcNow.AddHours(2);
 
+                // if (order.Status == OrderStatus.Refunded)
+                //_orderService.RefundAuthorizedOrder();
+                
             await _orderRepository.UpdateOrderAsync(order);
 
             return Ok(new { message = "Order status updated successfully.", status });

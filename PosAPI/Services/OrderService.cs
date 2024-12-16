@@ -140,7 +140,6 @@ public class OrderService : IOrderService
         return order;
     }
 
-
     public async Task<OrderItem?> GetAuthorizedOrderItem(int orderItemId, User sender)
     {
         AuthorizationHelper.Authorize("Order", "Read", sender);
@@ -292,70 +291,4 @@ public class OrderService : IOrderService
         return orderVariations;
     }
 }
-
-/* Deprecated
-    public async Task RecalculateOrderCharge(int orderId)
-    {
-        Order order = await _orderRepository.GetOrderByIdAsync(orderId);
-
-        if (order.Status == OrderStatus.Closed || order.Status == OrderStatus.Paid)
-            return;
-
-        List<OrderItem> orderItems = await _orderRepository.GetOrderItemsByOrderIdAsync(orderId);
-        List<OrderItemVariation> orderItemVariations = await _orderRepository.GetOrderItemVariationsByOrderIdAsync(orderId);
-        List<PosShared.Models.OrderService> orderServices = await _orderRepository.GetAllOrderServices(orderId);
-        Tax? tax;
-
-        order.ChargeAmount = 0;
-        order.TaxAmount = 0;
-
-        //base charge(untaxed)
-        foreach (var item in orderItems)
-        {
-            order.ChargeAmount += item.Price * item.Quantity;
-
-
-            tax = await _taxRepository.GetTaxByItemIdAsync(item.ItemId);
-
-            if (tax != null)
-            {
-                if (tax.IsPercentage)
-                    order.TaxAmount += item.Price * item.Quantity * tax.Amount / 100;
-                else
-                    order.TaxAmount += tax.Amount;
-            }
-            else
-            {
-                order.TaxAmount = 0;
-            }
-        }
-
-        foreach (var variation in orderItemVariations)
-        {
-            order.ChargeAmount += variation.AdditionalPrice * variation.Quantity;
-            OrderItem orderItemForVar = await _orderRepository.GetOrderItemById(variation.OrderItemId);
-
-            tax = await _taxRepository.GetTaxByItemIdAsync(orderItemForVar.ItemId);
-            if (tax != null)
-            {
-                if (tax.IsPercentage)
-                    order.TaxAmount += variation.AdditionalPrice * variation.Quantity * tax.Amount / 100;
-                else
-                    order.TaxAmount += tax.Amount;
-            }
-            else
-            {
-                order.TaxAmount = 0;
-            }
-        }
-
-        foreach (var service in orderServices)
-        {
-            order.TaxAmount += service.Tax;
-            order.ChargeAmount += service.Tax + service.Charge;
-        }
-
-        await _orderRepository.UpdateOrderAsync(order);
-    }
-*/
 

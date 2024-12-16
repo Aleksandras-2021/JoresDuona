@@ -85,5 +85,13 @@ namespace PosAPI.Repositories
         {
             throw new NotImplementedException();
         }
+        
+        public async Task<decimal> GetTotalPaymentsForOrderAsync(int orderId)
+        {
+            return await _context.Payments
+                .Where(p => p.OrderId == orderId)
+                .SumAsync(p => p.Amount);
+        }
+
     }
 }

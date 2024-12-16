@@ -28,7 +28,6 @@ public class PaymentController : Controller
     [HttpGet]
     public IActionResult Create(int orderId, decimal untaxedAmount, decimal tax)
     {
-        // Initialize the PaymentViewModel using the query string parameters
         var paymentViewModel = new PaymentViewModel
         {
             OrderId = orderId,
@@ -63,6 +62,68 @@ public class PaymentController : Controller
 
         TempData["Error"] = "Failed to create Payment. Please try again.\n" + response.ToString();
         return View(paymentViewModel);
+    }
+    
+    [HttpGet]
+    public async Task<IActionResult> Refund(int orderId, decimal untaxedAmount, decimal tax)
+    {
+        
+        string? token = Request.Cookies["authToken"];
+        _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+
+        var apiUrl = _apiUrl + $"/api/Payment/Order/{orderId}";
+        var response = await _httpClient.GetAsync(apiUrl);
+
+        if (response.IsSuccessStatusCode)
+        {
+            var paymentData = await response.Content.ReadAsStringAsync();
+            var payments = JsonSerializer.Deserialize<List<Payment>>(paymentData,JsonOptions.Default);
+
+            if (payments != null && payments.Any())
+            {
+                DateTime today = DateTime.Today;
+                today = DateTime.SpecifyKind(today, DateTimeKind.Utc);
+
+                var model = new RefundViewModel() 
+                {
+                    Payments = payments,
+                    RefundDate = today,
+                    Amount = untaxedAmount + tax,
+                    Reason = string.Empty,
+                };
+
+                return View("Refund", model);
+            }
+        }
+
+        
+        return RedirectToAction("Index", "Order");
+    }
+
+    [HttpPost]
+    public async Task<IActionResult> Refund(RefundViewModel model,int paymentId)
+    {
+        string? token = Request.Cookies["authToken"];
+        _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+
+        var refund = new RefundDTO()
+        {
+            Amount = model.Amount,
+            PaymentId = paymentId,
+            RefundDate = model.RefundDate,
+            Reason = model.Reason
+        };
+
+        var content = new StringContent(JsonSerializer.Serialize(refund), Encoding.UTF8, "application/json");
+        var response = await _httpClient.PostAsync(_apiUrl + $"/api/Payment/Refund/{paymentId}", content);
+
+        if (response.IsSuccessStatusCode)
+        {
+            return RedirectToAction("Index", "Order");
+        }
+
+        TempData["Error"] = "Failed to create Payment. Please try again.\n" + response.ToString();
+        return RedirectToAction("Refund");
     }
 
     [HttpGet]
