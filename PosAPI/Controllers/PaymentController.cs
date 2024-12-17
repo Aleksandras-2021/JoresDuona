@@ -272,7 +272,7 @@ public class PaymentController : ControllerBase
 
 
 
-    #region HelperMethods
+  #region HelperMethods
     private async Task<User?> GetUserFromToken()
     {
         string token = HttpContext.Request.Headers["Authorization"].ToString();

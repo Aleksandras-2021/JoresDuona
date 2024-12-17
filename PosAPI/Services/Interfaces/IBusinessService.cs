@@ -11,4 +11,6 @@ public interface IBusinessService
     Task UpdateAuthorizedBusinessAsync(Business business, User? sender);
     Task CreateAuthorizedBusinessAsync(Business business, User? sender);
     Task DeleteAuthorizedBusinessAsync(int businessId, User? sender);
+    Task<List<Business>> GetAllBusinesses(); 
+    
 }

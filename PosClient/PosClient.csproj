@@ -24,6 +24,7 @@
 	</ItemGroup>
 
 	<ItemGroup>
+		<ProjectReference Include="..\PosAPI\PosAPI.csproj" />
 		<ProjectReference Include="..\PosShared\PosShared.csproj" />
 	</ItemGroup>
 

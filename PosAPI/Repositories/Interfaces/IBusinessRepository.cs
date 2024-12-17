@@ -12,5 +12,6 @@ public interface IBusinessRepository
     Task<Business> GetBusinessByIdAsync(int businessId);
     Task UpdateBusinessAsync(Business business);
     Task DeleteBusinessAsync(int businessId);
+    Task<IEnumerable<Business>> GetAllAsync();
 
 }

@@ -31,5 +31,8 @@ public class Order
     public ICollection<Payment>? Payments { get; set; }
     public ICollection<OrderDiscount>? OrderDiscounts { get; set; }
     public ICollection<OrderService>? OrderServices { get; set; }
+    public int? DiscountId { get; set; }
+    public Discount? Discount { get; set; }
+
 
 }

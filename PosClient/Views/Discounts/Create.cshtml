@@ -1,0 +1,80 @@
+﻿@model PosShared.DTOs.DiscountDto
+
+<div class="container my-4">
+    <h1 class="text-center mb-4">Create Discount</h1>
+
+    @if (ViewBag.Error != null)
+    {
+        <div class="alert alert-danger">
+            <strong>Error:</strong> @ViewBag.Error
+        </div>
+    }
+
+    @if (ViewBag.DebugInfo != null)
+    {
+        <div class="alert alert-info">
+            <strong>Debug Info:</strong>
+            <pre>@ViewBag.DebugInfo</pre>
+        </div>
+    }<div class="container my-4">
+        <h1 class="text-center mb-4">Create Discount</h1>
+
+        @if (ViewBag.Error != null)
+        {
+            <div class="alert alert-danger">
+                <strong>Error:</strong> @ViewBag.Error
+            </div>
+        }
+
+        @if (ViewBag.DebugInfo != null)
+        {
+            <div class="alert alert-info">
+                <strong>Debug Info:</strong>
+                <pre>@ViewBag.DebugInfo</pre>
+            </div>
+        }
+
+
+    <form asp-action="Create" method="post" class="w-50 mx-auto">
+        <div class="mb-3">
+            <label class="form-label">Business:</label>
+                <select asp-for="BusinessId" class="form-control" required>
+                    <option value="">-- Select Business --</option>
+                    @if (ViewBag.Businesses != null && ViewBag.Businesses is List<PosShared.Models.Business>)
+                    {
+                        foreach (var business in ViewBag.Businesses as List<PosShared.Models.Business>)
+                        {
+                            <option value="@business.Id">@business.Name</option>
+                        }
+                    }
+                    else
+                    {
+                        <option disabled>No businesses available</option>
+                    }
+                </select>
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label">Description:</label>
+            <input asp-for="Description" class="form-control" required />
+        </div>
+        <div class="mb-3">
+            <label class="form-label">Amount:</label>
+            <input asp-for="Amount" step="0.01" class="form-control" required />
+        </div>
+        <div class="form-check mb-3">
+            <input type="hidden" asp-for="IsPercentage" value="false" />
+            <input asp-for="IsPercentage" type="checkbox" value="true" class="form-check-input" />
+            <label class="form-check-label">Is Percentage</label>
+        </div>
+        <div class="mb-3">
+            <label class="form-label">Valid From:</label>
+            <input asp-for="ValidFrom" type="datetime-local" class="form-control" required />
+        </div>
+        <div class="mb-3">
+            <label class="form-label">Valid To:</label>
+            <input asp-for="ValidTo" type="datetime-local" class="form-control" required />
+        </div>
+        <button type="submit" class="btn btn-primary">Create</button>
+    </form>
+</div>

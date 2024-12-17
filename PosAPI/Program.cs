@@ -58,6 +58,7 @@ builder.Services.AddScoped<IServiceRepository, ServiceRepository>();
 builder.Services.AddScoped<IReservationRepository, ReservationRepository>();
 builder.Services.AddScoped<IScheduleRepository, ScheduleRepository>();
 builder.Services.AddScoped<IDefaultShiftPatternRepository, DefaultShiftPatternRepository>();
+builder.Services.AddScoped<IDiscountRepository, DiscountRepository>();
 
 //Add Services here
 builder.Services.AddScoped<IOrderService, PosAPI.Services.OrderService>();
@@ -68,6 +69,8 @@ builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IServiceService, ServiceService>();
 builder.Services.AddScoped<IDefaultShiftPatternService, DefaultShiftPatternService>();
 
+builder.Services.AddHttpClient();
+builder.Services.AddHttpContextAccessor();
 
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 builder.Services.AddDbContext<ApplicationDbContext>(options => options.UseNpgsql(connectionString));

@@ -68,4 +68,16 @@ public class BusinessService : IBusinessService
 
         await _businessRepository.DeleteBusinessAsync(businessId);
     }
+    public async Task<List<Business>> GetAllBusinesses()
+    {
+        try
+        {
+            var businesses = await _businessRepository.GetAllAsync();  
+            return businesses.ToList();  
+        }
+        catch (Exception ex)
+        {
+            throw new Exception("Error fetching businesses: " + ex.Message);
+        }
+    }
 }

@@ -1,0 +1,37 @@
+﻿@model PosShared.DTOs.DiscountDto
+@if (ViewBag.DebugInfo != null)
+{
+    <div class="alert alert-info">
+        <strong>Debug Info:</strong>
+        <pre>@ViewBag.DebugInfo</pre>
+    </div>
+}
+
+<div class="container my-4">
+    <h1 class="text-center mb-4">Edit Discount</h1>
+    <form asp-action="Edit" method="post" class="w-50 mx-auto">
+        <input asp-for="Id" type="hidden" />
+        <div class="mb-3">
+            <label class="form-label">Description:</label>
+            <input asp-for="Description" class="form-control" required />
+        </div>
+        <div class="mb-3">
+            <label class="form-label">Amount:</label>
+            <input asp-for="Amount" step="0.01" class="form-control" required />
+        </div>
+        <div class="form-check mb-3">
+            <input type="hidden" asp-for="IsPercentage" value="false" />
+            <input asp-for="IsPercentage" type="checkbox" value="true" class="form-check-input" />
+            <label class="form-check-label">Is Percentage</label>
+        </div>
+        <div class="mb-3">
+            <label class="form-label">Valid From:</label>
+            <input asp-for="ValidFrom" type="datetime-local" class="form-control" required />
+        </div>
+        <div class="mb-3">
+            <label class="form-label">Valid To:</label>
+            <input asp-for="ValidTo" type="datetime-local" class="form-control" required />
+        </div>
+        <button type="submit" class="btn btn-success">Save Changes</button>
+    </form>
+</div>

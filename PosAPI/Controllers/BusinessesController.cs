@@ -5,6 +5,7 @@ using PosAPI.Repositories;
 using PosAPI.Services;
 using PosAPI.Services.Interfaces;
 using PosShared.Models;
+using PosAPI.Repositories.Interfaces;
 
 namespace PosAPI.Controllers;
 
@@ -16,25 +17,24 @@ public class BusinessesController : ControllerBase
     private readonly IBusinessService _businessService;
     private readonly IUserRepository _userRepository;
     private readonly ILogger<BusinessesController> _logger;
+    private readonly IBusinessRepository _businessRepository;
 
-
-    public BusinessesController(IBusinessService businessService,IUserRepository userRepository, ILogger<BusinessesController> logger)
+    public BusinessesController(IBusinessService businessService,IUserRepository userRepository, ILogger<BusinessesController> logger, IBusinessRepository businessRepository)
     {
         _businessService = businessService;
         _userRepository = userRepository;
         _logger = logger;
+        _businessRepository = businessRepository;
     }
 
     // GET: api/Businesses
-    [HttpGet("")]
+    [HttpGet]
     public async Task<IActionResult> GetAllBusinesses(int pageNumber = 1, int pageSize = 10)
     {
         User? sender = await GetUserFromToken();
-        
         try
         {
-            var paginatedBusinesses = await _businessService.GetAuthorizedBusinessesAsync
-                (sender, pageNumber, pageSize);
+            var paginatedBusinesses = await _businessService.GetAuthorizedBusinessesAsync(sender, pageNumber, pageSize);
 
             if (paginatedBusinesses.Items.Count > 0)
                 return Ok(paginatedBusinesses);
@@ -56,6 +56,7 @@ public class BusinessesController : ControllerBase
             return StatusCode(500, $"Internal server error {ex.Message}");
         }
     }
+
 
     // GET: api/Businesses/{id}
     [HttpGet("{id}")]
@@ -177,7 +178,20 @@ public class BusinessesController : ControllerBase
             return StatusCode(500, $"Internal server error {ex.Message}");
         }
     }
-    
+    //[HttpGet]
+    //public async Task<IActionResult> GetAllBusinesses()
+    //{
+    //    var businesses = await _businessService.GetAllBusinesses();
+    //    if (businesses == null || !businesses.Any())
+    //    {
+    //        return NotFound("No businesses found.");
+    //    }
+
+    //    return Ok(businesses);
+    //}
+
+
+
     #region HelperMethods
     private async Task<User?> GetUserFromToken()
     {
@@ -202,6 +216,6 @@ public class BusinessesController : ControllerBase
 
     }
     #endregion
-    
+   
 }
 

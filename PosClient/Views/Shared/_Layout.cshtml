@@ -72,6 +72,12 @@
                                 <a class="nav-link text-dark" asp-area="" asp-controller="Reservation" asp-action="Index">Reservations</a>
                             </li>
                         }
+                        @if (userRole == "SuperAdmin" || userRole == "Owner" || userRole == "Manager")
+                        {
+                            <li class="nav-item">
+                                <a class="nav-link text-dark" asp-area="" asp-controller="Discounts" asp-action="Index">Discounts</a>
+                            </li>
+                        }
                     </ul>
                     <div class="navbar-right">
                         @if (userRole != null)

@@ -44,7 +44,7 @@ public class BusinessRepository : IBusinessRepository
     public async Task<PaginatedResult<Business>> GetPaginatedBusinessAsync(int businessId, int pageNumber = 1, int pageSize = 10)
     {
         var totalCount = await _context.Set<Business>()
-            .Where(b =>b.Id == businessId)
+            .Where(b => b.Id == businessId)
             .CountAsync();
 
         var businesses = await _context.Set<Business>()
@@ -87,5 +87,10 @@ public class BusinessRepository : IBusinessRepository
         _context.Businesses.Remove(business);
 
         await _context.SaveChangesAsync();
+    }
+    public async Task<IEnumerable<Business>> GetAllAsync()
+    {
+        return await _context.Businesses.ToListAsync();
+
     }
 }

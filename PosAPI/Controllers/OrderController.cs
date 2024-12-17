@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using PosAPI.Repositories;
+using PosAPI.Repositories.Interfaces;
 using PosAPI.Services;
 using PosShared.Models;
 using PosShared.Utilities;
@@ -14,16 +15,19 @@ public class OrderController : ControllerBase
 {
     private readonly IOrderRepository _orderRepository;
     private readonly IUserRepository _userRepository;
+    private readonly IDiscountRepository _discountRepository;
     private readonly IOrderService _orderService;
 
     private readonly ILogger<OrderController> _logger;
 
-    public OrderController(IOrderRepository orderRepository, IUserRepository userRepository, IOrderService orderService, ILogger<OrderController> logger)
+
+    public OrderController(IOrderRepository orderRepository, IUserRepository userRepository, IOrderService orderService, ILogger<OrderController> logger, IDiscountRepository discountRepository)
     {
         _orderRepository = orderRepository;
         _userRepository = userRepository;
         _orderService = orderService;
         _logger = logger;
+        _discountRepository = discountRepository;
     }
 
     // GET: api/Order
@@ -129,7 +133,7 @@ public class OrderController : ControllerBase
         {
             Order? order = await _orderService.GetAuthorizedOrder(orderId, sender);
 
-            // Update the status
+      
             order.Status = status;
 
             if (order.Status == OrderStatus.Closed)
@@ -322,4 +326,76 @@ public class OrderController : ControllerBase
 
     }
     #endregion
+
+    [HttpPut("{orderId}/apply-discount")]
+    public async Task<IActionResult> ApplyDiscountToOrder(int orderId, [FromForm] string discountName)
+    {
+        // 1. Fetch the discount by name
+        var discount = await _discountRepository.GetActiveDiscountByNameAsync(discountName);
+        if (discount == null)
+        {
+            return NotFound(new { Message = "Discount not found or not active." });
+        }
+
+        // 2. Fetch the order using the provided order ID
+        var order = await _orderRepository.GetOrderByIdAsync(orderId);
+        if (order == null)
+        {
+            return NotFound(new { Message = "Order not found." });
+        }
+
+        // 3. Calculate the total amount of the order (including charges, tax, and tip)
+        var totalAmount = order.ChargeAmount + order.TaxAmount + order.TipAmount - order.DiscountAmount;
+
+        // 4. Apply the discount based on whether it's a percentage or fixed amount
+        decimal discountApplied = 0;
+        if (discount.IsPercentage)
+        {
+            // Apply percentage-based discount
+            discountApplied = totalAmount * (discount.Amount / 100);
+        }
+        else
+        {
+            // Apply fixed amount discount
+            discountApplied = discount.Amount;
+        }
+
+        // 5. Update the order's discount and charge amounts
+        order.DiscountAmount += discountApplied;
+        order.ChargeAmount = totalAmount - order.DiscountAmount; 
+        order.DiscountId = discount.Id; 
+
+        try
+        {
+            // Save the updated order
+            await _orderRepository.UpdateOrderAsync(order);
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, new { Message = $"Error applying discount: {ex.Message}" });
+        }
+
+        // 6. Return the updated order with the savings message
+        var savingsText = discount.IsPercentage
+            ? $"{discount.Amount}%"
+            : $"{discount.Amount:C}";
+
+        return Ok(new
+        {
+            Message = $"You saved {savingsText}. Total after discount: {order.ChargeAmount:C}.",
+            Order = new
+            {
+                order.Id,
+                order.ChargeAmount,
+                order.DiscountAmount,
+                order.TaxAmount,
+                order.TipAmount
+            }
+        });
+    }
+
+
+
+
+
 }
