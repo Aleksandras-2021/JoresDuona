@@ -15,12 +15,12 @@ namespace PosAPI.Controllers;
 public class OrderItemsVariationsController : ControllerBase
 {
     private readonly IOrderService _orderService;
-    private readonly IUserRepository _userRepository;
+    private readonly IUserTokenService _userTokenService;
     private readonly ILogger<OrderItemsVariationsController> _logger;
 
-    public OrderItemsVariationsController(IUserRepository userRepository, IOrderService orderService, ILogger<OrderItemsVariationsController> logger)
+    public OrderItemsVariationsController(IUserTokenService userTokenService, IOrderService orderService, ILogger<OrderItemsVariationsController> logger)
     {
-        _userRepository = userRepository;
+        _userTokenService = userTokenService;
         _orderService = orderService;
         _logger = logger;
     }
@@ -29,8 +29,10 @@ public class OrderItemsVariationsController : ControllerBase
     [HttpGet("{orderId}/Items/{orderItemId}/Variations")]
     public async Task<IActionResult> GetOrderItemVariations(int orderItemId)
     {
-        User? sender = await GetUserFromToken();
+        User? sender = await _userTokenService.GetUserFromTokenAsync();
+        
         var orderItemVariations = await _orderService.GetAuthorizedOrderItemVariations(orderItemId, sender);
+        
         return Ok(orderItemVariations);
     }
 
@@ -38,15 +40,17 @@ public class OrderItemsVariationsController : ControllerBase
     [HttpGet("{orderId}/Items/{orderItemId}/Variations/{variationId}")]
     public async Task<IActionResult> GetOrderItemVariationById(int orderId, int orderItemId, int variationId)
     {
-        User? sender = await GetUserFromToken();
+        User? sender = await _userTokenService.GetUserFromTokenAsync();
+        
         var orderItemVariation = await _orderService.GetAuthorizedOrderItemVariation(variationId, orderItemId, sender);
+        
         return Ok(orderItemVariation);
     }
 
     [HttpPost("{orderId}/Items/{itemId}/Variations")]
     public async Task<IActionResult> AddOrderItemVariation(int orderId, int itemId, [FromBody] AddVariationDTO addVariationDTO)
     {
-        User? sender = await GetUserFromToken();
+        User? sender = await _userTokenService.GetUserFromTokenAsync();
         
         var orderItemVariation =
                 await _orderService.CreateAuthorizedOrderItemVariation(orderId, itemId, addVariationDTO, sender);
@@ -60,38 +64,10 @@ public class OrderItemsVariationsController : ControllerBase
     [HttpDelete("{orderId}/Items/{orderItemId}/Variations/{orderItemVariationId}")]
     public async Task<IActionResult> DeleteOrderItemVariation(int orderId, int orderItemId, int orderItemVariationId)
     {
-        User? sender = await GetUserFromToken();
+        User? sender = await _userTokenService.GetUserFromTokenAsync();
         
         await _orderService.DeleteAuthorizedOrderItemVariation(orderId, orderItemId, orderItemVariationId, sender);
 
         return Ok("Order Item Variation deleted successfully.");
     }
-
-    #region HelperMethods
-
-    private async Task<User?> GetUserFromToken()
-    {
-        string token = HttpContext.Request.Headers["Authorization"].ToString();
-
-        if (string.IsNullOrEmpty(token))
-        {
-            _logger.LogWarning("Authorization token is missing or null.");
-            return null;
-        }
-
-        int? userId = Ultilities.ExtractUserIdFromToken(token);
-        User? user = await _userRepository.GetUserByIdAsync(userId);
-
-        if (user == null)
-        {
-            _logger.LogWarning($"Failed to find user with {userId} in DB");
-            return null;
-        }
-
-        return user;
-
-    }
-
-    #endregion
-
 }

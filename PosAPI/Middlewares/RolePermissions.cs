@@ -97,6 +97,16 @@ public static class RolePermissions
                 { "Delete", new List<UserRole> { UserRole.SuperAdmin, UserRole.Owner, UserRole.Manager } }
             }
         },
+        // Permissions for "DefaultShiftPattern" endpoints
+        { "Schedule", new Dictionary<string, List<UserRole>>
+            {
+                { "List", new List<UserRole> { UserRole.SuperAdmin, UserRole.Owner, UserRole.Manager } },
+                { "Create", new List<UserRole> { UserRole.SuperAdmin, UserRole.Owner, UserRole.Manager } },
+                { "Read", AllRoles },
+                { "Update", new List<UserRole> { UserRole.SuperAdmin, UserRole.Owner, UserRole.Manager } },
+                { "Delete", new List<UserRole> { UserRole.SuperAdmin, UserRole.Owner, UserRole.Manager } }
+            }
+        },
         // Permissions for "Payment" endpoints
         { "Payment", new Dictionary<string, List<UserRole>>
             {

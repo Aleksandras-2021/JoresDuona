@@ -1,5 +1,12 @@
 @model PosShared.ViewModels.ReservationViewModel
 
+@if (TempData["Error"] != null)
+{
+    <div class="alert alert-danger">
+        @TempData["Error"]
+    </div>
+}
+
 <div class="container mt-4">
     <h2>Make a Reservation</h2>
     

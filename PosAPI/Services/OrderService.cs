@@ -104,10 +104,8 @@ public class OrderService : IOrderService
     public async Task<Order?> GetAuthorizedOrder(int orderId, User sender)
     {
         AuthorizationHelper.Authorize("Order", "Read", sender);
-
         var order = await _orderRepository.GetOrderByIdAsync(orderId);
         AuthorizationHelper.ValidateOwnershipOrRole(sender, order.BusinessId, sender.BusinessId, "Read");
-
         return order;
     }
 
@@ -138,7 +136,7 @@ public class OrderService : IOrderService
         AuthorizationHelper.Authorize("Order", "Update", sender);
         var existingOrder = await GetAuthorizedOrderForModification(order.Id, sender);
 
-        if (order.Status is OrderStatus.Closed or OrderStatus.Paid or OrderStatus.Refunded)
+        if (existingOrder.Status is OrderStatus.Closed or OrderStatus.Paid or OrderStatus.Refunded)
             throw new BusinessRuleViolationException("Cannot modify closed order");
         
         existingOrder.UserId = sender.Id; //Whoever updates order, takes over the ownership of it
@@ -150,7 +148,6 @@ public class OrderService : IOrderService
         existingOrder.TipAmount = order.TipAmount;
         
         await _orderRepository.UpdateOrderAsync(existingOrder);
-
     }
 
     

@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Logging;
 using PosAPI.Repositories;
 using PosAPI.Services;
+using PosAPI.Services.Interfaces;
 using PosShared.DTOs;
 using PosShared.Models;
 using PosShared.Utilities;
@@ -17,13 +18,13 @@ namespace PosAPI.Controllers;
 public class ItemsController : ControllerBase
 {
     private readonly ILogger<ItemsController> _logger;
-    private readonly IUserRepository _userRepository;
+    private readonly IUserTokenService _userTokenService;
     private readonly IItemService _itemService;
     public ItemsController(ILogger<ItemsController> logger, IItemRepository itemRepository, 
-        IUserRepository userRepository,IItemService itemService)
+        IUserTokenService userTokenService,IItemService itemService)
     {
         _logger = logger;
-        _userRepository = userRepository;
+        _userTokenService = userTokenService;
         _itemService = itemService;
     }
     
@@ -31,7 +32,7 @@ public class ItemsController : ControllerBase
     [HttpGet]
     public async Task<IActionResult> GetAllItems(int pageNumber = 1, int pageSize = 10)
     {
-        User? sender = await GetUserFromToken();
+        User? sender = await _userTokenService.GetUserFromTokenAsync();
         
         var paginatedItems = await _itemService.GetAuthorizedItemsAsync(sender, pageNumber, pageSize);
 
@@ -45,7 +46,7 @@ public class ItemsController : ControllerBase
     [HttpGet("{id}")]
     public async Task<IActionResult> GetItemById(int id)
     {
-        User? sender = await GetUserFromToken();
+        User? sender = await _userTokenService.GetUserFromTokenAsync();
         Item? item = await _itemService.GetAuthorizedItemByIdAsync(id, sender);
         return Ok(item);
     }
@@ -54,7 +55,7 @@ public class ItemsController : ControllerBase
     [HttpPost]
     public async Task<IActionResult> CreateItem([FromBody] ItemViewModel item)
     {
-        User? sender = await GetUserFromToken();
+        User? sender = await _userTokenService.GetUserFromTokenAsync();
         var newItem = await _itemService.CreateAuthorizedItemAsync(item,sender);
         return CreatedAtAction(nameof(GetItemById), new { id = newItem.Id }, newItem);
     }
@@ -63,7 +64,7 @@ public class ItemsController : ControllerBase
     [HttpPut("{id}")]
     public async Task<IActionResult> UpdateItem(int id, [FromBody] ItemViewModel item)
     {
-        User? sender = await GetUserFromToken();
+        User? sender = await _userTokenService.GetUserFromTokenAsync();
         await _itemService.UpdateAuthorizedItemAsync(id,item, sender);
         return Ok();
     }
@@ -72,7 +73,7 @@ public class ItemsController : ControllerBase
     [HttpDelete("{id}")]
     public async Task<IActionResult> DeleteItem(int id)
     {
-        User? sender = await GetUserFromToken();
+        User? sender = await _userTokenService.GetUserFromTokenAsync();
         await _itemService.DeleteAuthorizedItemAsync(id,sender);
         _logger.LogInformation($"User with id {sender.Id} deleted item with id {id} at {DateTime.Now}");
         return Ok();
@@ -82,7 +83,7 @@ public class ItemsController : ControllerBase
     [HttpGet("{id}/Variations")]
     public async Task<IActionResult> GetAllItemVariations(int id)
     {
-        User? sender = await GetUserFromToken();
+        User? sender = await _userTokenService.GetUserFromTokenAsync();
         List<ItemVariation> variations = await _itemService.GetAuthorizedItemVariationsAsync(id, sender);
         return Ok(variations);
     }
@@ -91,7 +92,7 @@ public class ItemsController : ControllerBase
     [HttpGet("Variations/{varId}")]
     public async Task<IActionResult> GetItemVariationById(int varId)
     {
-        User? sender = await GetUserFromToken();
+        User? sender = await _userTokenService.GetUserFromTokenAsync();
         
         ItemVariation? variation = await _itemService.GetAuthorizedItemVariationByIdAsync(varId,sender);
 
@@ -102,7 +103,6 @@ public class ItemsController : ControllerBase
             Id = variation.Id,
             ItemId = variation.ItemId
         };
-
             return Ok(variationDTO);
     }
 
@@ -110,7 +110,7 @@ public class ItemsController : ControllerBase
     [HttpPost("{id}/Variations")]
     public async Task<IActionResult> CreateVariation([FromBody] ItemVariation variation)
     {
-        User? sender = await GetUserFromToken();
+        User? sender = await _userTokenService.GetUserFromTokenAsync();
         var newVariation = await _itemService.CreateAuthorizedItemVariationAsync(variation, sender);
         return CreatedAtAction(
             nameof(GetItemVariationById),
@@ -124,7 +124,7 @@ public class ItemsController : ControllerBase
     [HttpDelete("Variations/{varId}")]
     public async Task<IActionResult> DeleteVariation(int varId)
     {
-        User? sender = await GetUserFromToken();
+        User? sender = await _userTokenService.GetUserFromTokenAsync();
         await _itemService.DeleteAuthorizedItemVariationAsync(varId, sender);
         return Ok();
     }
@@ -133,34 +133,9 @@ public class ItemsController : ControllerBase
     [HttpPut("Variations/{id}")]
     public async Task<IActionResult> UpdateVariation(int id, VariationsDTO variation)
     {
-        User? sender = await GetUserFromToken();
+        User? sender = await _userTokenService.GetUserFromTokenAsync();
         await _itemService.UpdateAuthorizedItemVariationAsync(id,variation,sender);
         return Ok();
     }
-
-    #region HelperMethods
-    private async Task<User?> GetUserFromToken()
-    {
-        string token = HttpContext.Request.Headers["Authorization"].ToString();
-
-        if (string.IsNullOrEmpty(token))
-        {
-            _logger.LogWarning("Authorization token is missing or null.");
-            return null;
-        }
-
-        int? userId = Ultilities.ExtractUserIdFromToken(token);
-        User? user = await _userRepository.GetUserByIdAsync(userId);
-
-        if(user == null)
-        {
-            _logger.LogWarning($"Failed to find user with {userId} in DB");
-            return null;
-        }
-
-        return user;
-
-    }
-    #endregion
-
+    
 }

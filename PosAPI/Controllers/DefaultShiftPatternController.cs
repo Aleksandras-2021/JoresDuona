@@ -13,16 +13,16 @@ namespace PosAPI.Controllers;
 public class DefaultShiftPatternController : ControllerBase
 {
     private readonly IDefaultShiftPatternService _shiftPatternService;
-    private readonly IUserRepository _userRepository;
+    private readonly IUserTokenService _userTokenService;
     private readonly ILogger<DefaultShiftPatternController> _logger;
 
     public DefaultShiftPatternController(
         IDefaultShiftPatternService shiftPatternService,
-        IUserRepository userRepository,
+        IUserTokenService userTokenService,
         ILogger<DefaultShiftPatternController> logger)
     {
         _shiftPatternService = shiftPatternService;
-        _userRepository = userRepository;
+        _userTokenService = userTokenService;
         _logger = logger;
     }
 
@@ -30,18 +30,16 @@ public class DefaultShiftPatternController : ControllerBase
     [HttpGet]
     public async Task<IActionResult> GetAllPatterns()
     {
-        User? sender = await GetUserFromToken();
-        
-            var patterns = await _shiftPatternService.GetAuthorizedPatternsAsync(sender);
-            return Ok(patterns);
+        User? sender = await _userTokenService.GetUserFromTokenAsync();
+        var patterns = await _shiftPatternService.GetAuthorizedPatternsAsync(sender);
+        return Ok(patterns);
     }
 
     // GET: api/DefaultShiftPattern/User/{userId}
     [HttpGet("{id}")]
     public async Task<IActionResult> GetPatternById(int id)
     {
-        User? sender = await GetUserFromToken();
-        
+        User? sender = await _userTokenService.GetUserFromTokenAsync();
         var pattern = await _shiftPatternService.GetAuthorizedPatternByIdAsync(id, sender);
         return Ok(pattern);
     }
@@ -50,7 +48,7 @@ public class DefaultShiftPatternController : ControllerBase
     [HttpGet("User/{userId}")]
     public async Task<IActionResult> GetPatternsByUser(int userId)
     {
-        User? sender = await GetUserFromToken();
+        User? sender = await _userTokenService.GetUserFromTokenAsync();
         var patterns = await _shiftPatternService.GetAuthorizedPatternsByUserAsync(userId, sender);
         return Ok(patterns);
     }
@@ -59,10 +57,8 @@ public class DefaultShiftPatternController : ControllerBase
     [HttpPost]
     public async Task<IActionResult> CreatePattern([FromBody] DefaultShiftPattern pattern)
     {
-        User? sender = await GetUserFromToken();
-
-        _logger.LogInformation($"{sender.Id} is creating a shift pattern");
-
+        User? sender = await _userTokenService.GetUserFromTokenAsync();
+        
         if (pattern == null)
             return BadRequest("Pattern data is null.");
 
@@ -93,7 +89,7 @@ public class DefaultShiftPatternController : ControllerBase
     [HttpPut("{id}")]
     public async Task<IActionResult> UpdatePattern(int id, [FromBody] DefaultShiftPattern pattern)
     {
-        User? sender = await GetUserFromToken();
+        User? sender = await _userTokenService.GetUserFromTokenAsync();
 
         if (id != pattern.Id)
             return BadRequest("ID mismatch");
@@ -106,8 +102,7 @@ public class DefaultShiftPatternController : ControllerBase
     [HttpDelete("{id}")]
     public async Task<IActionResult> DeletePattern(int id)
     {
-        User? sender = await GetUserFromToken();
-        
+        User? sender = await _userTokenService.GetUserFromTokenAsync();
         await _shiftPatternService.DeleteAuthorizedPatternAsync(id, sender);
         return NoContent();
     }
@@ -116,8 +111,7 @@ public class DefaultShiftPatternController : ControllerBase
     [HttpPost("{patternId}/User/{userId}")]
     public async Task<IActionResult> AssignUserToPattern(int patternId, int userId)
     {
-        User? sender = await GetUserFromToken();
-        
+        User? sender = await _userTokenService.GetUserFromTokenAsync();
         await _shiftPatternService.AssignAuthorizedUserToPatternAsync(patternId, userId, sender);
         return NoContent();
     }
@@ -126,33 +120,10 @@ public class DefaultShiftPatternController : ControllerBase
     [HttpDelete("{patternId}/User/{userId}")]
     public async Task<IActionResult> RemoveUserFromPattern(int patternId, int userId)
     {
-        User? sender = await GetUserFromToken();
+        User? sender = await _userTokenService.GetUserFromTokenAsync();
         
         await _shiftPatternService.RemoveAuthorizedUserFromPatternAsync(patternId, userId, sender);
         return NoContent();
     }
-
-    #region HelperMethods
-    private async Task<User?> GetUserFromToken()
-    {
-        string token = HttpContext.Request.Headers["Authorization"].ToString();
-
-        if (string.IsNullOrEmpty(token))
-        {
-            _logger.LogWarning("Authorization token is missing or null.");
-            return null;
-        }
-
-        int? userId = Ultilities.ExtractUserIdFromToken(token);
-        User? user = await _userRepository.GetUserByIdAsync(userId);
-
-        if (user == null)
-        {
-            _logger.LogWarning($"Failed to find user with {userId} in DB");
-            return null;
-        }
-
-        return user;
-    }
-    #endregion
+    
 }
