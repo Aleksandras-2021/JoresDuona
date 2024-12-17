@@ -134,7 +134,7 @@ public class OrderService : IOrderService
     public async Task UpdateAuthorizedOrder(Order order, User? sender)
     {
         AuthorizationHelper.Authorize("Order", "Update", sender);
-        var existingOrder = await GetAuthorizedOrderForModification(order.Id, sender);
+        var existingOrder = await _orderRepository.GetOrderByIdAsync(order.Id);
 
         if (existingOrder.Status is OrderStatus.Closed or OrderStatus.Paid or OrderStatus.Refunded)
             throw new BusinessRuleViolationException("Cannot modify closed order");
@@ -163,21 +163,6 @@ public class OrderService : IOrderService
         await _orderRepository.DeleteOrderAsync(orderId);
     }
 
-
-    public async Task<Order?> GetAuthorizedOrderForModification(int orderId, User sender)
-    {
-        AuthorizationHelper.Authorize("Order", "Update", sender);
-        var order = await _orderRepository.GetOrderByIdAsync(orderId);
-        AuthorizationHelper.ValidateOwnershipOrRole(sender, order.BusinessId, sender.BusinessId, "Update");
-
-        //Owner can modify orders & manager
-        if ((order.Status == OrderStatus.Closed || order.Status == OrderStatus.Paid) &&
-            sender.Role != UserRole.SuperAdmin)
-            throw new UnauthorizedAccessException("You are not authorized to modify closed orders.");
-
-        return order;
-    }
-
     public async Task<OrderItem?> GetAuthorizedOrderItem(int orderItemId, User sender)
     {
         AuthorizationHelper.Authorize("Order", "Read", sender);
@@ -198,7 +183,7 @@ public class OrderService : IOrderService
         var orderItems = await _orderRepository.GetOrderItemsByOrderIdAsync(orderId);
 
         if (!orderItems.Any())
-            throw new KeyNotFoundException($"Order items for order with ID {orderId} not found.");
+            orderItems = new List<OrderItem>();
 
         return orderItems;
     }
@@ -218,8 +203,7 @@ public class OrderService : IOrderService
         var item = await _itemRepository.GetItemByIdAsync(orderItem.ItemId);
 
         AuthorizationHelper.ValidateOwnershipOrRole(sender, item.BusinessId, sender.BusinessId, "Read");
-
-
+        
         return orderItemVariation;
     }
 
@@ -310,23 +294,22 @@ public class OrderService : IOrderService
     public async Task<List<OrderItemVariation>?> GetAuthorizedOrderVariations(int orderId, User sender)
     {
         AuthorizationHelper.Authorize("Order", "Read", sender);
-
         List<OrderItemVariation> orderVariations = await _orderRepository.GetAllOrderItemVariationsAsync(orderId);
+        
         Order order = await _orderRepository.GetOrderByIdAsync(orderId);
-
-        if (orderVariations == null || !orderVariations.Any())
-            throw new KeyNotFoundException($"No variations found for order with ID {order}.");
-
         AuthorizationHelper.ValidateOwnershipOrRole(sender, order.BusinessId, sender.BusinessId, "Read");
 
+        if (!orderVariations.Any())
+            orderVariations = new List<OrderItemVariation>();
+        
         return orderVariations;
     }
     
     public async Task<List<PosShared.Models.OrderService>?> GetAuthorizedOrderServices(int orderId, User? sender)
     {
         AuthorizationHelper.Authorize("Service", "Read", sender);
-
         List<PosShared.Models.OrderService> orderVariations = await _orderRepository.GetAllOrderServices(orderId);
+        
         Order order = await _orderRepository.GetOrderByIdAsync(orderId);
         AuthorizationHelper.ValidateOwnershipOrRole(sender, order.BusinessId, sender.BusinessId, "Read");
 

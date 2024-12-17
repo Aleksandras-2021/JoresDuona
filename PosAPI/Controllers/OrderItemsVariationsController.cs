@@ -16,16 +16,13 @@ public class OrderItemsVariationsController : ControllerBase
 {
     private readonly IOrderService _orderService;
     private readonly IUserTokenService _userTokenService;
-    private readonly ILogger<OrderItemsVariationsController> _logger;
 
-    public OrderItemsVariationsController(IUserTokenService userTokenService, IOrderService orderService, ILogger<OrderItemsVariationsController> logger)
+    public OrderItemsVariationsController(IUserTokenService userTokenService, IOrderService orderService)
     {
         _userTokenService = userTokenService;
         _orderService = orderService;
-        _logger = logger;
     }
-
-
+    
     [HttpGet("{orderId}/Items/{orderItemId}/Variations")]
     public async Task<IActionResult> GetOrderItemVariations(int orderItemId)
     {
