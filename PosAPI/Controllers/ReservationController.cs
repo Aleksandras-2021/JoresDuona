@@ -14,15 +14,13 @@ public class ReservationController : ControllerBase
     private readonly IServiceService _serviceService;
     private readonly IReservationRepository _reservationRepository;
     private readonly IUserTokenService _userTokenService;
-    private readonly ILogger<ReservationController> _logger;
 
     public ReservationController(IServiceService serviceService, IReservationRepository reservationRepository,
-        IUserTokenService userTokenService, ILogger<ReservationController> logger)
+        IUserTokenService userTokenService)
     {
         _serviceService = serviceService;
         _reservationRepository = reservationRepository;
         _userTokenService = userTokenService;
-        _logger = logger;
     }
 
     [HttpGet]
