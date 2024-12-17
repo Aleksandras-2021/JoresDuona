@@ -32,42 +32,23 @@ namespace PosClient.Controllers
                 return View(patterns);
             }
 
-           TempData["Error"] = "Unable to fetch shift patterns. Please try again.";
-           return View(new List<DefaultShiftPattern>());
-       }
+            TempData["Error"] = "Unable to fetch shift patterns. Please try again.";
+            return View(new List<DefaultShiftPattern>());
+        }
 
-        // GET: DefaultShiftPattern/Create
         [HttpGet]
         public async Task<IActionResult> Create(int pageNumber = 1, int pageSize = 20)
         {
             string? token = Request.Cookies["authToken"];
             _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
-            var usersApiUrl = ApiRoutes.User.GetPaginated(pageNumber, pageSize);
-            var userResponse = await _httpClient.GetAsync(usersApiUrl);
-
-            PaginatedResult<User>? users = null;
-            if (userResponse.IsSuccessStatusCode)
+            var pattern = new DefaultShiftPattern
             {
-                var usersJson = await userResponse.Content.ReadAsStringAsync();
-                users = JsonSerializer.Deserialize<PaginatedResult<User>>(usersJson, JsonOptions.Default);
-            }
-            else
-            {
-                users = new PaginatedResult<User>();
-            }
-
-            var model = new DefaultShiftPatternCreateViewModel
-            {
-                AvailableUsers = users,
-                Pattern = new DefaultShiftPattern
-                {
-                    StartDate = DateTime.Now,
-                    EndDate = DateTime.Now.AddHours(8)
-                }
+                StartDate = DateTime.Now,
+                EndDate = DateTime.Now.AddHours(8)
             };
 
-            return View(model);
+            return View(await ReloadViewModelWithUsers(pattern, pageNumber, pageSize));
         }
 
         [HttpPost]
@@ -83,16 +64,7 @@ namespace PosClient.Controllers
                     if (viewModel.Pattern.EndDate.TimeOfDay <= viewModel.Pattern.StartDate.TimeOfDay)
                     {
                         TempData["Error"] = "End time must be after start time.";
-
-                        var reloadUsersApiUrl = ApiRoutes.User.GetPaginated(1, 20);
-                        var reloadUserResponse = await _httpClient.GetAsync(reloadUsersApiUrl);
-                        if (reloadUserResponse.IsSuccessStatusCode)
-                        {
-                            var usersJson = await reloadUserResponse.Content.ReadAsStringAsync();
-                            viewModel.AvailableUsers = JsonSerializer.Deserialize<PaginatedResult<User>>(
-                                usersJson, JsonOptions.Default);
-                        }
-                        return View(viewModel);
+                        return View(await ReloadViewModelWithUsers(viewModel.Pattern));
                     }
 
                     viewModel.Pattern.StartDate = new DateTime(2000, 1, 1, 
@@ -121,7 +93,7 @@ namespace PosClient.Controllers
 
                         return RedirectToAction(nameof(Index));
                     }
-                    if (response.StatusCode == System.Net.HttpStatusCode.Conflict) // 409
+                    if (response.StatusCode == System.Net.HttpStatusCode.Conflict)
                     {
                         var errorMessage = await response.Content.ReadAsStringAsync();
                         TempData["Error"] = errorMessage;
@@ -137,19 +109,9 @@ namespace PosClient.Controllers
                 }
             }
 
-            var usersApiUrl = ApiRoutes.User.GetPaginated(1, 20);
-            var userResponse = await _httpClient.GetAsync(usersApiUrl);
-            if (userResponse.IsSuccessStatusCode)
-            {
-                var usersJson = await userResponse.Content.ReadAsStringAsync();
-                viewModel.AvailableUsers = JsonSerializer.Deserialize<PaginatedResult<User>>(
-                    usersJson, JsonOptions.Default);
-            }
-
-            return View(viewModel);
+            return View(await ReloadViewModelWithUsers(viewModel.Pattern));
         }
 
-        // GET: DefaultShiftPattern/Edit/5
         [HttpGet]
         public async Task<IActionResult> Edit(int id, int pageNumber = 1, int pageSize = 20)
         {
@@ -165,23 +127,9 @@ namespace PosClient.Controllers
                 var pattern = JsonSerializer.Deserialize<DefaultShiftPattern>(patternData, 
                     new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
 
-                var usersApiUrl = ApiRoutes.User.GetPaginated(pageNumber, pageSize);
-                var userResponse = await _httpClient.GetAsync(usersApiUrl);
-
-                if (userResponse.IsSuccessStatusCode)
+                if (pattern != null)
                 {
-                    var usersJson = await userResponse.Content.ReadAsStringAsync();
-                    var users = JsonSerializer.Deserialize<PaginatedResult<User>>(usersJson, 
-                        new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
-
-                    var viewModel = new DefaultShiftPatternCreateViewModel
-                    {
-                        Pattern = pattern,
-                        AvailableUsers = users,
-                        AssignedUsers = pattern.Users?.ToList() ?? new List<User>()
-                    };
-
-                    return View(viewModel);
+                    return View(await ReloadViewModelWithUsers(pattern, pageNumber, pageSize));
                 }
             }
 
@@ -199,26 +147,9 @@ namespace PosClient.Controllers
                 if (pattern.EndDate.TimeOfDay <= pattern.StartDate.TimeOfDay)
                 {
                     TempData["Error"] = "End time must be after start time.";
-                    var reloadUsersApiUrl = ApiRoutes.User.GetPaginated(1, 20);
-                    var reloadUserResponse = await _httpClient.GetAsync(reloadUsersApiUrl);
-                    if (reloadUserResponse.IsSuccessStatusCode)
-                    {
-                        var usersJson = await reloadUserResponse.Content.ReadAsStringAsync();
-                        var users = JsonSerializer.Deserialize<PaginatedResult<User>>(
-                            usersJson,
-                            new JsonSerializerOptions { PropertyNameCaseInsensitive = true }
-                        );
-
-                        var viewModel = new DefaultShiftPatternCreateViewModel
-                        {
-                            Pattern = pattern,
-                            AvailableUsers = users,
-                            AssignedUsers = new List<User>()
-                        };
-                        return View(viewModel);
-                    }
-                    return View(pattern);
+                    return View(await ReloadViewModelWithUsers(pattern));
                 }
+
                 try
                 {
                     var apiUrl = _apiUrl + $"/api/DefaultShiftPattern/{id}?{string.Join("&", assignedUserIds.Select(id => $"userIds={id}"))}";
@@ -251,16 +182,15 @@ namespace PosClient.Controllers
                         return RedirectToAction(nameof(Index));
                     }
 
-                    if (response.StatusCode == System.Net.HttpStatusCode.Conflict) // 409
+                    if (response.StatusCode == System.Net.HttpStatusCode.Conflict)
                     {
                         var errorMessage = await response.Content.ReadAsStringAsync();
                         TempData["Error"] = errorMessage;
                     }
                     else
                     {
-                        TempData["Error"] = $"Failed to create shift pattern. " + response.StatusCode;
+                        TempData["Error"] = $"Failed to update shift pattern. " + response.StatusCode;
                     }
-                
                 }
                 catch (Exception ex)
                 {
@@ -268,30 +198,9 @@ namespace PosClient.Controllers
                 }
             }
 
-            var usersApiUrl = ApiRoutes.User.GetPaginated(1, 20);
-            var userResponse = await _httpClient.GetAsync(usersApiUrl);
-            if (userResponse.IsSuccessStatusCode)
-            {
-                var usersJson = await userResponse.Content.ReadAsStringAsync();
-                var users = JsonSerializer.Deserialize<PaginatedResult<User>>(
-                    usersJson,
-                    new JsonSerializerOptions { PropertyNameCaseInsensitive = true }
-                );
-
-                var viewModel = new DefaultShiftPatternCreateViewModel
-                {
-                    Pattern = pattern,
-                    AvailableUsers = users,
-                    AssignedUsers = new List<User>()
-                };
-
-                return View(viewModel);
-            }
-
-            return View(pattern);
+            return View(await ReloadViewModelWithUsers(pattern));
         }
 
-        // POST: DefaultShiftPattern/Delete/5
         [HttpPost]
         public async Task<IActionResult> Delete(int id)
         {
@@ -310,8 +219,6 @@ namespace PosClient.Controllers
             return RedirectToAction(nameof(Index));
         }
 
-        
-        // POST: DefaultShiftPattern/AssignUser
         [HttpPost]
         public async Task<IActionResult> AssignUser(int userId, int patternId)
         {
@@ -328,7 +235,6 @@ namespace PosClient.Controllers
             return Json(new { success = false, message = "Failed to assign user" });
         }
 
-        // POST: DefaultShiftPattern/RemoveUser
         [HttpPost]
         public async Task<IActionResult> RemoveUser(int userId, int patternId)
         {
@@ -356,14 +262,14 @@ namespace PosClient.Controllers
                 AvailableUsers = new PaginatedResult<User>(),
                 AssignedUsers = pattern.Users?.ToList() ?? new List<User>()
             };
-        
+
             if (userResponse.IsSuccessStatusCode)
             {
                 var usersJson = await userResponse.Content.ReadAsStringAsync();
                 viewModel.AvailableUsers = JsonSerializer.Deserialize<PaginatedResult<User>>(
                     usersJson, JsonOptions.Default);
             }
-        
+
             return viewModel;
         }
     }
