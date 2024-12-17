@@ -1,42 +1,31 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Metadata.Conventions.Infrastructure;
-using Microsoft.Extensions.Logging;
-using PosAPI.Repositories;
 using PosShared.Models;
-using PosShared.Utilities;
-using PosShared.ViewModels;
-using System;
-using System.Collections.Generic;
-using System.Reflection;
-using System.Text.Json;
-using System.Threading.Tasks;
+using Microsoft.AspNetCore.Authorization;
 using PosAPI.Services;
 using PosAPI.Services.Interfaces;
 using PosShared.DTOs;
 
 namespace PosAPI.Controllers;
 
+[Authorize]
 [Route("api/[controller]")]
 [ApiController]
 public class UsersController : ControllerBase
 {
-    private readonly ILogger<UsersController> _logger;
-    private readonly IUserRepository _userRepository;
     private readonly IUserService _userService;
-
-    public UsersController(IUserService userService,IUserRepository userRepository, ILogger<UsersController> logger)
+    private readonly IUserTokenService _userTokenService;
+    
+    public UsersController(IUserService userService, IUserTokenService userTokenService)
     {
         _userService = userService;
-        _userRepository = userRepository;
-        _logger = logger;
+        _userTokenService = userTokenService;
     }
 
     // GET: api/Users
     [HttpGet]
     public async Task<IActionResult> GetAllUsers(int pageNumber = 1, int pageSize = 10)
     {
-        User? sender = await GetUserFromToken();
+        User? sender = await _userTokenService.GetUserFromTokenAsync();
         var users = await _userService.GetAuthorizedUsers(sender,pageNumber,pageSize);
         return Ok(users);
     }
@@ -45,7 +34,7 @@ public class UsersController : ControllerBase
     [HttpGet("{id}")]
     public async Task<IActionResult> GetUserById(int id)
     {
-        User? sender = await GetUserFromToken();
+        User? sender = await _userTokenService.GetUserFromTokenAsync();
         User? user = await _userService.GetAuthorizedUserById(id,sender);
 
         if (user == null)
@@ -71,11 +60,10 @@ public class UsersController : ControllerBase
     [HttpPost]
     public async Task<IActionResult> CreateUser([FromBody] CreateUserDTO user)
     {
-        User? sender = await GetUserFromToken();
+        User? sender = await _userTokenService.GetUserFromTokenAsync();
         
         var newUser = await _userService.CreateAuthorizedUser(user, sender);
-        
-        await _userRepository.AddUserAsync(newUser);
+
         return CreatedAtAction(nameof(GetUserById), new { id = newUser.Id }, newUser);
     }
 
@@ -83,7 +71,7 @@ public class UsersController : ControllerBase
     [HttpPut("{id}")]
     public async Task<IActionResult> UpdateUser(int id, [FromBody] UserDTO user)
     {
-        User? sender = await GetUserFromToken();
+        User? sender = await _userTokenService.GetUserFromTokenAsync();
         await _userService.UpdateAuthorizedUser(id, user, sender);
         return Ok();
     }
@@ -92,34 +80,10 @@ public class UsersController : ControllerBase
     [HttpDelete("{id}")]
     public async Task<IActionResult> DeleteUser(int id)
     {
-        User? sender = await GetUserFromToken();
+        User? sender = await _userTokenService.GetUserFromTokenAsync();
+        
         await _userService.DeleteAuthorizedUser(id, sender);
-        _logger.LogInformation($"User with id {id} deleted at {DateTime.Now} by {sender.Id}");
+        
         return Ok();
     }
-
-    #region HelperMethods
-    private async Task<User?> GetUserFromToken()
-    {
-        string token = HttpContext.Request.Headers["Authorization"].ToString();
-
-        if (string.IsNullOrEmpty(token))
-        {
-            _logger.LogWarning("Authorization token is missing or null.");
-            return null;
-        }
-
-        int? userId = Ultilities.ExtractUserIdFromToken(token);
-        User? user = await _userRepository.GetUserByIdAsync(userId);
-
-        if (user == null)
-        {
-            _logger.LogWarning($"Failed to find user with {userId} in DB");
-            return null;
-        }
-
-        return user;
-
-    }
-    #endregion
 }

@@ -18,13 +18,13 @@ public class TaxController : ControllerBase
 {
     private readonly ILogger<TaxController> _logger;
     private readonly ITaxRepository _taxRepository;
-    private readonly IUserRepository _userRepository;
+    private readonly IUserTokenService _userTokenService;
     private readonly ITaxService _taxService;
-    public TaxController(ILogger<TaxController> logger, ITaxRepository taxRepository, IUserRepository userRepository, ITaxService taxService)
+    public TaxController(ILogger<TaxController> logger, ITaxRepository taxRepository, IUserTokenService userTokenService, ITaxService taxService)
     {
         _logger = logger;
         _taxRepository = taxRepository;
-        _userRepository = userRepository;
+        _userTokenService = userTokenService;
         _taxService = taxService;
     }
 
@@ -33,7 +33,7 @@ public class TaxController : ControllerBase
     [HttpGet]
     public async Task<IActionResult> GetAllTaxes()
     {
-        User? sender = await GetUserFromToken();
+        User? sender = await _userTokenService.GetUserFromTokenAsync();
         List<Tax> taxes = await _taxService.GetAuthorizedTaxesAsync(sender);
         return Ok(taxes);
     }
@@ -42,7 +42,7 @@ public class TaxController : ControllerBase
     [HttpGet("{id}")]
     public async Task<IActionResult> GetTaxById(int id)
     {
-        User? sender = await GetUserFromToken();
+        User? sender = await _userTokenService.GetUserFromTokenAsync();
         Tax? tax =  await _taxService.GetAuthorizedTaxByIdAsync(id,sender);
         return Ok(tax);
     }
@@ -51,7 +51,7 @@ public class TaxController : ControllerBase
     [HttpPost]
     public async Task<IActionResult> CreateTax([FromBody] TaxDTO tax)
     {
-        User? sender = await GetUserFromToken();
+        User? sender = await _userTokenService.GetUserFromTokenAsync();
         
         Tax newTax = new Tax()
         {
@@ -66,13 +66,12 @@ public class TaxController : ControllerBase
 
         return CreatedAtAction(nameof(GetTaxById), new { id = newTax.Id }, newTax);
     }
-
-
+    
     // PUT: api/Tax/{id}
     [HttpPut("{id}")]
     public async Task<IActionResult> UpdateTax(int id, [FromBody] TaxDTO tax)
     {
-        User? sender = await GetUserFromToken();
+        User? sender = await _userTokenService.GetUserFromTokenAsync();
         Tax? existingTax = await _taxService.GetAuthorizedTaxByIdAsync(id,sender);
         
         existingTax.Name = tax.Name;
@@ -89,32 +88,8 @@ public class TaxController : ControllerBase
     [HttpDelete("{id}")]
     public async Task<IActionResult> DeleteTax(int id)
     {
-        User? sender = await GetUserFromToken();
+        User? sender = await _userTokenService.GetUserFromTokenAsync();
         await _taxService.DeleteAuthorizedTaxAsync(id,sender);
         return NoContent();
     }
-    #region HelperMethods
-    private async Task<User?> GetUserFromToken()
-    {
-        string token = HttpContext.Request.Headers["Authorization"].ToString();
-
-        if (string.IsNullOrEmpty(token))
-        {
-            _logger.LogWarning("Authorization token is missing or null.");
-            return null;
-        }
-
-        int? userId = Ultilities.ExtractUserIdFromToken(token);
-        User? user = await _userRepository.GetUserByIdAsync(userId);
-
-        if (user == null)
-        {
-            _logger.LogWarning($"Failed to find user with {userId} in DB");
-            return null;
-        }
-
-        return user;
-
-    }
-    #endregion
 }

@@ -10,27 +10,29 @@ using PosShared.Models;
 using PosShared.Utilities;
 using PosShared.ViewModels;
 
-namespace PosAPI.Controllers
-{
+namespace PosAPI.Controllers;
+
     [Route("api/[controller]")]
     [ApiController]
     public class ServiceController : ControllerBase
     {
         private readonly ILogger<ServiceController> _logger;
         private readonly IServiceService _serviceService;
-        private readonly IUserRepository _userRepository;
-        public ServiceController(ILogger<ServiceController> logger, IServiceService serviceService, IUserRepository userRepository)
+        private readonly IUserTokenService _userTokenService;
+
+        public ServiceController(ILogger<ServiceController> logger, IServiceService serviceService,
+            IUserTokenService userTokenService)
         {
             _logger = logger;
             _serviceService = serviceService;
-            _userRepository = userRepository;
+            _userTokenService = userTokenService;
         }
 
         // GET: api/Service
         [HttpGet]
         public async Task<IActionResult> GetAllServices()
         {
-            User? sender = await GetUserFromToken();
+            User? sender = await _userTokenService.GetUserFromTokenAsync();
             List<Service> services = await _serviceService.GetAuthorizedServices(sender);
             return Ok(services);
         }
@@ -39,7 +41,7 @@ namespace PosAPI.Controllers
         [HttpGet("{id}")]
         public async Task<IActionResult> GetServiceById(int id)
         {
-            User? sender = await GetUserFromToken();
+            User? sender = await _userTokenService.GetUserFromTokenAsync();
             Service? service = await _serviceService.GetAuthorizedService(id, sender);
             return Ok(service);
         }
@@ -48,8 +50,8 @@ namespace PosAPI.Controllers
         [HttpPost]
         public async Task<IActionResult> CreateService([FromBody] ServiceCreateDTO service)
         {
-            User? sender = await GetUserFromToken();
-            var newService = await  _serviceService.CreateAuthorizedService(service,sender);
+            User? sender = await _userTokenService.GetUserFromTokenAsync();
+            var newService = await _serviceService.CreateAuthorizedService(service, sender);
             return CreatedAtAction(nameof(GetServiceById), new { id = newService.Id }, newService);
         }
 
@@ -57,7 +59,7 @@ namespace PosAPI.Controllers
         [HttpPut("{id}")]
         public async Task<IActionResult> UpdateService(int id, [FromBody] ServiceCreateDTO service)
         {
-            User? sender = await GetUserFromToken();
+            User? sender = await _userTokenService.GetUserFromTokenAsync();
             await _serviceService.UpdateAuthorizedService(id, service, sender);
             return Ok();
         }
@@ -66,33 +68,9 @@ namespace PosAPI.Controllers
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteService(int id)
         {
-            User? sender = await GetUserFromToken();
-            await _serviceService.DeleteAuthorizedService(id,sender);
+            User? sender = await _userTokenService.GetUserFromTokenAsync();
+            await _serviceService.DeleteAuthorizedService(id, sender);
             return Ok();
         }
-        #region HelperMethods
-        private async Task<User?> GetUserFromToken()
-        {
-            string token = HttpContext.Request.Headers["Authorization"].ToString();
 
-            if (string.IsNullOrEmpty(token))
-            {
-                _logger.LogWarning("Authorization token is missing or null.");
-                return null;
-            }
-
-            int? userId = Ultilities.ExtractUserIdFromToken(token);
-            User? user = await _userRepository.GetUserByIdAsync(userId);
-
-            if (user == null)
-            {
-                _logger.LogWarning($"Failed to find user with {userId} in DB");
-                return null;
-            }
-
-            return user;
-
-        }
-        #endregion
     }
-}

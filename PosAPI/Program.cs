@@ -47,6 +47,12 @@ builder.Services.AddSwaggerGen(options =>
     });
 });
 
+
+//These 2 must be on top
+builder.Services.AddHttpContextAccessor();
+builder.Services.AddScoped<IUserTokenService, UserTokenService>();
+//
+
 //Add repositories here
 builder.Services.AddScoped<IBusinessRepository, BusinessRepository>();
 builder.Services.AddScoped<IUserRepository, UserRepository>();
@@ -60,7 +66,6 @@ builder.Services.AddScoped<IScheduleRepository, ScheduleRepository>();
 builder.Services.AddScoped<IDefaultShiftPatternRepository, DefaultShiftPatternRepository>();
 
 //Add Services here
-builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<IOrderService, PosAPI.Services.OrderService>();
 builder.Services.AddScoped<IItemService, ItemService>();
 builder.Services.AddScoped<IBusinessService, BusinessService>();
@@ -70,7 +75,6 @@ builder.Services.AddScoped<IScheduleService, ScheduleService>();
 builder.Services.AddScoped<IServiceService, ServiceService>();
 builder.Services.AddScoped<IPaymentService, PaymentService>();
 builder.Services.AddScoped<IDefaultShiftPatternService, DefaultShiftPatternService>();
-builder.Services.AddScoped<IUserTokenService, UserTokenService>();
 
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 builder.Services.AddDbContext<ApplicationDbContext>(options => options.UseNpgsql(connectionString));
