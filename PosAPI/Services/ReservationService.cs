@@ -164,10 +164,10 @@ public async Task CreateAuthorizedReservationAsync(ReservationCreateDTO reservat
         var endTime = reservation.ReservationTime.AddMinutes(service.DurationInMinutes);
 
         var isOverlapping = await _reservationRepository.IsReservationOverlappingAsync(service.Id, startTime, endTime,existingReservation.Id);
-        bool isEmployeeAvailable = await IsEmployeeAvailableAsync(service.EmployeeId, startTime, endTime);
+        bool isEmployeeAvailable = await IsEmployeeAvailableAsync(service.EmployeeId, startTime, endTime); //Checks Employee schedule
 
         if (!isEmployeeAvailable || isOverlapping || startTime < DateTime.Now.ToUniversalTime())
-            throw new BusinessRuleViolationException($"The selected time slot from {startTime} to {endTime} are invalid. Employee available {isEmployeeAvailable}");
+            throw new BusinessRuleViolationException($"The selected time slot from {startTime} to {endTime} are invalid. Employee available {isEmployeeAvailable}, isOverlapping {isOverlapping}");
 
         existingReservation.ServiceId = reservation.ServiceId;
         existingReservation.ReservationTime = startTime;
@@ -190,24 +190,4 @@ public async Task CreateAuthorizedReservationAsync(ReservationCreateDTO reservat
 
         return isWithinSchedule;
     }
-    
-    public async Task<bool> IsEmployeeAvailableForEditAsync(int employeeId, DateTime reservationStartTime, DateTime reservationEndTime, int? excludeReservationId = null)
-    {
-        // Fetch schedules for the employee
-        var schedules = await _scheduleRepository.GetSchedulesForDateRangeAsync(
-            reservationStartTime.Date, reservationEndTime.Date, employeeId);
-
-        // Check if any schedule overlaps with the new reservation time
-        bool isWithinSchedule = schedules.Any(schedule =>
-                reservationStartTime >= schedule.StartTime &&
-                reservationEndTime <= schedule.EndTime &&
-                (!excludeReservationId.HasValue || schedule.ReservationId != excludeReservationId.Value) // Exclude current reservation
-        );
-
-        return isWithinSchedule;
-    }
-
-
-    
-
 }
