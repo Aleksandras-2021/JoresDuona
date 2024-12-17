@@ -18,7 +18,7 @@ namespace PosClient.Controllers
             _httpClient = httpClient;
         }
 
-        public async Task<IActionResult> ShiftPatterns()
+        public async Task<IActionResult> Index()
         {
             string? token = Request.Cookies["authToken"];
             _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
@@ -136,7 +136,7 @@ namespace PosClient.Controllers
                         }
                     }
 
-                    return RedirectToAction(nameof(ShiftPatterns));
+                    return RedirectToAction(nameof(Index));
                 }
                 var errorMessage = await response.Content.ReadAsStringAsync();
                 ModelState.AddModelError(string.Empty, $"Error creating shift pattern: {errorMessage}");
@@ -161,7 +161,6 @@ namespace PosClient.Controllers
             string? token = Request.Cookies["authToken"];
             _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
-            // Get the pattern
             var apiUrl = _apiUrl + $"/api/DefaultShiftPattern/{id}";
             var response = await _httpClient.GetAsync(apiUrl);
 
@@ -171,7 +170,6 @@ namespace PosClient.Controllers
                 var pattern = JsonSerializer.Deserialize<DefaultShiftPattern>(patternData, 
                     new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
 
-                // Get all users
                 var usersApiUrl = ApiRoutes.User.GetPaginated(pageNumber, pageSize);
                 var userResponse = await _httpClient.GetAsync(usersApiUrl);
 
@@ -203,7 +201,6 @@ namespace PosClient.Controllers
 
             if (ModelState.IsValid)
             {
-                // Update the pattern
                 var apiUrl = _apiUrl + $"/api/DefaultShiftPattern/{id}";
                 var content = new StringContent(
                     JsonSerializer.Serialize(pattern),
@@ -215,34 +212,29 @@ namespace PosClient.Controllers
 
                 if (response.IsSuccessStatusCode)
                 {
-                    // Update user assignments
                     if (assignedUserIds != null)
                     {
-                        // First, get current assigned users
                         var currentPattern = await _httpClient.GetFromJsonAsync<DefaultShiftPattern>($"{_apiUrl}/api/DefaultShiftPattern/{id}");
                         var currentUserIds = currentPattern?.Users?.Select(u => u.Id).ToList() ?? new List<int>();
 
-                        // Remove users that are no longer assigned
                         foreach (var userId in currentUserIds.Except(assignedUserIds))
                         {
                             await _httpClient.DeleteAsync($"{_apiUrl}/api/DefaultShiftPattern/{id}/User/{userId}");
                         }
 
-                        // Add newly assigned users
                         foreach (var userId in assignedUserIds.Except(currentUserIds))
                         {
                             await _httpClient.PostAsync($"{_apiUrl}/api/DefaultShiftPattern/{id}/User/{userId}", null);
                         }
                     }
 
-                    return RedirectToAction(nameof(ShiftPatterns));
+                    return RedirectToAction(nameof(Index));
                 }
 
                 var errorMessage = await response.Content.ReadAsStringAsync();
                 ModelState.AddModelError(string.Empty, $"Error updating shift pattern: {errorMessage}");
             }
 
-            // If we get here, something failed - reload the form
             var usersApiUrl = ApiRoutes.User.GetPaginated(1, 20);
             var userResponse = await _httpClient.GetAsync(usersApiUrl);
             if (userResponse.IsSuccessStatusCode)
@@ -257,7 +249,7 @@ namespace PosClient.Controllers
                 {
                     Pattern = pattern,
                     AvailableUsers = users,
-                    AssignedUsers = new List<User>() // This will be empty on error, but the page will still work
+                    AssignedUsers = new List<User>()
                 };
 
                 return View(viewModel);
@@ -278,11 +270,11 @@ namespace PosClient.Controllers
 
             if (response.IsSuccessStatusCode)
             {
-                return RedirectToAction(nameof(ShiftPatterns));
+                return RedirectToAction(nameof(Index));
             }
 
             TempData["Error"] = "Could not delete the shift pattern.";
-            return RedirectToAction(nameof(ShiftPatterns));
+            return RedirectToAction(nameof(Index));
         }
     }
 }
