@@ -129,12 +129,9 @@ namespace PosClient.Controllers
         [HttpPost]
         public async Task<IActionResult> LoadShiftPatterns(int userId, DateTime weekStart)
         {
-            string? token = Request.Cookies["authToken"];
-            _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
-
             try
             {
-                var patternsResponse = await _httpClient.GetAsync($"{_apiUrl}/api/DefaultShiftPattern/User/{userId}");
+                var patternsResponse = await _apiService.GetAsync($"{_apiUrl}/api/DefaultShiftPattern/User/{userId}");
                 if (!patternsResponse.IsSuccessStatusCode)
                     return BadRequest("Could not load patterns");
 
@@ -146,7 +143,7 @@ namespace PosClient.Controllers
                 }
 
                 var weekEnd = weekStart.AddDays(7);
-                var schedulesResponse = await _httpClient.GetAsync(
+                var schedulesResponse = await _apiService.GetAsync(
                     $"{_apiUrl}/api/Schedule/{userId}/User?startDate={weekStart:yyyy-MM-dd}&endDate={weekEnd:yyyy-MM-dd}");
 
                 var existingSchedules = new List<Schedule>();
@@ -181,7 +178,7 @@ namespace PosClient.Controllers
                                     Encoding.UTF8,
                                     "application/json");
 
-                                var createResponse = await _httpClient.PostAsync($"{_apiUrl}/api/Schedule", content);
+                                var createResponse = await _apiService.PostAsync($"{_apiUrl}/api/Schedule", content);
                                 if (createResponse.IsSuccessStatusCode)
                                 {
                                     createdSchedules.Add(await createResponse.Content.ReadFromJsonAsync<Schedule>());

@@ -253,7 +253,7 @@ namespace PosClient.Controllers
 
         private async Task<DefaultShiftPatternCreateViewModel> ReloadViewModelWithUsers(DefaultShiftPattern pattern, int pageNumber = 1, int pageSize = 20)
         {
-            var usersApiUrl = ApiRoutes.User.GetPaginated(pageNumber, pageSize);
+            var usersApiUrl = ApiRoutes.User.ListPaginated(pageNumber, pageSize);
             var userResponse = await _httpClient.GetAsync(usersApiUrl);
             
             var viewModel = new DefaultShiftPatternCreateViewModel
