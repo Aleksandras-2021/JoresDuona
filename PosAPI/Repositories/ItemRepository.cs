@@ -2,6 +2,7 @@
 using PosAPI.Data.DbContext;
 using PosShared;
 using PosShared.Models;
+using PosShared.Models.Items;
 
 namespace PosAPI.Repositories
 {
@@ -88,15 +89,68 @@ namespace PosAPI.Repositories
         // Delete an item and its associated variations
         public async Task DeleteItemAsync(int id)
         {
-            var item = await _context.Items.FindAsync(id);
+            // Find the item to delete
+            var item = await _context.Items
+                .Include(i => i.OrderItems) // Ensure OrderItems are loaded
+                .FirstOrDefaultAsync(i => i.Id == id);
 
             if (item == null)
+            {
                 throw new KeyNotFoundException($"Item with ID {id} not found.");
+            }
 
-            var variations = await _context.ItemVariations.Where(v => v.ItemId == id).ToListAsync();
-            _context.ItemVariations.RemoveRange(variations);
+            //  Create a placeholder item
+            var placeholderItem = await _context.Items
+                .FirstOrDefaultAsync(i => i.Name == "Deleted Item");
+            var placeHolderBusiness = await _context.Businesses
+                .FirstOrDefaultAsync(i => i.Name == "Place holder business for item");
+
+            
+            if (placeHolderBusiness == null)
+            {
+                // If the placeHolderBusiness doesn't exist, create it
+                placeHolderBusiness = new Business()
+                {
+                    Name = "Deleted Item",
+                    Address = "Deleted items go here",
+                    VATCode = "00000",
+                    Email = "deleteditemsemail@gmail.com",
+                    PhoneNumber = "123Deleted",
+                };
+
+                _context.Businesses.Add(placeHolderBusiness);
+                await _context.SaveChangesAsync();
+            }
+            
+            
+            if (placeholderItem == null)
+            {
+                // If the placeholder doesn't exist, create it
+                placeholderItem = new Item
+                {
+                    Name = "Deleted Item",
+                    BusinessId = placeHolderBusiness.Id,
+                    Description = "Item was deleted and is now a placeholder",
+                    Category = ItemCategory.Unlisted,
+                    BasePrice = 0,
+                    Price = 0,
+                    Quantity = 0
+                };
+
+                _context.Items.Add(placeholderItem);
+                await _context.SaveChangesAsync();
+            }
+
+            // Disassociate Item from OrderItems and point them to the placeholder item
+            foreach (var orderItem in item.OrderItems)
+            {
+                orderItem.ItemId = placeholderItem.Id; 
+            }
+            // Save changes to disassociate OrderItems from the deleted Item
+            await _context.SaveChangesAsync();
+
+            //Delete Item without affecting OrderItems
             _context.Items.Remove(item);
-
             await _context.SaveChangesAsync();
         }
 
