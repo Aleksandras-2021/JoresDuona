@@ -157,12 +157,13 @@ public async Task CreateAuthorizedReservationAsync(ReservationCreateDTO reservat
     {
         AuthorizationHelper.Authorize("Reservation", "Update", sender);
         var existingReservation = await  _reservationRepository.GetReservationByIdAsync(reservationId);
+        Console.WriteLine("EXISTING VAR: " + existingReservation.Id);
         var service = await _serviceService.GetAuthorizedService(existingReservation.ServiceId, sender);
 
         var startTime = reservation.ReservationTime;
         var endTime = reservation.ReservationTime.AddMinutes(service.DurationInMinutes);
 
-        var isOverlapping = await _reservationRepository.IsReservationOverlappingAsync(service.Id, startTime, endTime,reservationId);
+        var isOverlapping = await _reservationRepository.IsReservationOverlappingAsync(service.Id, startTime, endTime,existingReservation.Id);
         var isEmployeeAvailable = await IsValidShiftForReservationAsync(service.EmployeeId, sender, startTime);
 
         if (!isEmployeeAvailable || isOverlapping || startTime < DateTime.Now.ToUniversalTime())
@@ -170,16 +171,13 @@ public async Task CreateAuthorizedReservationAsync(ReservationCreateDTO reservat
                                                      $"\n IsOverlapping: {isOverlapping} \n" +
                                                      $"START {startTime}, NOW: {DateTime.Now.ToUniversalTime()}");
 
-        var newReservation = new Reservation()
-        {
-            ServiceId = reservation.ServiceId,
-            ReservationTime = startTime,
-            ReservationEndTime = endTime,
-            CustomerName = reservation.CustomerName,
-            CustomerPhone = reservation.CustomerPhone,
-        };
-
-        await _reservationRepository.UpdateReservationAsync(newReservation);
+        existingReservation.ServiceId = reservation.ServiceId;
+        existingReservation.ReservationTime = startTime;
+        existingReservation.ReservationEndTime = endTime;
+        existingReservation.CustomerName = reservation.CustomerName;
+        existingReservation.CustomerPhone = reservation.CustomerPhone;
+        
+        await _reservationRepository.UpdateReservationAsync(existingReservation);
     }
     
     private async Task<bool> IsValidShiftForReservationAsync(int userId,User? sender ,DateTime startTime)

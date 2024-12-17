@@ -171,17 +171,7 @@ namespace PosAPI.Repositories
 
         public async Task UpdateReservationAsync(Reservation reservation)
         {
-            var existingReservation = await _context.Reservations.FindAsync(reservation.Id);
-
-            if (existingReservation == null)
-                throw new KeyNotFoundException($"Reservation with ID {reservation.Id} not found.");
-
-            existingReservation.ReservationTime = reservation.ReservationTime;
-            existingReservation.ReservationEndTime = reservation.ReservationEndTime;
-            existingReservation.CustomerName = reservation.CustomerName;
-            existingReservation.CustomerPhone = reservation.CustomerPhone;
-
-            // Save changes
+            _context.Reservations.Update(reservation);
             await _context.SaveChangesAsync();
         }
 
