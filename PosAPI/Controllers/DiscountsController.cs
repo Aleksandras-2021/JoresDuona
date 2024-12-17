@@ -1,9 +1,11 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using PosAPI.Repositories.Interfaces;
 using PosShared.DTOs;
 using PosShared.Models;
 using System.Net.Http;
+using System.Security.Claims;
 using System.Text.Json;
 
 namespace PosAPI.Controllers;
@@ -56,13 +58,12 @@ public class DiscountsController : ControllerBase
 
         return Ok(discountDto);
     }
-
+    [Authorize]
     [HttpPost]
     public async Task<IActionResult> CreateDiscount([FromBody] DiscountDto discountDto)
     {
         if (!ModelState.IsValid)
         {
-            // Detailed ModelState logging
             foreach (var state in ModelState)
             {
                 foreach (var error in state.Value.Errors)
@@ -73,9 +74,12 @@ public class DiscountsController : ControllerBase
             return BadRequest(ModelState);
         }
 
+        // Automatically assign BusinessId based on sender's claims
+        var userBusinessId = GetUserBusinessId();
+
         var discount = new Discount
         {
-            BusinessId = discountDto.BusinessId,
+            BusinessId = userBusinessId,
             Description = discountDto.Description,
             Amount = discountDto.Amount,
             IsPercentage = discountDto.IsPercentage,
@@ -84,7 +88,18 @@ public class DiscountsController : ControllerBase
         };
 
         await _discountRepository.AddAsync(discount);
-        return CreatedAtAction(nameof(GetDiscount), new { id = discount.Id }, discountDto);
+
+        // Return the created discount (without IDs in DiscountDto)
+        var responseDto = new DiscountDto
+        {
+            Description = discount.Description,
+            Amount = discount.Amount,
+            IsPercentage = discount.IsPercentage,
+            ValidFrom = discount.ValidFrom,
+            ValidTo = discount.ValidTo
+        };
+
+        return CreatedAtAction(nameof(GetDiscount), new { id = discount.Id }, responseDto);
     }
 
     [HttpPut("{id}")]
@@ -97,45 +112,28 @@ public class DiscountsController : ControllerBase
 
         try
         {
-            Console.WriteLine($"Update Request Started for ID: {id}");
-            Console.WriteLine($"Payload: {JsonSerializer.Serialize(discountDto)}");
-
             var existingDiscount = await _discountRepository.GetByIdAsync(id);
-            if (existingDiscount == null)
-            {
-                Console.WriteLine($"Discount with ID {id} not found.");
-                return NotFound("Discount not found");
-            }
+            if (existingDiscount == null) return NotFound("Discount not found");
 
-
-            existingDiscount.BusinessId = discountDto.BusinessId > 0 ? discountDto.BusinessId : 1; 
+            // Update properties
             existingDiscount.Description = discountDto.Description;
             existingDiscount.Amount = discountDto.Amount;
             existingDiscount.IsPercentage = discountDto.IsPercentage;
             existingDiscount.ValidFrom = DateTime.SpecifyKind(discountDto.ValidFrom, DateTimeKind.Utc);
             existingDiscount.ValidTo = DateTime.SpecifyKind(discountDto.ValidTo, DateTimeKind.Utc);
 
-            Console.WriteLine("Attempting to update Discount in the repository...");
-
             await _discountRepository.UpdateAsync(existingDiscount);
-
-            Console.WriteLine($"Discount ID {id} updated successfully.");
             return NoContent();
         }
         catch (DbUpdateException dbEx)
         {
-            Console.WriteLine($"Database Update Error: {dbEx.InnerException?.Message}");
             return StatusCode(500, $"Database Error: {dbEx.InnerException?.Message}");
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Unexpected Error: {ex.Message}");
-            Console.WriteLine(ex.StackTrace);
             return StatusCode(500, $"Internal Server Error: {ex.Message}");
         }
     }
-
-
 
     [HttpDelete("{id}")]
     public async Task<IActionResult> DeleteDiscount(int id)
@@ -143,5 +141,12 @@ public class DiscountsController : ControllerBase
         await _discountRepository.DeleteAsync(id);
         return NoContent();
     }
-   
+
+    // Helper Method to Get User's Business ID
+    private int GetUserBusinessId()
+    {
+        var claim = User.Claims.FirstOrDefault(c => c.Type == "BusinessId");
+        if (claim == null) throw new UnauthorizedAccessException("User BusinessId not found in token claims.");
+        return int.Parse(claim.Value);
+    }
 }

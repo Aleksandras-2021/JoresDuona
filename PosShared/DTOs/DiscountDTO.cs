@@ -21,8 +21,8 @@ public class DiscountDto
     public bool IsPercentage { get; set; }
 
     [Required]
-    public DateTime ValidFrom { get; set; }
+    public DateTime ValidFrom { get; set; } = DateTime.UtcNow;
 
     [Required]
-    public DateTime ValidTo { get; set; }
+    public DateTime ValidTo { get; set; } = DateTime.UtcNow.AddDays(7);
 }

@@ -93,4 +93,5 @@ public class BusinessRepository : IBusinessRepository
         return await _context.Businesses.ToListAsync();
 
     }
+
 }

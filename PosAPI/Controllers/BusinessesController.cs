@@ -5,6 +5,7 @@ using PosAPI.Repositories;
 using PosAPI.Services;
 using PosAPI.Services.Interfaces;
 using PosShared.Models;
+using PosAPI.Repositories.Interfaces;
 
 namespace PosAPI.Controllers;
 
@@ -16,13 +17,15 @@ public class BusinessesController : ControllerBase
     private readonly IBusinessService _businessService;
     private readonly IUserTokenService _userTokenService;
     private readonly ILogger<BusinessesController> _logger;
+    private readonly IBusinessRepository _businessRepository;
 
 
-    public BusinessesController(IBusinessService businessService, IUserTokenService userTokenService, ILogger<BusinessesController> logger)
+    public BusinessesController(IBusinessService businessService, IUserTokenService userTokenService, ILogger<BusinessesController> logger, IBusinessRepository businessRepository)
     {
         _businessService = businessService;
         _userTokenService = userTokenService;
         _logger = logger;
+        _businessRepository = businessRepository;
     }
 
     // GET: api/Businesses
@@ -84,4 +87,21 @@ public class BusinessesController : ControllerBase
         await _businessService.DeleteAuthorizedBusinessAsync(id, sender);
         return Ok($"Business with ID {id} deleted.");
     }
+
+    [HttpGet("list")]
+    public async Task<IActionResult> GetBusinesses()
+    {
+        // Fetch businesses from the database using the repository
+        var businesses = await _businessRepository.GetAllAsync();
+
+        var businessDtos = businesses.Select(b => new
+        {
+            Id = b.Id,
+            Name = b.Name
+        });
+
+        return Ok(businessDtos);
+    }
+
+
 }

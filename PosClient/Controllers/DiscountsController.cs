@@ -61,30 +61,49 @@ public class DiscountsController : Controller
     [HttpPost]
     public async Task<IActionResult> Create(DiscountDto discountDto)
     {
+        ViewBag.DebugInfo = "Create Action Started\n";
+
         if (!ModelState.IsValid)
         {
+            ViewBag.DebugInfo += "ModelState is invalid.\n";
             TempData["Error"] = "Invalid input data.";
             return View(discountDto);
         }
 
         try
         {
+            ViewBag.DebugInfo += "Sending POST request to API...\n";
+            ViewBag.DebugInfo += $"Payload: {JsonSerializer.Serialize(discountDto)}\n";
+
             var response = await _httpClient.PostAsJsonAsync("Discounts", discountDto);
+
+            ViewBag.DebugInfo += $"API Response Status Code: {response.StatusCode}\n";
+            ViewBag.DebugInfo += $"Reason Phrase: {response.ReasonPhrase}\n";
+
+            // Log response body for debugging
+            var responseBody = await response.Content.ReadAsStringAsync();
+            ViewBag.DebugInfo += $"Response Body: {responseBody}\n";
 
             if (response.IsSuccessStatusCode)
             {
                 TempData["Success"] = "Discount created successfully.";
                 return RedirectToAction("Index");
             }
-            TempData["Error"] = $"Failed to create discount: {response.ReasonPhrase}";
+            else
+            {
+                TempData["Error"] = $"Failed to create discount: {response.ReasonPhrase}";
+            }
         }
         catch (Exception ex)
         {
+            ViewBag.DebugInfo += $"Exception: {ex.Message}\n";
+            ViewBag.DebugInfo += $"Stack Trace:\n{ex.StackTrace}\n";
             TempData["Error"] = $"An error occurred: {ex.Message}";
         }
 
         return View(discountDto);
     }
+
 
     // GET: Display edit form
     public async Task<IActionResult> Edit(int id)
@@ -176,21 +195,26 @@ public class DiscountsController : Controller
     {
         try
         {
-            // Temporary hardcoded data to verify UI behavior
-            var businesses = new List<Business>
-        {
-            new Business { Id = 1, Name = "Test Business 1" },
-            new Business { Id = 2, Name = "Test Business 2" }
-        };
+            // Fetch businesses from the API
+            var businesses = await _httpClient.GetFromJsonAsync<List<Business>>("Businesses/list");
 
-            ViewBag.Businesses = businesses;
+            if (businesses == null || !businesses.Any())
+            {
+                TempData["Error"] = "No businesses found.";
+                ViewBag.Businesses = new List<Business>();
+            }
+            else
+            {
+                ViewBag.Businesses = businesses;
+            }
         }
         catch (Exception ex)
         {
-            ViewBag.Error = "Error fetching businesses: " + ex.Message;
+            TempData["Error"] = $"Error fetching businesses: {ex.Message}";
             ViewBag.Businesses = new List<Business>();
         }
     }
+ 
 
 
 

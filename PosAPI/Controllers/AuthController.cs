@@ -11,6 +11,7 @@ using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using Microsoft.AspNetCore.Authorization;
 using PosAPI.Services.Interfaces;
+using static PosShared.ApiRoutes;
 
 namespace PosAPI.Controllers;
 
@@ -78,7 +79,7 @@ public class AuthController : ControllerBase
             return BadRequest("Invalid email or password.");
         }
 
-        var token = GenerateToken(user.Email, user.Id, user.Role);
+        var token = GenerateToken(user.Email, user.Id, user.Role, user.BusinessId);
 
         Response.Cookies.Append("authToken", token, new CookieOptions
         {
@@ -98,13 +99,14 @@ public class AuthController : ControllerBase
         });
     }
 
-    private string GenerateToken(string email, int userId, UserRole role)
+    private string GenerateToken(string email, int userId, UserRole role, int businessId)
     {
         var claims = new[]
         {
             new Claim(ClaimTypes.Name, email),
             new Claim("UserId", userId.ToString()),
             new Claim(ClaimTypes.Role, role.ToString()),
+            new Claim("BusinessId", businessId.ToString())
 
         };
 
