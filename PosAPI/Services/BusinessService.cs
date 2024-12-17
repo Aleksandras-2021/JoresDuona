@@ -17,13 +17,10 @@ public class BusinessService : IBusinessService
         _businessRepository = businessRepository;
     }
 
-    public async Task<PaginatedResult<Business>> GetAuthorizedBusinessesAsync(User? sender,
-        int pageNumber = 1,
+    public async Task<PaginatedResult<Business>> GetAuthorizedBusinessesAsync(User? sender, int pageNumber = 1,
         int pageSize = 10)
     {
         AuthorizationHelper.Authorize("Businesses", "List", sender);
-
-
         PaginatedResult<Business> business = null;
 
         if (sender.Role == UserRole.SuperAdmin)

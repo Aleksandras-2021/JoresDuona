@@ -2,33 +2,28 @@ using Microsoft.AspNetCore.Mvc;
 using PosShared;
 using PosShared.Models;
 using PosShared.ViewModels;
-using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
-using Microsoft.AspNetCore.Mvc.ModelBinding;
-using Microsoft.EntityFrameworkCore.Metadata.Internal;
+using PosClient.Services;
 using PosShared.DTOs;
 
 namespace PosClient.Controllers
 {
     public class ReservationController : Controller
     {
-        private readonly HttpClient _httpClient;
+        private readonly ApiService _apiService;
 
-        public ReservationController(HttpClient httpClient)
+        public ReservationController(ApiService apiService)
         {
-            _httpClient = httpClient;
+            _apiService = apiService;
         }
 
         // GET: Reservation
         [HttpGet]
         public async Task<IActionResult> Index()
         {
-            string? token = Request.Cookies["authToken"];
-            _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
-
-            var apiUrl = ApiRoutes.Reservation.Get;
-            var response = await _httpClient.GetAsync(apiUrl);
+            var apiUrl = ApiRoutes.Reservation.List;
+            var response = await _apiService.GetAsync(apiUrl);
         
             if (response.IsSuccessStatusCode)
             {
@@ -44,9 +39,6 @@ namespace PosClient.Controllers
         [HttpGet]
         public IActionResult Reserve(int serviceId)
         {
-            string? token = Request.Cookies["authToken"];
-            _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
-
             ReservationViewModel model = new ReservationViewModel()
             {
                 ServiceId = serviceId,
@@ -63,9 +55,6 @@ namespace PosClient.Controllers
         [HttpPost]
         public async Task<IActionResult> Reserve(ReservationViewModel model)
         {
-            string? token = Request.Cookies["authToken"];
-            _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
-            
             var dto = new ReservationCreateDTO()
             {
                 ServiceId = model.ServiceId,
@@ -77,10 +66,12 @@ namespace PosClient.Controllers
             
             var apiUrl = ApiRoutes.Reservation.Create;
             var content = new StringContent(JsonSerializer.Serialize(dto), Encoding.UTF8, "application/json");
-            var response = await _httpClient.PostAsync(apiUrl,content);
+            
+            var response = await _apiService.PostAsync(apiUrl,content);
 
             if (response.IsSuccessStatusCode)
             {
+                TempData["Message"] = $"Reservation created. {response.StatusCode}";
                return RedirectToAction("Index");
             }
 
@@ -93,14 +84,12 @@ namespace PosClient.Controllers
         [HttpPost]
         public async Task<IActionResult> Cancel(int reservationId)
         {
-            string? token = Request.Cookies["authToken"];
-            _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
-    
             var apiUrl = ApiRoutes.Reservation.Delete(reservationId);
-            var response = await _httpClient.DeleteAsync(apiUrl);
+            var response = await _apiService.DeleteAsync(apiUrl);
 
             if (response.IsSuccessStatusCode)
             {
+                TempData["Message"] = $"Reservation Canceled. {response.StatusCode}";
                 return RedirectToAction("Index");
             }
             TempData["Error"] = $"Could not delete reservation. {response.StatusCode}";

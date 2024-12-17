@@ -19,7 +19,7 @@ namespace PosAPI.Repositories
             }
             catch (DbUpdateException ex)
             {
-                throw new Exception("An error occurred while adding the new user to the database.", ex);
+                throw new DbUpdateException("An error occurred while adding the new user to the database.", ex);
             }
         }
 
@@ -34,7 +34,7 @@ namespace PosAPI.Repositories
             }
             catch (DbUpdateException ex)
             {
-                throw new Exception($"An error occurred while deleting the user {userId} from the database.", ex);
+                throw new DbUpdateException($"An error occurred while deleting the user {userId} from the database.", ex);
             }
         }
 
@@ -94,7 +94,7 @@ namespace PosAPI.Repositories
             }
             catch (DbUpdateException e)
             {
-                throw new Exception($"An error occurred while updating the user: {user.Id}.", e);
+                throw new DbUpdateException($"An error occurred while updating the user: {user.Id}.", e);
             }
         }
 

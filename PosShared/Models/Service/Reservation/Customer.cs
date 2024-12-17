@@ -1,3 +1,5 @@
+using System.Text.Json.Serialization;
+
 namespace PosShared.Models;
 
 public class Customer
@@ -10,5 +12,6 @@ public class Customer
 
     public string Phone { get; set; }
 
+    [JsonIgnore]
     public ICollection<Reservation> Reservations { get; set; }
 }

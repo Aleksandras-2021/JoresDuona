@@ -72,7 +72,7 @@ namespace PosAPI.Repositories
             }
             catch (DbUpdateException ex)
             {
-                throw new Exception("An error occurred while adding the new reservation to the database.", ex);
+                throw new DbUpdateException("An error occurred while adding the new reservation to the database.", ex);
             }
             
         }

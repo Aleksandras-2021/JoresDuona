@@ -13,154 +13,37 @@ public class ReservationController : ControllerBase
 {
     private readonly IServiceService _serviceService;
     private readonly IReservationRepository _reservationRepository;
-    private readonly IServiceRepository _serviceRepository;
-    private readonly IUserRepository _userRepository;
-    private readonly ILogger<ReservationController> _logger;
+    private readonly IUserTokenService _userTokenService;
 
-    public ReservationController(
-        IServiceService serviceService,
-        IReservationRepository reservationRepository,
-        IServiceRepository serviceRepository,
-        IUserRepository userRepository,
-        ILogger<ReservationController> logger)
+    public ReservationController(IServiceService serviceService, IReservationRepository reservationRepository,
+        IUserTokenService userTokenService)
     {
         _serviceService = serviceService;
         _reservationRepository = reservationRepository;
-        _serviceRepository = serviceRepository;
-        _userRepository = userRepository;
-        _logger = logger;
+        _userTokenService = userTokenService;
     }
 
     [HttpGet]
     public async Task<IActionResult> GetAll()
     {
-        User? sender = await GetUserFromToken();
-        if (sender == null)
-            return Unauthorized();
-
-        try 
-        {
-            var reservations = await _reservationRepository.GetAllReservationsAsync();
-            return Ok(reservations);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError($"Error getting reservations: {ex.Message}");
-            return StatusCode(500, "Internal server error");
-        }
+        User? sender = await _userTokenService.GetUserFromTokenAsync();
+        var reservations = await _reservationRepository.GetAllReservationsAsync();
+        return Ok(reservations);
     }
-
-    [HttpGet("services/{serviceId}/available-slots")]
-    public async Task<IActionResult> GetAvailableSlots(int serviceId, DateTime date)
-    {
-
-        //Unimplemented
-        User? sender = await GetUserFromToken();
-        if (sender == null)
-            return Unauthorized();
-
-        try
-        {
-            var slots = await _serviceService.GetAvailableTimeSlots(serviceId);
-            return Ok(slots);
-        }
-        catch (KeyNotFoundException ex)
-        {
-            _logger.LogError($"{ex.Message}");
-            return NotFound(ex.Message);
-        }
-        catch (UnauthorizedAccessException ex)
-        {
-            _logger.LogWarning($"403 Status, User {sender.Id}. {ex.Message}");
-            return StatusCode(403, $"Forbidden {ex.Message}");
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError($"Error deleting reservation: {ex.Message}");
-            return StatusCode(500, "Internal server error");
-        }
-    }
-
+    
     [HttpPost]
     public async Task<IActionResult> Create([FromBody] ReservationCreateDTO dto)
     {
-        User? sender = await GetUserFromToken();
-
-        try
-        {
-            await _serviceService.CreateAuthorizedReservation(dto, sender);
-            return Ok();
-        }
-        catch (KeyNotFoundException ex)
-        {
-            _logger.LogError($"{ex.Message}");
-            return NotFound(ex.Message);
-        }
-        catch (UnauthorizedAccessException ex)
-        {
-            _logger.LogWarning($"403 Status, User {sender.Id}. {ex.Message}");
-            return StatusCode(403, $"Forbidden {ex.Message}");
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError($"Error deleting reservation: {ex.Message}");
-            return StatusCode(500, "Internal server error");
-        }
+        User? sender = await _userTokenService.GetUserFromTokenAsync();
+        await _serviceService.CreateAuthorizedReservation(dto, sender);
+        return Ok();
     }
-    
     
     [HttpDelete("{reservationId}")]
     public async Task<IActionResult> Delete(int reservationId)
     {
-        User? sender = await GetUserFromToken();
-
-        try
-        {
-            await _serviceService.DeleteAuthorizedReservationAsync(reservationId,sender);
-            return Ok();
-        }
-        catch (KeyNotFoundException ex)
-        {
-            _logger.LogError($"{ex.Message}");
-            return NotFound(ex.Message);
-        }
-        catch (UnauthorizedAccessException ex)
-        {
-            _logger.LogWarning($"403 Status, User {sender.Id}. {ex.Message}");
-            return StatusCode(403, $"Forbidden {ex.Message}");
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError($"Error deleting reservation: {ex.Message}");
-            return StatusCode(500, "Internal server error");
-        }
+        User? sender = await _userTokenService.GetUserFromTokenAsync();
+        await _serviceService.DeleteAuthorizedReservationAsync(reservationId,sender);
+        return Ok();
     }
-
-
-    // Add other reservation-related endpoints: modify, cancel, etc.
-
-    #region HelperMethods
-    private async Task<User?> GetUserFromToken()
-    {
-        string token = HttpContext.Request.Headers["Authorization"].ToString();
-
-        if (string.IsNullOrEmpty(token))
-        {
-            _logger.LogWarning("Authorization token is missing or null.");
-            return null;
-        }
-
-        int? userId = Ultilities.ExtractUserIdFromToken(token);
-        User? user = await _userRepository.GetUserByIdAsync(userId);
-
-        if (user == null)
-        {
-            _logger.LogWarning($"Failed to find user with {userId} in DB");
-            return null;
-        }
-
-        return user;
-
-    }
-    #endregion
 }

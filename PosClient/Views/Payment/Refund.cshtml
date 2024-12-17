@@ -1,0 +1,64 @@
+﻿@using PosShared.Models
+@model PosShared.ViewModels.RefundViewModel
+
+@if (TempData["Error"] != null)
+{
+    <div class="alert alert-danger">
+        <i class="bi bi-exclamation-circle"></i> @TempData["Error"]
+    </div>
+}
+
+@if (TempData["Message"] != null)
+{
+    <div class="alert alert-info">
+        <i class="bi bi-exclamation-circle"></i> @TempData["Message"]
+    </div>
+}
+
+@if (Model != null && Model.Payments.Any())
+{
+    <div class="card" style="width: 100%; max-width: 800px; margin: 20px auto; padding: 20px; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); border-radius: 8px; background-color: #f9f9f9;">
+        <h2 class="card-title text-center" style="margin-bottom: 20px; font-size: 1.5rem;">Refund Payment</h2>
+        
+        <p><strong>Order ID:</strong> @Model.Payments.FirstOrDefault()?.OrderId</p>
+        
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>Payment ID</th>
+                    <th>Amount</th>
+                    <th>Payment Date</th>
+                    <th>Payment Method</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var payment in Model.Payments)
+                {
+                    <tr>
+                        <td>@payment.Id</td>
+                        <td>@payment.Amount.ToString("C")</td>
+                        <td>@payment.PaymentDate.ToShortDateString()</td>
+                        <td>@payment.PaymentMethod</td>
+                        <td>
+                            <form asp-action="Refund" asp-controller="Payment" method="post" style="margin: 0;">
+                                <input type="hidden" name="paymentId" value="@payment.Id" />
+                                <input type="hidden" name="RefundAmount" value="@payment.Amount" />
+                                <input type="hidden" name="Reason" value="@Model.Reason" />
+                                <input type="hidden" name="RefundDate" value="@Model.RefundDate.ToString("o")" />
+                                
+                                <button type="submit" class="btn btn-danger btn-sm">Refund</button>
+                            </form>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}
+else
+{
+    <div class="alert alert-warning text-center">
+        No payments found for this order.
+    </div>
+}

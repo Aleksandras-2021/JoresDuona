@@ -47,7 +47,7 @@ namespace PosAPI.Repositories
 
             if (!userExists)
             {
-                throw new Exception($"User with ID {schedule.UserId} does not exist.");
+                throw new KeyNotFoundException($"User with ID {schedule.UserId} does not exist.");
             }
 
             if (schedule.User == null)
@@ -60,7 +60,7 @@ namespace PosAPI.Repositories
 
             if (schedule.EndTime <= schedule.StartTime)
             {
-                throw new Exception("End time must be after start time.");
+                throw new KeyNotFoundException("End time must be after start time.");
             }
 
             var hasOverlap = await _context.Schedules
@@ -84,7 +84,7 @@ namespace PosAPI.Repositories
             }
             catch (DbUpdateException ex)
             {
-                throw new Exception("An error occurred while adding the new schedule to the database.", ex);
+                throw new DbUpdateException("An error occurred while adding the new schedule to the database.", ex);
             }
         }
 

@@ -1,14 +1,9 @@
-namespace PosShared.Models;
+namespace PosShared.DTOs;
 
-
-public class Refund
+public class RefundDTO
 {
-    public int Id { get; set; }
-
     public int PaymentId { get; set; }
-
-    public Payment? Payment { get; set; }
-
+    
     public DateTime RefundDate { get; set; }
 
     public decimal Amount { get; set; }

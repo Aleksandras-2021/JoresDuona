@@ -12,30 +12,23 @@ namespace PosClient.Controllers
     public class TaxController : Controller
     {
 
-        private readonly HttpClient _httpClient;
-        private readonly IUserSessionService _userSessionService;
-
+        private readonly ApiService _apiService;
 
         private readonly string _apiUrl = ApiRoutes.ApiBaseUrl;
 
-        public TaxController(HttpClient httpClient, IUserSessionService userSessionService)
+        public TaxController(ApiService apiService, IUserSessionService userSessionService)
         {
-            _httpClient = httpClient;
-            _userSessionService = userSessionService;
+            _apiService = apiService;
         }
 
         [HttpGet]
         public async Task<IActionResult> Index()
         {
-            string? token = Request.Cookies["authToken"];
-
-            _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
-
-            var response = await _httpClient.GetAsync(_apiUrl + "/api/Tax");
+            var response = await _apiService.GetAsync(_apiUrl + "/api/Tax");
             if (response.IsSuccessStatusCode)
             {
                 var taxData = await response.Content.ReadAsStringAsync();
-                var taxes = JsonSerializer.Deserialize<List<Tax>>(taxData, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+                var taxes = JsonSerializer.Deserialize<List<Tax>>(taxData, JsonOptions.Default);
                 return View(taxes);
             }
 
@@ -52,11 +45,8 @@ namespace PosClient.Controllers
         [HttpPost]
         public async Task<IActionResult> Create(TaxDTO tax)
         {
-            string? token = Request.Cookies["authToken"];
-            _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
-
             var content = new StringContent(JsonSerializer.Serialize(tax), Encoding.UTF8, "application/json");
-            var response = await _httpClient.PostAsync(_apiUrl + $"/api/Tax", content);
+            var response = await _apiService.PostAsync(_apiUrl + $"/api/Tax", content);
 
             if (response.IsSuccessStatusCode)
             {
@@ -70,14 +60,11 @@ namespace PosClient.Controllers
         [HttpGet]
         public async Task<IActionResult> Edit(int id)
         {
-            string? token = Request.Cookies["authToken"];
-            _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
-
-            var response = await _httpClient.GetAsync(_apiUrl + $"/api/Tax/{id}");
+            var response = await _apiService.GetAsync(_apiUrl + $"/api/Tax/{id}");
             if (response.IsSuccessStatusCode)
             {
                 var taxData = await response.Content.ReadAsStringAsync();
-                var tax = JsonSerializer.Deserialize<Tax>(taxData, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+                var tax = JsonSerializer.Deserialize<Tax>(taxData, JsonOptions.Default);
                 TaxDTO taxDto = new TaxDTO()
                 {
                     Amount = tax.Amount,
@@ -96,12 +83,9 @@ namespace PosClient.Controllers
         [HttpPost]
         public async Task<IActionResult> Edit(int id, TaxDTO tax)
         {
-            string? token = Request.Cookies["authToken"];
-            _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
-
             var content = new StringContent(JsonSerializer.Serialize(tax), Encoding.UTF8, "application/json");
 
-            var response = await _httpClient.PutAsync(_apiUrl + $"/api/Tax/{id}", content);
+            var response = await _apiService.PutAsync(_apiUrl + $"/api/Tax/{id}", content);
 
             if (response.IsSuccessStatusCode)
             {
@@ -115,10 +99,7 @@ namespace PosClient.Controllers
         [HttpPost]
         public async Task<IActionResult> Delete(int id)
         {
-            string? token = Request.Cookies["authToken"];
-            _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
-
-            var response = await _httpClient.DeleteAsync(_apiUrl + $"/api/Tax/{id}");
+            var response = await _apiService.DeleteAsync(_apiUrl + $"/api/Tax/{id}");
             if (response.IsSuccessStatusCode)
             {
                 return RedirectToAction("Index");
@@ -127,8 +108,6 @@ namespace PosClient.Controllers
             TempData["Error"] = "Failed to delete tax. Please try again.";
             return RedirectToAction("Index");
         }
-
-
-
+        
     }
 }

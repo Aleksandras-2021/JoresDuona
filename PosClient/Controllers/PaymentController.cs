@@ -3,7 +3,6 @@ using PosClient.Services;
 using PosShared.DTOs;
 using PosShared.Models;
 using PosShared;
-using System.Net.Http.Headers;
 using System.Text.Json;
 using System.Text;
 using PosShared.ViewModels;
@@ -12,23 +11,17 @@ namespace PosClient.Controllers;
 
 public class PaymentController : Controller
 {
-
-    private readonly HttpClient _httpClient;
-    private readonly IUserSessionService _userSessionService;
-
-
     private readonly string _apiUrl = ApiRoutes.ApiBaseUrl;
+    private readonly ApiService _apiService;
 
-    public PaymentController(HttpClient httpClient, IUserSessionService userSessionService)
+    public PaymentController(ApiService apiService)
     {
-        _httpClient = httpClient;
-        _userSessionService = userSessionService;
+        _apiService = apiService;
     }
 
     [HttpGet]
     public IActionResult Create(int orderId, decimal untaxedAmount, decimal tax)
     {
-        // Initialize the PaymentViewModel using the query string parameters
         var paymentViewModel = new PaymentViewModel
         {
             OrderId = orderId,
@@ -43,9 +36,6 @@ public class PaymentController : Controller
     [HttpPost]
     public async Task<IActionResult> Create(PaymentViewModel paymentViewModel)
     {
-        string? token = Request.Cookies["authToken"];
-        _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
-
         AddPaymentDTO payment = new AddPaymentDTO()
         {
             Amount = paymentViewModel.Amount,
@@ -54,26 +44,80 @@ public class PaymentController : Controller
         };
 
         var content = new StringContent(JsonSerializer.Serialize(payment), Encoding.UTF8, "application/json");
-        var response = await _httpClient.PostAsync(_apiUrl + $"/api/Payment", content);
+        var response = await _apiService.PostAsync(ApiRoutes.Payment.Create, content);
 
         if (response.IsSuccessStatusCode)
         {
+            TempData["Message"] = $"Payment successfully added";
             return RedirectToAction("Index", "Order");
         }
 
-        TempData["Error"] = "Failed to create Payment. Please try again.\n" + response.ToString();
+        TempData["Error"] = "Failed to create Payment. Please try again. \n" + response.StatusCode;
         return View(paymentViewModel);
+    }
+    
+    [HttpGet]
+    public async Task<IActionResult> Refund(int orderId, decimal untaxedAmount, decimal tax)
+    {
+        var apiUrl = ApiRoutes.Order.GetOrderPayments(orderId);
+        var response = await _apiService.GetAsync(apiUrl);
+
+        if (response.IsSuccessStatusCode)
+        {
+            var paymentData = await response.Content.ReadAsStringAsync();
+            var payments = JsonSerializer.Deserialize<List<Payment>>(paymentData,JsonOptions.Default);
+
+            if (payments != null && payments.Any())
+            {
+                DateTime today = DateTime.Today;
+                today = DateTime.SpecifyKind(today, DateTimeKind.Utc);
+
+                var model = new RefundViewModel() 
+                {
+                    Payments = payments.Where(p => p.Amount > 0).ToList(),
+                    RefundDate = today,
+                    Amount = untaxedAmount + tax,
+                    Reason = string.Empty,
+                };
+
+                return View("Refund", model);
+            }
+        }
+
+        TempData["Error"] = "Failed to get Payments. Please try again. \n" + response.StatusCode;
+
+        return RedirectToAction("Index", "Order");
+    }
+
+    [HttpPost]
+    public async Task<IActionResult> Refund(RefundViewModel model,int paymentId)
+    {
+        var refund = new RefundDTO()
+        {
+            Amount = model.Amount,
+            PaymentId = paymentId,
+            RefundDate = model.RefundDate,
+            Reason = model.Reason
+        };
+
+        var content = new StringContent(JsonSerializer.Serialize(refund), Encoding.UTF8, "application/json");
+        var response = await _apiService.PostAsync(ApiRoutes.Payment.CreateRefund(paymentId), content);
+
+        if (response.IsSuccessStatusCode)
+        {
+            TempData["Message"] = $"Payment {paymentId} successfully refunded";
+            return RedirectToAction("Index", "Order");
+        }
+
+        TempData["Error"] = "Failed to create Payment. \n" + response.StatusCode;
+        return RedirectToAction("Refund");
     }
 
     [HttpGet]
     public async Task<IActionResult> GetOrderPayments(int orderId)
     {
-        string? token = Request.Cookies["authToken"];
-
-        _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
-
-        var apiUrl = _apiUrl + $"/api/Payment/Order/{orderId}";
-        var response = await _httpClient.GetAsync(apiUrl);
+        var apiUrl = ApiRoutes.Order.GetOrderPayments(orderId);
+        var response = await _apiService.GetAsync(apiUrl);
 
         if (response.IsSuccessStatusCode)
         {
@@ -99,21 +143,11 @@ public class PaymentController : Controller
     [HttpGet]
     public async Task<IActionResult> GetOrderReceipt(int orderId)
     {
-        string? token = Request.Cookies["authToken"];
-
-        if (string.IsNullOrEmpty(token))
-        {
-            TempData["Error"] = "Authentication token is missing.";
-            return Unauthorized();
-        }
-
-        _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
-
         try
         {
             // Get Order Items
             var orderApiUrl = ApiRoutes.Order.GetById(orderId);
-            var orderResponse = await _httpClient.GetAsync(orderApiUrl);
+            var orderResponse = await _apiService.GetAsync(orderApiUrl);
             Order? order = null;
 
             if (orderResponse.IsSuccessStatusCode)
@@ -123,15 +157,13 @@ public class PaymentController : Controller
             }
             else
             {
-                TempData["Error"] = "Couldn't retrieve order.";
+                TempData["Error"] = "Couldn't retrieve order." + orderResponse.StatusCode;
 
             }
             
-            
-            
             // Get Order Items
             var orderItemsApiUrl = ApiRoutes.OrderItems.GetOrderItems(orderId);
-            var orderItemsResponse = await _httpClient.GetAsync(orderItemsApiUrl);
+            var orderItemsResponse = await _apiService.GetAsync(orderItemsApiUrl);
 
             List<OrderItem>? orderItems = null;
 
@@ -147,7 +179,7 @@ public class PaymentController : Controller
 
             // Get Order Item Variations
             var orderItemVariationsApiUrl = ApiRoutes.Order.GetOrderVariations(orderId);
-            var orderItemVariationsResponse = await _httpClient.GetAsync(orderItemVariationsApiUrl);
+            var orderItemVariationsResponse = await _apiService.GetAsync(orderItemVariationsApiUrl);
 
             List<OrderItemVariation>? orderItemVariations = null;
             if (orderItemVariationsResponse.IsSuccessStatusCode)
@@ -161,7 +193,7 @@ public class PaymentController : Controller
             }
             
             var orderServicesApiUrl = ApiRoutes.Order.GetOrderServices(orderId);
-            var orderServicesResponse = await _httpClient.GetAsync(orderServicesApiUrl);
+            var orderServicesResponse = await _apiService.GetAsync(orderServicesApiUrl);
 
             List<OrderService>? orderServices = null;
             if (orderServicesResponse.IsSuccessStatusCode)
@@ -174,31 +206,8 @@ public class PaymentController : Controller
                 orderServices = new List<OrderService>();
             }
             
+            decimal total = order.ChargeAmount + order.TaxAmount + order.TipAmount;
             
-            decimal totalTax = 0;
-            decimal totalCharge = 0;
-            decimal total = 0;
-
-
-            foreach (var item in orderItems)
-            {
-                totalCharge += item.Price * item.Quantity;
-                totalTax += item.TaxedAmount * item.Quantity;
-            }
-
-            foreach (var variation in orderItemVariations)
-            {
-                totalCharge += variation.AdditionalPrice * variation.Quantity;
-                totalTax += variation.TaxedAmount * variation.Quantity;
-            }
-            foreach (var service in orderServices)
-            {
-                totalCharge += service.Charge;
-                totalTax += service.Tax;
-            }
-            
-            total = totalTax + totalCharge + order.TipAmount;
-
             var model = new ReceiptViewModel()
             {
                 OrderId = orderId,
@@ -208,9 +217,9 @@ public class PaymentController : Controller
                 OrderItemVariatons = orderItemVariations,
                 OrderServices = orderServices,
                 Total = total,
-                TotalCharge = totalCharge,
+                TotalCharge = order.ChargeAmount,
                 Tips = order.TipAmount,
-                TotalTax = totalTax,
+                TotalTax = order.TaxAmount,
             };
 
             return View("Receipt", model);
