@@ -15,22 +15,9 @@
   <component name="ChangeListManager">
     <list default="true" id="fe899842-ea22-4e77-98e6-59d0bab7b320" name="Changes" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/.idea.JoresDuona/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/.idea.JoresDuona/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/PosAPI/Middlewares/AuthorizationHelper.cs" beforeDir="false" afterPath="$PROJECT_DIR$/PosAPI/Ultility/AuthorizationHelper.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/PosAPI/Middlewares/BusinessRuleViolationException.cs" beforeDir="false" afterPath="$PROJECT_DIR$/PosAPI/Exceptions/BusinessRuleViolationException.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/PosAPI/Middlewares/RolePermissions.cs" beforeDir="false" afterPath="$PROJECT_DIR$/PosAPI/Ultility/RolePermissions.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/PosAPI/Services/UserService.cs" beforeDir="false" afterPath="$PROJECT_DIR$/PosAPI/Services/UserService.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/PosClient/Controllers/BusinessController.cs" beforeDir="false" afterPath="$PROJECT_DIR$/PosClient/Controllers/BusinessController.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/PosClient/Controllers/HomeController.cs" beforeDir="false" afterPath="$PROJECT_DIR$/PosClient/Controllers/HomeController.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/PosClient/Controllers/ItemsController.cs" beforeDir="false" afterPath="$PROJECT_DIR$/PosClient/Controllers/ItemsController.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/PosClient/Controllers/OrderController.cs" beforeDir="false" afterPath="$PROJECT_DIR$/PosClient/Controllers/OrderController.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/PosClient/Controllers/PaymentController.cs" beforeDir="false" afterPath="$PROJECT_DIR$/PosClient/Controllers/PaymentController.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/PosClient/Controllers/ReservationController.cs" beforeDir="false" afterPath="$PROJECT_DIR$/PosClient/Controllers/ReservationController.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/PosClient/Controllers/ScheduleController.cs" beforeDir="false" afterPath="$PROJECT_DIR$/PosClient/Controllers/ScheduleController.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/PosClient/Controllers/ServiceController.cs" beforeDir="false" afterPath="$PROJECT_DIR$/PosClient/Controllers/ServiceController.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/PosClient/Controllers/UserController.cs" beforeDir="false" afterPath="$PROJECT_DIR$/PosClient/Controllers/UserController.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/PosShared/Ultilities/JsonOptions.cs" beforeDir="false" afterPath="$PROJECT_DIR$/PosClient/Ultility/JsonOptions.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/PosShared/Ultilities/Ultilities.cs" beforeDir="false" afterPath="$PROJECT_DIR$/PosAPI/Ultility/Ultilities.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/PosShared/UserProfileSessionData.cs" beforeDir="false" afterPath="$PROJECT_DIR$/PosShared/UserProfileSessionData.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/PosAPI/Repositories/ReservationRepository.cs" beforeDir="false" afterPath="$PROJECT_DIR$/PosAPI/Repositories/ReservationRepository.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/PosAPI/Services/ReservationService.cs" beforeDir="false" afterPath="$PROJECT_DIR$/PosAPI/Services/ReservationService.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/PosClient/Views/Reservation/Edit.cshtml" beforeDir="false" afterPath="$PROJECT_DIR$/PosClient/Views/Reservation/Edit.cshtml" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -59,7 +46,7 @@
     "RunOnceActivity.OpenProjectViewOnStart": "true",
     "RunOnceActivity.ShowReadmeOnStart": "true",
     "WebServerToolWindowFactoryState": "false",
-    "git-widget-placeholder": "main",
+    "git-widget-placeholder": "feature/reservationedit",
     "node.js.detected.package.eslint": "true",
     "node.js.selected.package.eslint": "(autodetect)",
     "node.js.selected.package.tslint": "(autodetect)",

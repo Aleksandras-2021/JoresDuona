@@ -88,7 +88,7 @@ public async Task CreateAuthorizedReservationAsync(ReservationCreateDTO reservat
 
             // 3. Check for overlapping reservations
             var isOverlapping = await _reservationRepository.IsReservationOverlappingAsync(reservation.ServiceId, startTime, endTime);
-            var isEmployeeAvailable = await IsValidShiftForReservationAsync(sender.Id, sender, startTime);
+            var isEmployeeAvailable = await IsValidShiftForReservationAsync(service.EmployeeId, sender, startTime);
 
             if (!isEmployeeAvailable || isOverlapping || startTime < DateTime.Today)
                 throw new BusinessRuleViolationException($"The selected time slot from {startTime} to {endTime} are invalid. Is employee available: {isEmployeeAvailable}");
@@ -132,6 +132,51 @@ public async Task CreateAuthorizedReservationAsync(ReservationCreateDTO reservat
         }
     }
 
+    public async Task DeleteAuthorizedReservationAsync(int reservationId, User? sender)
+    {
+        AuthorizationHelper.Authorize("Reservation", "Delete", sender);
+        Reservation? reservation = await _reservationRepository.GetReservationByIdAsync(reservationId);
+        Service? service = await _serviceService.GetAuthorizedService(reservation.ServiceId,sender);
+   
+        
+        Order? order = await _orderRepository.GetOrderByIdAsync(reservation.OrderId);
+
+        if (order.Status is not OrderStatus.Closed or OrderStatus.Paid)
+        {
+            order.ChargeAmount -= service.BasePrice;
+            order.TaxAmount -=
+                await _taxService.CalculateTaxByCategory(service.BasePrice, 1, service.Category, service.BusinessId);
+        }
+
+        await _reservationRepository.DeleteReservationAsync(reservationId);
+    }
+
+    public async Task UpdateAuthorizedReservationAsync(int reservationId, ReservationCreateDTO reservation, User? sender)
+    {
+        AuthorizationHelper.Authorize("Reservation", "Update", sender);
+        var existingReservation = await  GetAuthorizedReservationAsync(reservationId, sender);
+        var service = await _serviceService.GetAuthorizedService(existingReservation.ServiceId, sender);
+        
+        var startTime = reservation.ReservationTime.ToUniversalTime();
+        var endTime = reservation.ReservationTime.AddMinutes(service.DurationInMinutes).ToUniversalTime();
+
+        var isOverlapping = await _reservationRepository.IsReservationOverlappingAsync(reservation.ServiceId, startTime, endTime);
+        var isEmployeeAvailable = await IsValidShiftForReservationAsync(service.EmployeeId, sender, startTime);
+
+        if (!isEmployeeAvailable || isOverlapping || startTime < DateTime.Today)
+            throw new BusinessRuleViolationException($"The selected time slot from {startTime} to {endTime} are invalid. Is employee available: {isEmployeeAvailable}");
+
+        var newReservation = new Reservation()
+        {
+            ServiceId = reservation.ServiceId,
+            ReservationTime = startTime,
+            ReservationEndTime = endTime,
+            CustomerName = reservation.CustomerName,
+            CustomerPhone = reservation.CustomerPhone,
+        };
+
+        await _reservationRepository.UpdateReservationAsync(newReservation);
+    }
     
     private async Task<bool> IsValidShiftForReservationAsync(int userId,User? sender ,DateTime startTime)
     {
@@ -162,47 +207,4 @@ public async Task CreateAuthorizedReservationAsync(ReservationCreateDTO reservat
         return false;
     }
 
-
-
-    public async Task DeleteAuthorizedReservationAsync(int reservationId, User? sender)
-    {
-        AuthorizationHelper.Authorize("Reservation", "Delete", sender);
-        Reservation? reservation = await _reservationRepository.GetReservationByIdAsync(reservationId);
-        Service? service = await _serviceService.GetAuthorizedService(reservation.ServiceId,sender);
-   
-        
-        Order? order = await _orderRepository.GetOrderByIdAsync(reservation.OrderId);
-
-        if (order.Status is not OrderStatus.Closed or OrderStatus.Paid)
-        {
-            order.ChargeAmount -= service.BasePrice;
-            order.TaxAmount -=
-                await _taxService.CalculateTaxByCategory(service.BasePrice, 1, service.Category, service.BusinessId);
-        }
-
-        await _reservationRepository.DeleteReservationAsync(reservationId);
-    }
-
-    public async Task UpdateAuthorizedReservationAsync(int reservationId, ReservationCreateDTO reservation, User? sender)
-    {
-        AuthorizationHelper.Authorize("Reservation", "Update", sender);
-        var existingReservation = await  GetAuthorizedReservationAsync(reservationId, sender);
-        var service = await _serviceService.GetAuthorizedService(existingReservation.ServiceId, sender);
-        
-        var startTime = reservation.ReservationTime.ToUniversalTime();
-        var endTime = reservation.ReservationTime.AddMinutes(service.DurationInMinutes).ToUniversalTime();
-
-        var isOverlapping = await _reservationRepository.IsReservationOverlappingAsync(reservation.ServiceId, startTime, endTime);
-        var isEmployeeAvailable = await IsValidShiftForReservationAsync(sender.Id, sender, startTime);
-
-        if (!isEmployeeAvailable || isOverlapping || startTime < DateTime.Today)
-            throw new BusinessRuleViolationException($"The selected time slot from {startTime} to {endTime} are invalid. Is employee available: {isEmployeeAvailable}");
-
-        existingReservation.ReservationTime = startTime;
-        existingReservation.ReservationEndTime = endTime;
-        existingReservation.CustomerName = reservation.CustomerName;
-        existingReservation.CustomerPhone = reservation.CustomerPhone;
-
-        await _reservationRepository.UpdateReservationAsync(existingReservation);
-    }
 }

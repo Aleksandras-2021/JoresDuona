@@ -141,15 +141,23 @@ namespace PosAPI.Repositories
         
         public async Task<bool> IsReservationOverlappingAsync(int serviceId, DateTime startTime, DateTime endTime)
         {
-            startTime = DateTime.SpecifyKind(startTime, DateTimeKind.Utc);
-            endTime = DateTime.SpecifyKind(endTime, DateTimeKind.Utc);
             
-            return await _context.Reservations
-                .AnyAsync(r =>
-                        r.ServiceId == serviceId &&  // Match the service
-                        r.ReservationTime < endTime &&     // Check if existing reservation starts before the new one ends
-                        r.ReservationEndTime > startTime        // Check if existing reservation ends after the new one starts
-                );
+            Console.WriteLine($"Checking overlaps for ServiceId: {serviceId}");
+            Console.WriteLine($"StartTime: {startTime}, EndTime: {endTime}");
+
+            var overlappingReservations = await _context.Reservations
+                .Where(r => r.ServiceId == serviceId &&
+                            r.ReservationTime < endTime &&
+                            r.ReservationEndTime > startTime)
+                .ToListAsync();
+
+            foreach (var res in overlappingReservations)
+            {
+                Console.WriteLine($"Overlapping Reservation Found: ID: {res.Id}, Start: {res.ReservationTime}, End: {res.ReservationEndTime}");
+            }
+
+            return overlappingReservations.Any();
+            
         }
 
         public async Task<Reservation> GetReservationByIdAsync(int id)
@@ -164,11 +172,18 @@ namespace PosAPI.Repositories
         public async Task UpdateReservationAsync(Reservation reservation)
         {
             var existingReservation = await _context.Reservations.FindAsync(reservation.Id);
-            
+
             if (existingReservation == null)
-                throw new KeyNotFoundException($"existingReservation with ID {reservation.Id} not found.");
-            _context.Reservations.Update(existingReservation);
+                throw new KeyNotFoundException($"Reservation with ID {reservation.Id} not found.");
+
+            existingReservation.ReservationTime = reservation.ReservationTime;
+            existingReservation.ReservationEndTime = reservation.ReservationEndTime;
+            existingReservation.CustomerName = reservation.CustomerName;
+            existingReservation.CustomerPhone = reservation.CustomerPhone;
+
+            // Save changes
             await _context.SaveChangesAsync();
         }
+
     }
 }
