@@ -7,7 +7,7 @@ public class Refund
 
     public int PaymentId { get; set; }
 
-    public Payment Payment { get; set; }
+    public Payment? Payment { get; set; }
 
     public DateTime RefundDate { get; set; }
 

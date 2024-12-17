@@ -12,7 +12,7 @@ public class Item
     [JsonIgnore]
     public Business Business { get; set; }
 
-    public string Name { get; set; }
+    public string? Name { get; set; }
 
     public string? Description { get; set; }
 
@@ -24,7 +24,7 @@ public class Item
 
     public int Quantity { get; set; }
     [JsonIgnore]
-    public ICollection<ItemVariation> ItemVariations { get; set; }
+    public ICollection<ItemVariation>? ItemVariations { get; set; }
     [JsonIgnore]
-    public ICollection<OrderItem> OrderItems { get; set; }
+    public ICollection<OrderItem>? OrderItems { get; set; }
 }

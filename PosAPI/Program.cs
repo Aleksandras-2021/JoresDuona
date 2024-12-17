@@ -47,6 +47,12 @@ builder.Services.AddSwaggerGen(options =>
     });
 });
 
+
+//These 2 must be on top
+builder.Services.AddHttpContextAccessor();
+builder.Services.AddScoped<IUserTokenService, UserTokenService>();
+//
+
 //Add repositories here
 builder.Services.AddScoped<IBusinessRepository, BusinessRepository>();
 builder.Services.AddScoped<IUserRepository, UserRepository>();
@@ -65,9 +71,12 @@ builder.Services.AddScoped<IItemService, ItemService>();
 builder.Services.AddScoped<IBusinessService, BusinessService>();
 builder.Services.AddScoped<ITaxService, TaxService>();
 builder.Services.AddScoped<IUserService, UserService>();
+builder.Services.AddScoped<IScheduleService, ScheduleService>();
 builder.Services.AddScoped<IServiceService, ServiceService>();
 builder.Services.AddScoped<IDefaultShiftPatternService, DefaultShiftPatternService>();
 
+builder.Services.AddScoped<IReservationService, ReservationService>();
+builder.Services.AddScoped<IPaymentService, PaymentService>();
 
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 builder.Services.AddDbContext<ApplicationDbContext>(options => options.UseNpgsql(connectionString));
@@ -182,7 +191,8 @@ using (var scope = app.Services.CreateScope())
     }
 }
 
-
+app.UseMiddleware<RequestHandlingMiddleware>();
+app.UseMiddleware<ExceptionHandlingMiddleware>();
 
 app.UseHttpsRedirection();
 

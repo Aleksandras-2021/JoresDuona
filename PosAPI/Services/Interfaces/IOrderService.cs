@@ -7,12 +7,13 @@ namespace PosAPI.Services;
 public interface IOrderService
 {
     Task<PaginatedResult<Order>> GetAuthorizedOrders(User sender, int pageNumber, int pageSize);
-    Task<int> CreateAuthorizedOrder(User? sender);
+    Task<Order?> GetAuthorizedOrder(int orderId, User sender);
+    Task<Order> CreateAuthorizedOrder(User? sender);
+    Task DeleteAuthorizedOrder(int orderId, User? sender);
+    
     Task<OrderItem> CreateAuthorizedOrderItem(int orderId,AddItemDTO addItemDTO,User? sender);
     Task DeleteAuthorizedOrderItem(int orderId, int orderItemId, User? sender);
-
-    Task<Order?> GetAuthorizedOrder(int orderId, User sender);
-    Task<Order?> GetAuthorizedOrderForModification(int orderId, User sender);
+    Task UpdateAuthorizedOrder(Order order, User? sender);
     Task<OrderItem?> GetAuthorizedOrderItem(int orderItemId, User sender);
     Task<List<OrderItem>?> GetAuthorizedOrderItems(int orderId, User sender);
     

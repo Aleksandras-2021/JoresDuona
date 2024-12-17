@@ -1,30 +1,23 @@
+using System.Text;
 using Microsoft.AspNetCore.Mvc;
 using PosShared.Models;
 using System.Text.Json;
-using System.Net.Http.Headers;
-using System.Security.Claims;
-using Microsoft.AspNetCore.Authentication;
-using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Authorization;
 using PosShared;
-using System.IdentityModel.Tokens.Jwt;
-using PosShared.Utilities;
 using PosClient.Services;
-using System.Net;
 
 namespace PosClient.Controllers
 {
     public class HomeController : Controller
     {
-        private readonly HttpClient _httpClient;
+        private readonly ApiService _apiService;
         private readonly IUserSessionService _userSessionService;
         private readonly string _apiUrl = ApiRoutes.ApiBaseUrl;
-        private readonly ILogger<HomeController> _logger;
 
-        public HomeController(HttpClient httpClient, IUserSessionService userSessionService, ILogger<HomeController> logger)
+        public HomeController(ApiService apiService, IUserSessionService userSessionService)
         {
-            _httpClient = httpClient;
+            _apiService = apiService;
             _userSessionService = userSessionService;
-            _logger = logger;
         }
 
         // GET: Home/Index
@@ -54,9 +47,10 @@ namespace PosClient.Controllers
         public async Task<IActionResult> Login(string email, string password)
         {
             var loginRequest = new { Email = email, Password = password };
+            
+            var content = new StringContent(JsonSerializer.Serialize(loginRequest), Encoding.UTF8, "application/json");
 
-            // Call API to validate login
-            var response = await _httpClient.PostAsJsonAsync(_apiUrl + "/api/login", loginRequest);
+            var response = await _apiService.PostAsync(ApiRoutes.Auth.Login, content);
 
             if (response.IsSuccessStatusCode)
             {
@@ -98,8 +92,42 @@ namespace PosClient.Controllers
             TempData["Error"] = "Invalid credentials.";
             return RedirectToAction("Login");
         }
+        
+        [Authorize]
+        [HttpPost]
+        public async Task<IActionResult> ChangePassword(string oldPassword, string newPassword)
+        {
+            // Prepare the request payload
+            var changePasswordRequest = new
+            {
+                OldPassword = oldPassword,
+                NewPassword = newPassword
+            };
 
+            var content = new StringContent(JsonSerializer.Serialize(changePasswordRequest), Encoding.UTF8, "application/json");
+            
+            var response = await _apiService.PostAsync(ApiRoutes.Auth.ChangePassword, content);
 
+            if (response.IsSuccessStatusCode)
+            {
+                TempData["Success"] = "Password changed successfully.";
+                return RedirectToAction("Index");
+            }
+            else
+            {
+                var errorMessage = await response.Content.ReadAsStringAsync();
+                TempData["Error"] = $"Failed to change password: {errorMessage}";
+                return RedirectToAction("ChangePassword");
+            }
+        }
+
+        // GET: Home/ChangePassword
+        [Authorize]
+        public IActionResult ChangePassword()
+        {
+            return View();
+        }
+        
         public IActionResult Logout()
         {
 

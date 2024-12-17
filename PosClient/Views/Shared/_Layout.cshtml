@@ -42,36 +42,29 @@
                                 <a class="nav-link text-dark" asp-area="" asp-controller="User" asp-action="Index">Users</a>
                             </li>
                         }
-                        @if (userRole == "SuperAdmin" || userRole == "Owner" || userRole == "Manager"|| userRole == "Worker")
-                        {
+
                             <li class="nav-item">
                                 <a class="nav-link text-dark" asp-area="" asp-controller="Items" asp-action="Index">Items</a>
                             </li>
-                        }
-                         @if (userRole == "SuperAdmin" || userRole == "Owner" || userRole == "Manager")
-                        {
+                        
+
                             <li class="nav-item">
                                 <a class="nav-link text-dark" asp-area="" asp-controller="Tax" asp-action="Index">Tax</a>
                             </li>
-                        }
+                        
                          @if (userRole == "SuperAdmin" || userRole == "Owner" || userRole == "Manager" || userRole == "Worker")
                         {
                             <li class="nav-item">
                                 <a class="nav-link text-dark" asp-area="" asp-controller="Order" asp-action="Index">Orders</a>
                             </li>
                         }
-                        @if (userRole == "SuperAdmin" || userRole == "Owner" || userRole == "Manager")
-                        {
                             <li class="nav-item">
                                 <a class="nav-link text-dark" asp-area="" asp-controller="Service" asp-action="Index">Services</a>
                             </li>
-                        }
-                        @if (userRole == "SuperAdmin" || userRole == "Owner" || userRole == "Manager")
-                        {
                             <li class="nav-item">
                                 <a class="nav-link text-dark" asp-area="" asp-controller="Reservation" asp-action="Index">Reservations</a>
                             </li>
-                        }
+                        
                     </ul>
                     <div class="navbar-right">
                         @if (userRole != null)
@@ -80,6 +73,9 @@
                                 <li>
                                     <a><span class="fw-bold">User role:</span> @userRole</a>
                                 </li>
+                                                                <li class="nav-item">
+                                                                    <a class="nav-link text-white btn btn-danger btn-sm" asp-area="" asp-controller="Home" asp-action="ChangePassword"><span class="fw-bold">Change password</span></a>
+                                                                </li>
                                 <li class="nav-item">
                                     <a class="nav-link text-white btn btn-danger btn-sm" asp-area="" asp-controller="Home" asp-action="Logout"><span class="fw-bold">Log out</span></a>
                                 </li>

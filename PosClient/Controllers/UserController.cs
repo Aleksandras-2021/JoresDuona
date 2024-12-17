@@ -1,43 +1,36 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using PosShared.Models;
-using System.Net.Http;
-using System.Threading.Tasks;
 using System.Text.Json;
 using System.Text;
-using System.Collections.Generic;
 using PosShared;
 using PosShared.ViewModels;
-using Microsoft.EntityFrameworkCore.Query.Internal;
-using System.Net.Http.Headers;
+using PosClient.Services;
 using PosShared.DTOs;
 
 namespace PosClient.Controllers;
 
 public class UserController : Controller
 {
-    private readonly HttpClient _httpClient;
+    private readonly ApiService _apiService;
 
     private readonly string _apiUrl = ApiRoutes.ApiBaseUrl;
 
-    public UserController(HttpClient httpClient)
+    public UserController(ApiService apiService)
     {
-        _httpClient = httpClient;
+        _apiService = apiService;
+
     }
 
     // GET: User/Index
     public async Task<IActionResult> Index(int pageNumber = 1, int pageSize = 10)
     {
-
-        string? token = Request.Cookies["authToken"];
-        _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
-
-        var apiUrl = ApiRoutes.User.GetPaginated(pageNumber, pageSize);
-        var response = await _httpClient.GetAsync(apiUrl);
+        var apiUrl = ApiRoutes.User.ListPaginated(pageNumber, pageSize);
+        var response = await _apiService.GetAsync(apiUrl);
 
         if (response.IsSuccessStatusCode)
         {
             var jsonData = await response.Content.ReadAsStringAsync();
-            var users = JsonSerializer.Deserialize<PaginatedResult<User>>(jsonData, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+            var users = JsonSerializer.Deserialize<PaginatedResult<User>>(jsonData, JsonOptions.Default);
             return View(users);
         }
 
@@ -55,15 +48,12 @@ public class UserController : Controller
     [HttpPost]
     public async Task<IActionResult> Create(CreateUserDTO newUser)
     {
-        string? token = Request.Cookies["authToken"];
-        _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
-
         if (ModelState.IsValid)
         {
             var apiUrl = ApiRoutes.User.Create;
             var content = new StringContent(JsonSerializer.Serialize(newUser), Encoding.UTF8, "application/json");
 
-            var response = await _httpClient.PostAsync(apiUrl, content);
+            var response = await _apiService.PostAsync(apiUrl, content);
 
             if (response.IsSuccessStatusCode)
             {
@@ -81,16 +71,13 @@ public class UserController : Controller
     [HttpGet]
     public async Task<IActionResult> Edit(int id)
     {
-        string? token = Request.Cookies["authToken"];
-        _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
-
         var apiUrl = ApiRoutes.User.GetById(id);
-        var response = await _httpClient.GetAsync(apiUrl);
+        var response = await _apiService.GetAsync(apiUrl);
 
         if(response.IsSuccessStatusCode)
         {
             string userData = await response.Content.ReadAsStringAsync();
-            UserDTO? user = JsonSerializer.Deserialize<UserDTO>(userData,new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+            UserDTO? user = JsonSerializer.Deserialize<UserDTO>(userData,JsonOptions.Default);
 
 
             Console.WriteLine(response);
@@ -121,10 +108,6 @@ public class UserController : Controller
     [HttpPost]
     public async Task<IActionResult> Edit(int id, UserViewModel user)
     {
-
-        string? token = Request.Cookies["authToken"];
-        _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
-
         if (ModelState.IsValid)
         {
             var apiUrl = ApiRoutes.User.Update(id);
@@ -142,14 +125,14 @@ public class UserController : Controller
             
             var content = new StringContent(JsonSerializer.Serialize(dto), Encoding.UTF8, "application/json");
 
-            var response = await _httpClient.PutAsync(apiUrl, content);
+            var response = await _apiService.PutAsync(apiUrl, content);
 
             if (response.IsSuccessStatusCode)
             {
                 return RedirectToAction("Index");
             }
 
-            TempData["Error"] = "Failed to update user.";
+            TempData["Error"] = $"Failed to update user. Status code:{response.StatusCode}";
         }
 
         return View(user);
@@ -159,17 +142,13 @@ public class UserController : Controller
     [HttpGet]
     public async Task<IActionResult> Delete(int id)
     {
-        string? token = Request.Cookies["authToken"];
-        _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
-
         var apiUrl = ApiRoutes.User.GetById(id);
-        var response = await _httpClient.GetAsync(apiUrl);
-        Console.WriteLine(response);
+        var response = await _apiService.GetAsync(apiUrl);
 
         if (response.IsSuccessStatusCode)
         {
             var userData = await response.Content.ReadAsStringAsync();
-            var user = JsonSerializer.Deserialize<User>(userData);
+            var user = JsonSerializer.Deserialize<User>(userData,JsonOptions.Default);
 
             if (user != null)
             {
@@ -184,18 +163,16 @@ public class UserController : Controller
     [HttpPost, ActionName("Delete")]
     public async Task<IActionResult> DeleteConfirmed(int id)
     {
-        string? token = Request.Cookies["authToken"];
-        _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
-
         var apiUrl = ApiRoutes.User.Delete(id);
-        var response = await _httpClient.DeleteAsync(apiUrl);
+        var response = await _apiService.DeleteAsync(apiUrl);
 
         if (response.IsSuccessStatusCode)
         {
+            TempData["Message"] = $"Deleted user {id}. Status code:{response.StatusCode}";
             return RedirectToAction("Index");
         }
 
-        TempData["Error"] = "Failed to delete user.";
+        TempData["Error"] = $"Failed to delete user. Status code:{response.StatusCode}";
         return RedirectToAction("Index");
     }
     

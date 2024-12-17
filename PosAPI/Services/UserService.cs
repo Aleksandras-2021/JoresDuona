@@ -15,7 +15,6 @@ public class UserService : IUserService
     {
         _userRepository = userRepository;
     }
-
     
     public async Task<PaginatedResult<User>> GetAuthorizedUsers(User? sender, int pageNumber = 1, int pageSize = 10)
     {
@@ -77,7 +76,8 @@ public class UserService : IUserService
         if (newUser.BusinessId != sender.BusinessId && sender.Role != UserRole.SuperAdmin)
             newUser.BusinessId = sender.BusinessId;
 
-        
+        await _userRepository.AddUserAsync(newUser);
+
         return newUser;
     }
     
@@ -113,6 +113,19 @@ public class UserService : IUserService
         AuthorizationHelper.ValidateOwnershipOrRole(sender,existingUser.BusinessId ,sender.BusinessId, "Delete");
         
         await _userRepository.DeleteUserAsync(userId);
+    }
+    
+    public async Task UpdateUserWithPassword(User user,User? sender)
+    {
+        AuthorizationHelper.ValidateOwnershipOrRole(sender,user.Id ,sender.Id, "Update");
+        await _userRepository.UpdateUserAsync(user);
+    }
+    
+    public async Task<User?> GetUserByEmail(string email)
+    {
+        email = email.ToLower();
+        var user = await _userRepository.GetUserByEmailAsync(email);
+        return user;
     }
     
 }

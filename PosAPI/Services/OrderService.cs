@@ -1,4 +1,5 @@
-﻿using PosAPI.Middlewares;
+﻿using BCrypt.Net;
+using PosAPI.Middlewares;
 using PosAPI.Repositories;
 using PosAPI.Services.Interfaces;
 using PosShared;
@@ -49,7 +50,10 @@ public class OrderService : IOrderService
 
         AuthorizationHelper.ValidateOwnershipOrRole(sender, order.BusinessId, sender.BusinessId, "Create");
         AuthorizationHelper.ValidateOwnershipOrRole(sender, item.BusinessId, sender.BusinessId, "Read");
-
+      
+        if (order.Status is OrderStatus.Closed or OrderStatus.Paid or OrderStatus.Refunded)
+            throw new BusinessRuleViolationException("Cannot modify closed order");
+        
         decimal taxedAmount = await _taxService.CalculateTaxByCategory(item.Price, 1, item.Category, item.BusinessId);
 
         OrderItem orderItem = new OrderItem
@@ -77,7 +81,10 @@ public class OrderService : IOrderService
         var order = await _orderRepository.GetOrderByIdAsync(orderId);
 
         AuthorizationHelper.ValidateOwnershipOrRole(sender, order.BusinessId, sender.BusinessId, "Delete");
-
+       
+        if (order.Status is OrderStatus.Closed or OrderStatus.Paid or OrderStatus.Refunded)
+            throw new BusinessRuleViolationException("Cannot modify closed order");
+        
         var orderItem = await GetAuthorizedOrderItem(orderItemId, sender);
 
         order.ChargeAmount -= orderItem.Price * orderItem.Quantity;
@@ -97,14 +104,12 @@ public class OrderService : IOrderService
     public async Task<Order?> GetAuthorizedOrder(int orderId, User sender)
     {
         AuthorizationHelper.Authorize("Order", "Read", sender);
-
         var order = await _orderRepository.GetOrderByIdAsync(orderId);
         AuthorizationHelper.ValidateOwnershipOrRole(sender, order.BusinessId, sender.BusinessId, "Read");
-
         return order;
     }
 
-    public async Task<int> CreateAuthorizedOrder(User? sender)
+    public async Task<Order> CreateAuthorizedOrder(User? sender)
     {
         AuthorizationHelper.Authorize("Order", "Create", sender);
         Order newOrder = new Order()
@@ -123,23 +128,44 @@ public class OrderService : IOrderService
         };
         await _orderRepository.AddOrderAsync(newOrder);
 
-        return newOrder.Id;
+        return newOrder;
     }
 
-    public async Task<Order?> GetAuthorizedOrderForModification(int orderId, User sender)
+    public async Task UpdateAuthorizedOrder(Order order, User? sender)
     {
         AuthorizationHelper.Authorize("Order", "Update", sender);
-        var order = await _orderRepository.GetOrderByIdAsync(orderId);
-        AuthorizationHelper.ValidateOwnershipOrRole(sender, order.BusinessId, sender.BusinessId, "Update");
+        var existingOrder = await _orderRepository.GetOrderByIdAsync(order.Id);
 
-        //Owner can modify orders & manager
-        if ((order.Status == OrderStatus.Closed || order.Status == OrderStatus.Paid) &&
-            sender.Role != UserRole.SuperAdmin)
-            throw new UnauthorizedAccessException("You are not authorized to modify closed orders.");
-
-        return order;
+        if (existingOrder.Status is OrderStatus.Closed or OrderStatus.Paid or OrderStatus.Refunded)
+            throw new BusinessRuleViolationException("Cannot modify closed order");
+        
+        existingOrder.UserId = sender.Id; //Whoever updates order, takes over the ownership of it
+        existingOrder.User = sender;
+        existingOrder.Status = order.Status;
+        existingOrder.ChargeAmount = order.ChargeAmount;
+        existingOrder.DiscountAmount = order.DiscountAmount;
+        existingOrder.TaxAmount = order.TaxAmount;
+        existingOrder.TipAmount = order.TipAmount;
+        
+        await _orderRepository.UpdateOrderAsync(existingOrder);
     }
 
+    
+    public async Task DeleteAuthorizedOrder(int orderId, User? sender)
+    {
+        AuthorizationHelper.Authorize("Order", "Delete", sender);
+        Order order = await _orderRepository.GetOrderByIdAsync(orderId);
+        AuthorizationHelper.ValidateOwnershipOrRole(sender, order.BusinessId, sender.BusinessId, "Delete");
+        
+        if (order.Status is OrderStatus.Closed or OrderStatus.Paid or OrderStatus.Refunded)
+            throw new BusinessRuleViolationException("Cannot modify closed order");
+        
+        await _orderRepository.DeleteOrderItemVariationsAsync(orderId);
+        await _orderRepository.DeleteOrderItemsAsync(orderId);
+        await _orderRepository.DeleteOrderServicesAsync(orderId);
+        
+        await _orderRepository.DeleteOrderAsync(orderId);
+    }
 
     public async Task<OrderItem?> GetAuthorizedOrderItem(int orderItemId, User sender)
     {
@@ -155,15 +181,13 @@ public class OrderService : IOrderService
     public async Task<List<OrderItem>?> GetAuthorizedOrderItems(int orderId, User sender)
     {
         AuthorizationHelper.Authorize("Order", "Read", sender);
-
         var order = await _orderRepository.GetOrderByIdAsync(orderId);
-
         AuthorizationHelper.ValidateOwnershipOrRole(sender, order.BusinessId, sender.BusinessId, "Read");
 
         var orderItems = await _orderRepository.GetOrderItemsByOrderIdAsync(orderId);
 
         if (!orderItems.Any())
-            throw new KeyNotFoundException($"Order items for order with ID {orderId} not found.");
+            orderItems = new List<OrderItem>();
 
         return orderItems;
     }
@@ -183,8 +207,7 @@ public class OrderService : IOrderService
         var item = await _itemRepository.GetItemByIdAsync(orderItem.ItemId);
 
         AuthorizationHelper.ValidateOwnershipOrRole(sender, item.BusinessId, sender.BusinessId, "Read");
-
-
+        
         return orderItemVariation;
     }
 
@@ -198,7 +221,6 @@ public class OrderService : IOrderService
             throw new KeyNotFoundException($"Variation with ID {variationId} not found.");
 
         var item = await _itemRepository.GetItemByIdAsync(variation.ItemId);
-
         AuthorizationHelper.ValidateOwnershipOrRole(sender, item.BusinessId, sender.BusinessId, "Read");
 
         return variation;
@@ -211,6 +233,9 @@ public class OrderService : IOrderService
         var order = await _orderRepository.GetOrderByIdAsync(orderId);
         AuthorizationHelper.ValidateOwnershipOrRole(sender, order.BusinessId, sender.BusinessId, "Create");
 
+        if (order.Status is OrderStatus.Closed or OrderStatus.Paid or OrderStatus.Refunded)
+            throw new BusinessRuleViolationException("Cannot modify closed order");
+        
         var variation = await GetAuthorizedItemVariation(addVariationDTO.VariationId, sender);
         var item = await _itemRepository.GetItemByIdAsync(variation.ItemId);
 
@@ -242,7 +267,10 @@ public class OrderService : IOrderService
         var order = await _orderRepository.GetOrderByIdAsync(orderId);
         AuthorizationHelper.ValidateOwnershipOrRole(sender, order.BusinessId, sender.BusinessId, "Create");
         var orderItemVariation = await _orderRepository.GetOrderItemVariationByIdAsync(orderItemVariationId);
-
+        
+        if (order.Status is OrderStatus.Closed or OrderStatus.Paid or OrderStatus.Refunded)
+            throw new BusinessRuleViolationException("Cannot modify closed order");
+        
         order.ChargeAmount -= orderItemVariation.AdditionalPrice * orderItemVariation.Quantity;
         order.TaxAmount -= orderItemVariation.TaxedAmount * orderItemVariation.Quantity;
             
@@ -256,8 +284,8 @@ public class OrderService : IOrderService
         var orderItemVariations = await _orderRepository.GetOrderItemVariationsByOrderItemIdAsync(orderItemId);
 
         if (!orderItemVariations.Any())
-            throw new KeyNotFoundException($"No variations found for order item with ID {orderItemId}.");
-
+            return new List<OrderItemVariation>();
+        
         var orderItem = await _orderRepository.GetOrderItemById(orderItemId);
         var order = await _orderRepository.GetOrderByIdAsync(orderItem.OrderId);
 
@@ -269,93 +297,26 @@ public class OrderService : IOrderService
     public async Task<List<OrderItemVariation>?> GetAuthorizedOrderVariations(int orderId, User sender)
     {
         AuthorizationHelper.Authorize("Order", "Read", sender);
-
         List<OrderItemVariation> orderVariations = await _orderRepository.GetAllOrderItemVariationsAsync(orderId);
+        
         Order order = await _orderRepository.GetOrderByIdAsync(orderId);
-
-        if (orderVariations == null || !orderVariations.Any())
-            throw new KeyNotFoundException($"No variations found for order with ID {order}.");
-
         AuthorizationHelper.ValidateOwnershipOrRole(sender, order.BusinessId, sender.BusinessId, "Read");
 
+        if (!orderVariations.Any())
+            orderVariations = new List<OrderItemVariation>();
+        
         return orderVariations;
     }
-
+    
     public async Task<List<PosShared.Models.OrderService>?> GetAuthorizedOrderServices(int orderId, User? sender)
     {
         AuthorizationHelper.Authorize("Service", "Read", sender);
-
         List<PosShared.Models.OrderService> orderVariations = await _orderRepository.GetAllOrderServices(orderId);
+        
         Order order = await _orderRepository.GetOrderByIdAsync(orderId);
         AuthorizationHelper.ValidateOwnershipOrRole(sender, order.BusinessId, sender.BusinessId, "Read");
 
         return orderVariations;
     }
 }
-
-/* Deprecated
-    public async Task RecalculateOrderCharge(int orderId)
-    {
-        Order order = await _orderRepository.GetOrderByIdAsync(orderId);
-
-        if (order.Status == OrderStatus.Closed || order.Status == OrderStatus.Paid)
-            return;
-
-        List<OrderItem> orderItems = await _orderRepository.GetOrderItemsByOrderIdAsync(orderId);
-        List<OrderItemVariation> orderItemVariations = await _orderRepository.GetOrderItemVariationsByOrderIdAsync(orderId);
-        List<PosShared.Models.OrderService> orderServices = await _orderRepository.GetAllOrderServices(orderId);
-        Tax? tax;
-
-        order.ChargeAmount = 0;
-        order.TaxAmount = 0;
-
-        //base charge(untaxed)
-        foreach (var item in orderItems)
-        {
-            order.ChargeAmount += item.Price * item.Quantity;
-
-
-            tax = await _taxRepository.GetTaxByItemIdAsync(item.ItemId);
-
-            if (tax != null)
-            {
-                if (tax.IsPercentage)
-                    order.TaxAmount += item.Price * item.Quantity * tax.Amount / 100;
-                else
-                    order.TaxAmount += tax.Amount;
-            }
-            else
-            {
-                order.TaxAmount = 0;
-            }
-        }
-
-        foreach (var variation in orderItemVariations)
-        {
-            order.ChargeAmount += variation.AdditionalPrice * variation.Quantity;
-            OrderItem orderItemForVar = await _orderRepository.GetOrderItemById(variation.OrderItemId);
-
-            tax = await _taxRepository.GetTaxByItemIdAsync(orderItemForVar.ItemId);
-            if (tax != null)
-            {
-                if (tax.IsPercentage)
-                    order.TaxAmount += variation.AdditionalPrice * variation.Quantity * tax.Amount / 100;
-                else
-                    order.TaxAmount += tax.Amount;
-            }
-            else
-            {
-                order.TaxAmount = 0;
-            }
-        }
-
-        foreach (var service in orderServices)
-        {
-            order.TaxAmount += service.Tax;
-            order.ChargeAmount += service.Tax + service.Charge;
-        }
-
-        await _orderRepository.UpdateOrderAsync(order);
-    }
-*/
 

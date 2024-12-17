@@ -6,38 +6,30 @@ using System.Text.Json;
 using System.Text;
 using System.Collections.Generic;
 using PosShared;
-using PosShared.Utilities;
 using System.Net.Http.Headers;
+using PosClient.Services;
 
 namespace PosClient.Controllers
 {
     public class BusinessController : Controller
     {
-        private readonly HttpClient _httpClient;
-        private readonly string _apiUrl = ApiRoutes.ApiBaseUrl;
-        private readonly ILogger<BusinessController> _logger;
-
-
-        public BusinessController(HttpClient httpClient, ILogger<BusinessController> logger)
+        private readonly ApiService _apiService;
+        
+        public BusinessController(ApiService apiService)
         {
-            _httpClient = httpClient;
-            _logger = logger;
+            _apiService = apiService;
         }
 
         // GET: Business/Index (retrieves all businesses)
         public async Task<IActionResult> Index(int pageNumber = 1, int pageSize = 20)
         {
-            string? token = Request.Cookies["authToken"]; // Retrieve the token from cookies
-
-            _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token); // Put the token into authroization header
-
-            var apiUrl = ApiRoutes.Business.GetPaginated(pageNumber, pageSize);
-            var response = await _httpClient.GetAsync(apiUrl);
+            var apiUrl = ApiRoutes.Business.ListPaginated(pageNumber, pageSize);
+            var response = await _apiService.GetAsync(apiUrl);
 
             if (response.IsSuccessStatusCode)
             {
                 var jsonData = await response.Content.ReadAsStringAsync();
-                var paginatedResult = JsonSerializer.Deserialize<PaginatedResult<Business>>(jsonData, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+                var paginatedResult = JsonSerializer.Deserialize<PaginatedResult<Business>>(jsonData, JsonOptions.Default);
                 
                 
                 return View(paginatedResult);
@@ -59,15 +51,12 @@ namespace PosClient.Controllers
         [HttpPost]
         public async Task<IActionResult> Create(Business business)
         {
-            string? token = Request.Cookies["authToken"];
-            _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
-
             if (ModelState.IsValid)
             {
                 var apiUrl = ApiRoutes.Business.Create;
                 var content = new StringContent(JsonSerializer.Serialize(business), Encoding.UTF8, "application/json");
 
-                var response = await _httpClient.PostAsync(apiUrl, content);
+                var response = await _apiService.PostAsync(apiUrl, content);
                 if (response.IsSuccessStatusCode)
                 {
                     return RedirectToAction("Index");
@@ -83,16 +72,13 @@ namespace PosClient.Controllers
         [HttpGet]
         public async Task<IActionResult> Edit(int id)
         {
-            string? token = Request.Cookies["authToken"];
-            _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
-
             var apiUrl = ApiRoutes.Business.GetById(id);
-            var response = await _httpClient.GetAsync(apiUrl);
+            var response = await _apiService.GetAsync(apiUrl);
 
             if (response.IsSuccessStatusCode)
             {
                 var businessData = await response.Content.ReadAsStringAsync();
-                var business = JsonSerializer.Deserialize<Business>(businessData, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+                var business = JsonSerializer.Deserialize<Business>(businessData, JsonOptions.Default);
 
                 if (business != null)
                 {
@@ -100,7 +86,7 @@ namespace PosClient.Controllers
                 }
             }
 
-            TempData["Error"] = $"Failed to create business: {response.StatusCode}";
+            TempData["Error"] = $"Failed to get business: {response.StatusCode}";
 
             return NotFound();
         }
@@ -116,22 +102,20 @@ namespace PosClient.Controllers
 
             if (ModelState.IsValid)
             {
-                string? token = Request.Cookies["authToken"];
-                _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
-
                 var apiUrl = ApiRoutes.Business.Update(id);
                 var content = new StringContent(JsonSerializer.Serialize(business), Encoding.UTF8, "application/json");
 
-                var response = await _httpClient.PutAsync(apiUrl, content);
-
-                Console.WriteLine("Business Id : " + business.Id);
-
+                var response = await _apiService.PutAsync(apiUrl, content);
+                
                 if (response.IsSuccessStatusCode)
                 {
+                    TempData["Message"] = $"Success in business update: {response.StatusCode}";
+
                     return RedirectToAction("Index");
                 }
+                TempData["Error"] = "Failed to update business." + response.StatusCode;
+
             }
-            TempData["Error"] = "Failed to update business.";
 
             return View(business); 
         }
@@ -140,16 +124,13 @@ namespace PosClient.Controllers
         [HttpGet]
         public async Task<IActionResult> Delete(int id)
         {
-            string? token = Request.Cookies["authToken"];
-            _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
-
             var apiUrl = ApiRoutes.Business.GetById(1);
-            var response = await _httpClient.GetAsync(apiUrl);
+            var response = await _apiService.GetAsync(apiUrl);
 
             if (response.IsSuccessStatusCode)
             {
                 var businessData = await response.Content.ReadAsStringAsync();
-                var business = JsonSerializer.Deserialize<Business>(businessData);
+                var business = JsonSerializer.Deserialize<Business>(businessData,JsonOptions.Default);
 
                 if (business != null)
                 {
@@ -164,14 +145,12 @@ namespace PosClient.Controllers
         [HttpPost, ActionName("Delete")]
         public async Task<IActionResult> DeleteConfirmed(int id)
         {
-            string? token = Request.Cookies["authToken"];
-            _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
-
             var apiUrl = ApiRoutes.Business.Delete(id);
-            var response = await _httpClient.DeleteAsync(apiUrl);
+            var response = await _apiService.DeleteAsync(apiUrl);
 
             if (response.IsSuccessStatusCode)
             {
+                TempData["Error"] = $"Business deleted. {response.StatusCode}";
                 return RedirectToAction("Index");
             }
 

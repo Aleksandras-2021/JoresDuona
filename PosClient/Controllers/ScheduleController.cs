@@ -3,7 +3,6 @@ using PosClient.Services;
 using PosShared;
 using PosShared.Models;
 using PosShared.ViewModels;
-using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
 
@@ -11,28 +10,24 @@ namespace PosClient.Controllers
 {
     public class ScheduleController : Controller
     {
-        private readonly HttpClient _httpClient;
+        private readonly ApiService _apiService;
         private readonly IUserSessionService _userSessionService;
         private readonly string _apiUrl = ApiRoutes.ApiBaseUrl;
 
-        public ScheduleController(HttpClient httpClient, IUserSessionService userSessionService)
+        public ScheduleController(ApiService apiService, IUserSessionService userSessionService)
         {
-            _httpClient = httpClient;
+            _apiService = apiService;
             _userSessionService = userSessionService;
         }
 
         public async Task<IActionResult> Schedules(int userId, DateTime? date = null)
         {
-            string? token = Request.Cookies["authToken"];
-            _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
-
-            var userResponse = await _httpClient.GetAsync($"{_apiUrl}/api/Users/{userId}");
+            var userResponse = await _apiService.GetAsync($"{_apiUrl}/api/Users/{userId}");
             string? userName = null;
             if (userResponse.IsSuccessStatusCode)
             {
                 var userJson = await userResponse.Content.ReadAsStringAsync();
-                var user = JsonSerializer.Deserialize<User>(userJson, 
-                    new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+                var user = JsonSerializer.Deserialize<User>(userJson, JsonOptions.Default);
                 userName = user?.Name;
             }
 
@@ -41,14 +36,13 @@ namespace PosClient.Controllers
             var weekEnd = weekStart.AddDays(7);
 
             var schedulesApiUrl = $"{_apiUrl}/api/Schedule/{userId}/User?startDate={weekStart:yyyy-MM-dd}&endDate={weekEnd:yyyy-MM-dd}";
-            var schedulesResponse = await _httpClient.GetAsync(schedulesApiUrl);
+            var schedulesResponse = await _apiService.GetAsync(schedulesApiUrl);
 
             List<Schedule> schedules;
             if (schedulesResponse.IsSuccessStatusCode)
             {
                 var schedulesJson = await schedulesResponse.Content.ReadAsStringAsync();
-                schedules = JsonSerializer.Deserialize<List<Schedule>>(schedulesJson,
-                    new JsonSerializerOptions { PropertyNameCaseInsensitive = true }) ?? new List<Schedule>();
+                schedules = JsonSerializer.Deserialize<List<Schedule>>(schedulesJson, JsonOptions.Default) ?? new List<Schedule>();
             }
             else
             {
@@ -90,10 +84,7 @@ namespace PosClient.Controllers
                 TempData["Error"] = "End time must be after start time.";
                 return View("~/Views/User/Schedule/Create.cshtml", model);
             }
-
-            string? token = Request.Cookies["authToken"];
-            _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
-
+            
             Schedule schedule = new Schedule
             {
                 UserId = model.UserId,
@@ -108,7 +99,7 @@ namespace PosClient.Controllers
                 Encoding.UTF8, 
                 "application/json");
 
-            var response = await _httpClient.PostAsync(apiUrl, content);
+            var response = await _apiService.PostAsync(apiUrl, content);
             if (response.IsSuccessStatusCode)
             {
                 return RedirectToAction("Schedules", new { userId = model.UserId });
@@ -119,39 +110,12 @@ namespace PosClient.Controllers
             return View("~/Views/User/Schedule/Create.cshtml", model);
         }
 
-        // GET: Schedule/Delete/5
-        [HttpGet]
-        public async Task<IActionResult> Delete(int id)
-        {
-            string? token = Request.Cookies["authToken"];
-            _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
-
-            var apiUrl = $"{_apiUrl}/api/Schedule/{id}";
-            var response = await _httpClient.GetAsync(apiUrl);
-
-            if (response.IsSuccessStatusCode)
-            {
-                var scheduleData = await response.Content.ReadAsStringAsync();
-                var schedule = JsonSerializer.Deserialize<Schedule>(scheduleData);
-
-                if (schedule != null)
-                {
-                    return View(schedule);
-                }
-            }
-
-            return NotFound();
-        }
-
         // POST: Schedule/Delete/5
         [HttpPost, ActionName("Delete")]
         public async Task<IActionResult> DeleteConfirmed(int id, int userId)
         {
-            string? token = Request.Cookies["authToken"];
-            _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
-
             var apiUrl = $"{_apiUrl}/api/Schedule/{id}";
-            var response = await _httpClient.DeleteAsync(apiUrl);
+            var response = await _apiService.DeleteAsync(apiUrl);
 
             if (response.IsSuccessStatusCode)
             {
@@ -248,21 +212,17 @@ namespace PosClient.Controllers
         // GET: Schedule/WeekView
         public async Task<IActionResult> WeekView(DateTime? date = null)
         {
-            string? token = Request.Cookies["authToken"];
-            _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
-
             var currentDate = date ?? DateTime.Today;
             var weekStart = currentDate.AddDays(-(int)currentDate.DayOfWeek);
             var weekEnd = weekStart.AddDays(7);
 
             var apiUrl = $"{_apiUrl}/api/Schedule?startDate={weekStart:yyyy-MM-dd}&endDate={weekEnd:yyyy-MM-dd}";
-            var response = await _httpClient.GetAsync(apiUrl);
+            var response = await _apiService.GetAsync(apiUrl);
 
             if (response.IsSuccessStatusCode)
             {
                 var jsonData = await response.Content.ReadAsStringAsync();
-                var schedules = JsonSerializer.Deserialize<List<Schedule>>(jsonData, 
-                    new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+                var schedules = JsonSerializer.Deserialize<List<Schedule>>(jsonData, JsonOptions.Default);
 
                 var viewModel = new WeeklyScheduleViewModel
                 {
