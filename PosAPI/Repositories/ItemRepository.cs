@@ -2,6 +2,7 @@
 using PosAPI.Data.DbContext;
 using PosShared;
 using PosShared.Models;
+using PosShared.Models.Items;
 
 namespace PosAPI.Repositories
 {

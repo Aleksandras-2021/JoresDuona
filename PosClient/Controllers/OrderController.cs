@@ -52,7 +52,6 @@ public class OrderController : Controller
             var jsonResponse = await response.Content.ReadAsStringAsync();
             var createdOrder = JsonSerializer.Deserialize<Order>(jsonResponse, JsonOptions.Default);
 
-            // Redirect to Index after successful creation
             return RedirectToAction("SelectItems", new { orderId = createdOrder?.Id });
         }
 

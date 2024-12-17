@@ -1,15 +1,11 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using PosShared.Models;
-using System.Net.Http.Headers;
-using System.Net.Http;
 using System.Text.Json;
 using PosShared;
-using PosShared.Utilities;
 using System.Text;
 using PosShared.ViewModels;
 using PosShared.DTOs;
 using PosClient.Services;
-using Microsoft.Extensions.Logging.Console;
 
 namespace PosClient.Controllers;
 
@@ -21,8 +17,7 @@ public class ItemsController : Controller
     {
         _apiService = apiService;
     }
-
-
+    
     // GET: Items/Index
     public async Task<IActionResult> Index(int pageNumber = 1, int pageSize = 20)
     {

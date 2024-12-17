@@ -1,14 +1,9 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using PosShared.Models;
-using System.Net.Http;
-using System.Threading.Tasks;
 using System.Text.Json;
 using System.Text;
-using System.Collections.Generic;
 using PosShared;
 using PosShared.ViewModels;
-using Microsoft.EntityFrameworkCore.Query.Internal;
-using System.Net.Http.Headers;
 using PosClient.Services;
 using PosShared.DTOs;
 

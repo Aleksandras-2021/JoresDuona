@@ -1,3 +1,4 @@
+using System.ComponentModel.DataAnnotations;
 using System.Text.Json.Serialization;
 
 namespace PosShared.Models;
@@ -9,7 +10,6 @@ public class ItemVariation
 
     public int ItemId { get; set; }
     public Item? Item { get; set; }
-
     public string Name { get; set; }
 
     public decimal AdditionalPrice { get; set; }

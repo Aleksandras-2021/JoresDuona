@@ -2,11 +2,8 @@ using Microsoft.AspNetCore.Mvc;
 using PosShared;
 using PosShared.Models;
 using PosShared.ViewModels;
-using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
-using Microsoft.AspNetCore.Mvc.ModelBinding;
-using Microsoft.EntityFrameworkCore.Metadata.Internal;
 using PosClient.Services;
 using PosShared.DTOs;
 
