@@ -20,19 +20,19 @@ namespace PosClient.Controllers
 
         // GET: Reservation
         [HttpGet]
-        public async Task<IActionResult> Index()
+        public async Task<IActionResult> Index(int pageNumber = 1, int pageSize = 10)
         {
-            var apiUrl = ApiRoutes.Reservation.List;
+            var apiUrl = ApiRoutes.Reservation.ListPaginated(pageNumber,pageSize);
             var response = await _apiService.GetAsync(apiUrl);
         
             if (response.IsSuccessStatusCode)
             {
-                var reservations = await response.Content.ReadFromJsonAsync<List<Reservation>>();
-                return View(reservations ?? new List<Reservation>());
+                var reservations = await response.Content.ReadFromJsonAsync<PaginatedResult<Reservation>>();
+                return View(reservations ?? new PaginatedResult<Reservation>());
             }
 
             TempData["Error"] = "Could not load reservations.";
-            return View(new List<Reservation>());
+            return View(new PaginatedResult<Reservation>());
         }
 
         // GET: Reservation/Reserve/5
@@ -60,7 +60,7 @@ namespace PosClient.Controllers
                 ServiceId = model.ServiceId,
                 CustomerName = model.CustomerName,
                 CustomerPhone = model.CustomerPhone,
-                ReservationTime = model.ReservationTime,
+                ReservationTime = model.ReservationTime.ToUniversalTime()
             };
             
             
@@ -78,6 +78,64 @@ namespace PosClient.Controllers
             TempData["Error"] = $"Could not Create reservation. {response.StatusCode}";
 
             return View("~/Views/Service/Reserve.cshtml", model);
+        }
+        
+        
+        // GET: Reservation/Reserve/5
+        [HttpGet]
+        public async Task<IActionResult>  Edit(int reservationId)
+        {
+            var apiUrl = ApiRoutes.Reservation.GetById(reservationId);
+            var response = await _apiService.GetAsync(apiUrl);
+        
+            
+            if (response.IsSuccessStatusCode)
+            {
+                var reservation = await response.Content.ReadFromJsonAsync<Reservation>();
+                
+                 var model = new ReservationViewModel()
+                {
+                    Id = reservationId,
+                    ServiceId = reservation.ServiceId,
+                    CustomerName = reservation.CustomerName,
+                    CustomerPhone = reservation.CustomerPhone,
+                    ReservationTime = reservation.ReservationTime.ToLocalTime()
+                };
+                return View("~/Views/Reservation/Edit.cshtml", model);
+            }
+            
+            return RedirectToAction("Index");
+        }
+
+        
+        // GET: Reservation/Reserve/5
+        [HttpPost]
+        public async Task<IActionResult> Edit(int id,ReservationViewModel model)
+        {
+            var dto = new ReservationCreateDTO()
+            {
+                ServiceId = model.ServiceId,
+                CustomerName = model.CustomerName,
+                CustomerPhone = model.CustomerPhone,
+                ReservationTime = model.ReservationTime.ToUniversalTime(),
+            };
+            Console.WriteLine($"Received ID: {id}"); // Debugging
+
+            
+            var apiUrl = ApiRoutes.Reservation.Update(id);
+            var content = new StringContent(JsonSerializer.Serialize(dto), Encoding.UTF8, "application/json");
+            
+            var response = await _apiService.PutAsync(apiUrl,content);
+
+            if (response.IsSuccessStatusCode)
+            {
+                TempData["Message"] = $"Reservation Updated. {response.StatusCode}";
+                return RedirectToAction("Index");
+            }
+
+            TempData["Error"] = $"Could not update reservation. {response.StatusCode}";
+
+            return RedirectToAction("Index","Reservation");
         }
         
         

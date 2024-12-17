@@ -115,4 +115,17 @@ public class UserService : IUserService
         await _userRepository.DeleteUserAsync(userId);
     }
     
+    public async Task UpdateUserWithPassword(User user,User? sender)
+    {
+        AuthorizationHelper.ValidateOwnershipOrRole(sender,user.Id ,sender.Id, "Update");
+        await _userRepository.UpdateUserAsync(user);
+    }
+    
+    public async Task<User?> GetUserByEmail(string email)
+    {
+        email = email.ToLower();
+        var user = await _userRepository.GetUserByEmailAsync(email);
+        return user;
+    }
+    
 }

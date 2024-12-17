@@ -9,6 +9,12 @@ public static class ApiRoutes
     public const string ClientBaseUrl = "https://localhost:5001";
 
 
+    public static class Auth
+    {
+        public static string Login => $"{ApiBaseUrl}/api/Auth/login";
+        public static string ChangePassword => $"{ApiBaseUrl}/api/Auth/Change-Password";
+    }
+    
     public static class Order
     {
         public static string GetPaginated(int pageNumber, int pageSize) => $"{ApiBaseUrl}/api/Order?pageNumber={pageNumber}&pageSize={pageSize}";
@@ -20,7 +26,6 @@ public static class ApiRoutes
         public static string Update(int id) => $"{ApiBaseUrl}/api/Order/{id}";
         public static string Delete(int id) => $"{ApiBaseUrl}/api/Order/{id}";
         public static string UpdateStatus(int id, OrderStatus status) => $"{ApiBaseUrl}/api/Order/{id}/UpdateStatus/{status}";
-
     }
 
     public static class OrderItems
@@ -68,7 +73,7 @@ public static class ApiRoutes
     
     public static class Reservation
     {
-        public static string List =>  $"{ApiBaseUrl}/api/Reservation";
+        public static string ListPaginated(int pageNumber,int pageSize) =>  $"{ApiBaseUrl}/api/Reservation?pageNumber={pageNumber}&pageSize={pageSize}";
         public static string Create =>  $"{ApiBaseUrl}/api/Reservation";
         public static string GetById(int id) =>  $"{ApiBaseUrl}/api/Reservation/{id}";
         public static string Update(int id) =>  $"{ApiBaseUrl}/api/Reservation/{id}";

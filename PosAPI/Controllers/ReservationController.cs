@@ -11,23 +11,30 @@ using PosShared.ViewModels;
 [ApiController]
 public class ReservationController : ControllerBase
 {
-    private readonly IServiceService _serviceService;
-    private readonly IReservationRepository _reservationRepository;
+    private readonly IReservationService _reservationService;
     private readonly IUserTokenService _userTokenService;
+    private readonly ILogger<ReservationController> _logger;
 
-    public ReservationController(IServiceService serviceService, IReservationRepository reservationRepository,
-        IUserTokenService userTokenService)
+    public ReservationController(IReservationService reservationService, IUserTokenService userTokenService,  ILogger<ReservationController> logger)
     {
-        _serviceService = serviceService;
-        _reservationRepository = reservationRepository;
+        _reservationService = reservationService;
         _userTokenService = userTokenService;
+        _logger = logger;
     }
 
     [HttpGet]
     public async Task<IActionResult> GetAll()
     {
         User? sender = await _userTokenService.GetUserFromTokenAsync();
-        var reservations = await _reservationRepository.GetAllReservationsAsync();
+        var reservations = await _reservationService.GetAuthorizedReservationsAsync(sender);
+        return Ok(reservations);
+    }
+    
+    [HttpGet("{id}")]
+    public async Task<IActionResult> GetById(int id)
+    {
+        User? sender = await _userTokenService.GetUserFromTokenAsync();
+        var reservations = await _reservationService.GetAuthorizedReservationAsync(id, sender);
         return Ok(reservations);
     }
     
@@ -35,7 +42,15 @@ public class ReservationController : ControllerBase
     public async Task<IActionResult> Create([FromBody] ReservationCreateDTO dto)
     {
         User? sender = await _userTokenService.GetUserFromTokenAsync();
-        await _serviceService.CreateAuthorizedReservation(dto, sender);
+        await _reservationService.CreateAuthorizedReservationAsync(dto, sender);
+        return Ok();
+    }
+    
+    [HttpPut("{id}")]
+    public async Task<IActionResult> Update(int id,[FromBody] ReservationCreateDTO dto)
+    {
+        User? sender = await _userTokenService.GetUserFromTokenAsync();
+        await _reservationService.UpdateAuthorizedReservationAsync(id,dto, sender);
         return Ok();
     }
     
@@ -43,7 +58,7 @@ public class ReservationController : ControllerBase
     public async Task<IActionResult> Delete(int reservationId)
     {
         User? sender = await _userTokenService.GetUserFromTokenAsync();
-        await _serviceService.DeleteAuthorizedReservationAsync(reservationId,sender);
+        await _reservationService.DeleteAuthorizedReservationAsync(reservationId,sender);
         return Ok();
     }
 }

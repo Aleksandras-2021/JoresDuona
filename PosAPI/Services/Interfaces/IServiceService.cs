@@ -10,7 +10,6 @@ public interface IServiceService
      Task<Service> CreateAuthorizedService(ServiceCreateDTO service, User? sender);
      Task UpdateAuthorizedService(int id, ServiceCreateDTO service, User? sender);
      Task DeleteAuthorizedService(int id, User? sender);
-     Task CreateAuthorizedReservation(ReservationCreateDTO reservation, User? sender);
-     Task DeleteAuthorizedReservationAsync(int reservationId, User? sender);
+
 
 }
