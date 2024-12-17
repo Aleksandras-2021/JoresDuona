@@ -68,7 +68,7 @@ public static class ApiRoutes
     
     public static class Reservation
     {
-        public static string List =>  $"{ApiBaseUrl}/api/Reservation";
+        public static string ListPaginated(int pageNumber,int pageSize) =>  $"{ApiBaseUrl}/api/Reservation?pageNumber={pageNumber}&pageSize={pageSize}";
         public static string Create =>  $"{ApiBaseUrl}/api/Reservation";
         public static string GetById(int id) =>  $"{ApiBaseUrl}/api/Reservation/{id}";
         public static string Update(int id) =>  $"{ApiBaseUrl}/api/Reservation/{id}";

@@ -8,7 +8,7 @@ public interface IOrderService
 {
     Task<PaginatedResult<Order>> GetAuthorizedOrders(User sender, int pageNumber, int pageSize);
     Task<Order?> GetAuthorizedOrder(int orderId, User sender);
-    Task<int> CreateAuthorizedOrder(User? sender);
+    Task<Order> CreateAuthorizedOrder(User? sender);
     Task DeleteAuthorizedOrder(int orderId, User? sender);
     
     Task<OrderItem> CreateAuthorizedOrderItem(int orderId,AddItemDTO addItemDTO,User? sender);

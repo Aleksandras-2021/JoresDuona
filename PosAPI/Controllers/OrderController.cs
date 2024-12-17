@@ -54,8 +54,8 @@ public class OrderController : ControllerBase
     public async Task<IActionResult> CreateOrder()
     {
         User? sender = await _userTokenService.GetUserFromTokenAsync();
-        int orderId = await _orderService.CreateAuthorizedOrder(sender);
-        return CreatedAtAction(nameof(GetOrderById), new { id = orderId }, new { Id = orderId });
+        var order = await _orderService.CreateAuthorizedOrder(sender);
+        return CreatedAtAction(nameof(GetOrderById), new { id = order.Id }, new { Id = order.Id });
     }
     // /api/Order/{id}/UpdateStatus
     [HttpPost("{orderId}/UpdateStatus/{status}")]

@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
 using PosAPI.Data.DbContext;
+using PosShared;
 using PosShared.Models;
 
 namespace PosAPI.Repositories
@@ -38,12 +39,39 @@ namespace PosAPI.Repositories
             }
         }
 
-        public async Task<List<Reservation>> GetAllReservationsAsync()
+        public async Task<PaginatedResult<Reservation>> GetAllReservationsAsync(int pageNumber, int pageSize)
         {
-            return await _context.Reservations
+            var totalCount = await _context.Reservations
+                .CountAsync();
+
+            
+            var reservations =  await _context.Reservations
                 .Include(r => r.Service)
-                .OrderBy(r => r.ReservationTime)
+                .OrderByDescending(r => r.ReservationTime)
+                .Skip((pageNumber - 1) * pageSize)
+                .Take(pageSize)
                 .ToListAsync();
+            
+            return PaginatedResult<Reservation>.Create(reservations, totalCount, pageNumber, pageSize);
+        }
+        
+        public async Task<PaginatedResult<Reservation>> GetAllBusinessReservationsAsync(int businessId,int pageNumber, int pageSize)
+        {
+            var totalCount = await _context.Reservations
+                .Include(r => r.Service)
+                .CountAsync(i => i.Service.BusinessId == businessId);
+
+            
+            var reservations =  await _context.Reservations
+                .Include(r => r.Service)
+                .Where(rs => rs.Service.BusinessId == businessId)
+                .OrderByDescending(r => r.ReservationTime)
+                .Skip((pageNumber - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync();
+            
+            return PaginatedResult<Reservation>.Create(reservations, totalCount, pageNumber, pageSize);
+
         }
 
         public async Task<bool> HasOverlappingReservationsAsync(DateTime startTime, DateTime endTime, int? employeeId = null)
@@ -123,8 +151,6 @@ namespace PosAPI.Repositories
                         r.ReservationEndTime > startTime        // Check if existing reservation ends after the new one starts
                 );
         }
-        
-        public Task<List<Reservation>> GetAllBusinessReservationsAsync(int businessId) => throw new NotImplementedException();
 
         public async Task<Reservation> GetReservationByIdAsync(int id)
         {
@@ -134,7 +160,15 @@ namespace PosAPI.Repositories
             
             return reservation;
         }
-        public Task<bool> IsEmployeeAvailable(int employeeId, DateTime requestedTime, int duration) => throw new NotImplementedException();
-        public Task UpdateReservationAsync(Reservation reservation) => throw new NotImplementedException();
+
+        public async Task UpdateReservationAsync(Reservation reservation)
+        {
+            var existingReservation = await _context.Reservations.FindAsync(reservation.Id);
+            
+            if (existingReservation == null)
+                throw new KeyNotFoundException($"existingReservation with ID {reservation.Id} not found.");
+            _context.Reservations.Update(existingReservation);
+            await _context.SaveChangesAsync();
+        }
     }
 }
