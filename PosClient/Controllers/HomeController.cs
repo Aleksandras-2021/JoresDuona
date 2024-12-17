@@ -1,15 +1,8 @@
 using Microsoft.AspNetCore.Mvc;
 using PosShared.Models;
 using System.Text.Json;
-using System.Net.Http.Headers;
-using System.Security.Claims;
-using Microsoft.AspNetCore.Authentication;
-using Microsoft.AspNetCore.Authentication.Cookies;
 using PosShared;
-using System.IdentityModel.Tokens.Jwt;
-using PosShared.Utilities;
 using PosClient.Services;
-using System.Net;
 
 namespace PosClient.Controllers
 {
@@ -18,13 +11,11 @@ namespace PosClient.Controllers
         private readonly HttpClient _httpClient;
         private readonly IUserSessionService _userSessionService;
         private readonly string _apiUrl = ApiRoutes.ApiBaseUrl;
-        private readonly ILogger<HomeController> _logger;
 
-        public HomeController(HttpClient httpClient, IUserSessionService userSessionService, ILogger<HomeController> logger)
+        public HomeController(HttpClient httpClient, IUserSessionService userSessionService)
         {
             _httpClient = httpClient;
             _userSessionService = userSessionService;
-            _logger = logger;
         }
 
         // GET: Home/Index

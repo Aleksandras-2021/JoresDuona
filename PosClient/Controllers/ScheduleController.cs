@@ -3,7 +3,6 @@ using PosClient.Services;
 using PosShared;
 using PosShared.Models;
 using PosShared.ViewModels;
-using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
 

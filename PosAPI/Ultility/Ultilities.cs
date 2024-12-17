@@ -20,7 +20,6 @@ public static class Ultilities
 
         try
         {
-            // Check if the token starts with "Bearer " and remove it
             if (token.StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase))
             {
                 token = token.Substring("Bearer ".Length).Trim();
@@ -30,7 +29,6 @@ public static class Ultilities
             
             var jwtToken = tokenHandler.ReadJwtToken(token);
 
-            // Extract the "UserId" claim (assuming it exists in the token)
             var userIdClaim = jwtToken.Claims.FirstOrDefault(claim => claim.Type == "UserId");
             if (userIdClaim != null && int.TryParse(userIdClaim.Value, out int userId))
             {

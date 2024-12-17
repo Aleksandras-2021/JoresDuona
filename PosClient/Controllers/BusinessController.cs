@@ -6,7 +6,6 @@ using System.Text.Json;
 using System.Text;
 using System.Collections.Generic;
 using PosShared;
-using PosShared.Utilities;
 using System.Net.Http.Headers;
 using PosClient.Services;
 

@@ -15,7 +15,6 @@ public class UserService : IUserService
     {
         _userRepository = userRepository;
     }
-
     
     public async Task<PaginatedResult<User>> GetAuthorizedUsers(User? sender, int pageNumber = 1, int pageSize = 10)
     {
