@@ -15,263 +15,110 @@ public class DefaultShiftPatternController : ControllerBase
 {
     private readonly IDefaultShiftPatternService _shiftPatternService;
     private readonly IUserRepository _userRepository;
-    private readonly ILogger<DefaultShiftPatternController> _logger;
+    private readonly IUserTokenService _userTokenService;
 
     public DefaultShiftPatternController(
         IDefaultShiftPatternService shiftPatternService,
-        IUserRepository userRepository,
-        ILogger<DefaultShiftPatternController> logger)
+        IUserRepository userRepository, IUserTokenService userTokenService)
     {
         _shiftPatternService = shiftPatternService;
         _userRepository = userRepository;
-        _logger = logger;
+        _userTokenService = userTokenService;
     }
 
     // GET: api/DefaultShiftPattern
     [HttpGet]
     public async Task<IActionResult> GetAllPatterns()
     {
-        User? sender = await GetUserFromToken();
-
-        try
-        {
-            var patterns = await _shiftPatternService.GetAuthorizedPatternsAsync(sender);
-            return Ok(patterns);
-        }
-        catch (UnauthorizedAccessException ex)
-        {
-            return Unauthorized(ex.Message);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError($"Error retrieving shift patterns: {ex.Message}");
-            return StatusCode(500, "Internal server error");
-        }
+        User? sender = await _userTokenService.GetUserFromTokenAsync();
+        var patterns = await _shiftPatternService.GetAuthorizedPatternsAsync(sender);
+        return Ok(patterns);
     }
 
     // GET: api/DefaultShiftPattern/User/{userId}
     [HttpGet("{id}")]
     public async Task<IActionResult> GetPatternById(int id)
     {
-        User? sender = await GetUserFromToken();
-
-        try
-        {
-            var pattern = await _shiftPatternService.GetAuthorizedPatternByIdAsync(id, sender);
-            return Ok(pattern);
-        }
-        catch (UnauthorizedAccessException ex)
-        {
-            return Unauthorized(ex.Message);
-        }
-        catch (KeyNotFoundException ex)
-        {
-            return NotFound(ex.Message);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError($"Error retrieving shift pattern: {ex.Message}");
-            return StatusCode(500, "Internal server error");
-        }
+        User? sender = await _userTokenService.GetUserFromTokenAsync();
+        var pattern = await _shiftPatternService.GetAuthorizedPatternByIdAsync(id, sender);
+        return Ok(pattern);
     }
 
     // GET: api/DefaultShiftPattern/User/{userId}
     [HttpGet("User/{userId}")]
     public async Task<IActionResult> GetPatternsByUser(int userId)
     {
-        User? sender = await GetUserFromToken();
-
-        try
-        {
-            var patterns = await _shiftPatternService.GetAuthorizedPatternsByUserAsync(userId, sender);
-            return Ok(patterns);
-        }
-        catch (UnauthorizedAccessException ex)
-        {
-            return Unauthorized(ex.Message);
-        }
-        catch (KeyNotFoundException ex)
-        {
-            return NotFound(ex.Message);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError($"Error retrieving user shift patterns: {ex.Message}");
-            return StatusCode(500, "Internal server error");
-        }
+        User? sender = await _userTokenService.GetUserFromTokenAsync();
+        var patterns = await _shiftPatternService.GetAuthorizedPatternsByUserAsync(userId, sender);
+        return Ok(patterns);
     }
 
     // POST: api/DefaultShiftPattern
     [HttpPost]
     public async Task<IActionResult> CreatePattern([FromBody] DefaultShiftPattern pattern, [FromQuery] List<int> userIds)
     {
-        User? sender = await GetUserFromToken();
-        if (sender == null)
-            return Unauthorized();
+        User? sender = await _userTokenService.GetUserFromTokenAsync();
 
-        _logger.LogInformation($"{sender.Name} is creating a shift pattern");
 
         if (pattern == null)
             return BadRequest("Pattern data is null.");
 
         if (sender.Role == UserRole.Worker)
             return Unauthorized();
+        
+        pattern.StartDate = DateTime.SpecifyKind(pattern.StartDate, DateTimeKind.Utc);
+        pattern.EndDate = DateTime.SpecifyKind(pattern.EndDate, DateTimeKind.Utc);
 
-        try
+        if (pattern.EndDate <= pattern.StartDate)
         {
-
-            pattern.StartDate = DateTime.SpecifyKind(pattern.StartDate, DateTimeKind.Utc);
-            pattern.EndDate = DateTime.SpecifyKind(pattern.EndDate, DateTimeKind.Utc);
-
-            if (pattern.EndDate <= pattern.StartDate)
-            {
-                return BadRequest("End time must be after start time.");
-            }
-
-            await _shiftPatternService.ValidateUserPatternConflictsAsync(pattern, userIds);
-
-            var newPattern = await _shiftPatternService.CreateAuthorizedPatternAsync(pattern, sender);
-            return CreatedAtAction(nameof(GetPatternById), new { id = newPattern.Id }, newPattern);
+            return BadRequest("End time must be after start time.");
         }
-        catch (InvalidOperationException ex)
-        {
-            return StatusCode(409, "Shift conflict detected: " + ex.Message);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError($"Error creating shift pattern: {ex.Message}");
-            return StatusCode(500, "Internal server error");
-        }
+
+        await _shiftPatternService.ValidateUserPatternConflictsAsync(pattern, userIds);
+
+        var newPattern = await _shiftPatternService.CreateAuthorizedPatternAsync(pattern, sender);
+        return CreatedAtAction(nameof(GetPatternById), new { id = newPattern.Id }, newPattern);
     }
 
     // PUT: api/DefaultShiftPattern/{id}
     [HttpPut("{id}")]
     public async Task<IActionResult> UpdatePattern(int id, [FromBody] DefaultShiftPattern pattern, [FromQuery] List<int> userIds)
     {
-        User? sender = await GetUserFromToken();
-        if (sender == null)
-            return Unauthorized();
+        User? sender = await _userTokenService.GetUserFromTokenAsync();
 
         if (id != pattern.Id)
             return BadRequest("ID mismatch");
 
-        try
-        {
-            await _shiftPatternService.ValidateUserPatternConflictsAsync(pattern, userIds, id);
-
-            await _shiftPatternService.UpdateAuthorizedPatternAsync(pattern, sender);
-            return NoContent();
-        }
-        catch (InvalidOperationException ex)
-        {
-            return StatusCode(409, "Shift conflict detected: " + ex.Message);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError($"Error updating shift pattern: {ex.Message}");
-            return StatusCode(500, "Internal server error");
-        }
+        await _shiftPatternService.ValidateUserPatternConflictsAsync(pattern, userIds, id);
+        await _shiftPatternService.UpdateAuthorizedPatternAsync(pattern, sender);
+        return Ok();
     }
 
     // DELETE: api/DefaultShiftPattern/{id}
     [HttpDelete("{id}")]
     public async Task<IActionResult> DeletePattern(int id)
     {
-        User? sender = await GetUserFromToken();
-
-        try
-        {
-            await _shiftPatternService.DeleteAuthorizedPatternAsync(id, sender);
-            return NoContent();
-        }
-        catch (UnauthorizedAccessException ex)
-        {
-            return Unauthorized(ex.Message);
-        }
-        catch (KeyNotFoundException ex)
-        {
-            return NotFound(ex.Message);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError($"Error deleting shift pattern: {ex.Message}");
-            return StatusCode(500, "Internal server error");
-        }
+        User? sender = await _userTokenService.GetUserFromTokenAsync();
+        await _shiftPatternService.DeleteAuthorizedPatternAsync(id, sender);
+        return Ok();
     }
 
     // POST: api/DefaultShiftPattern/{patternId}/User/{userId}
     [HttpPost("{patternId}/User/{userId}")]
     public async Task<IActionResult> AssignUserToPattern(int patternId, int userId)
     {
-        User? sender = await GetUserFromToken();
-
-        try
-        {
-            await _shiftPatternService.AssignAuthorizedUserToPatternAsync(patternId, userId, sender);
-            return NoContent();
-        }
-        catch (UnauthorizedAccessException ex)
-        {
-            return Unauthorized(ex.Message);
-        }
-        catch (KeyNotFoundException ex)
-        {
-            return NotFound(ex.Message);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError($"Error assigning user to pattern: {ex.Message}");
-            return StatusCode(500, "Internal server error");
-        }
+        User? sender = await _userTokenService.GetUserFromTokenAsync();
+        await _shiftPatternService.AssignAuthorizedUserToPatternAsync(patternId, userId, sender);
+        return Ok();
     }
 
     // DELETE: api/DefaultShiftPattern/{patternId}/User/{userId}
     [HttpDelete("{patternId}/User/{userId}")]
     public async Task<IActionResult> RemoveUserFromPattern(int patternId, int userId)
     {
-        User? sender = await GetUserFromToken();
-
-        try
-        {
-            await _shiftPatternService.RemoveAuthorizedUserFromPatternAsync(patternId, userId, sender);
-            return NoContent();
-        }
-        catch (UnauthorizedAccessException ex)
-        {
-            return Unauthorized(ex.Message);
-        }
-        catch (KeyNotFoundException ex)
-        {
-            return NotFound(ex.Message);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError($"Error removing user from pattern: {ex.Message}");
-            return StatusCode(500, "Internal server error");
-        }
+        User? sender = await _userTokenService.GetUserFromTokenAsync();
+        await _shiftPatternService.RemoveAuthorizedUserFromPatternAsync(patternId, userId, sender);
+        return Ok();
     }
-
-    #region HelperMethods
-    private async Task<User?> GetUserFromToken()
-    {
-        string token = HttpContext.Request.Headers["Authorization"].ToString();
-
-        if (string.IsNullOrEmpty(token))
-        {
-            _logger.LogWarning("Authorization token is missing or null.");
-            return null;
-        }
-
-        int? userId = Ultilities.ExtractUserIdFromToken(token);
-        User? user = await _userRepository.GetUserByIdAsync(userId);
-
-        if (user == null)
-        {
-            _logger.LogWarning($"Failed to find user with {userId} in DB");
-            return null;
-        }
-
-        return user;
-    }
-    #endregion
+    
 }
