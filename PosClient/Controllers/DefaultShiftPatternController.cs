@@ -5,31 +5,28 @@ using System.Text.Json;
 using PosShared;
 using PosShared.ViewModels;
 using System.Text;
+using PosClient.Services;
 
 namespace PosClient.Controllers
 {
     public class DefaultShiftPatternController : Controller
     {
-        private readonly HttpClient _httpClient;
+        private readonly ApiService _apiService;
         private readonly string _apiUrl = ApiRoutes.ApiBaseUrl;
 
-        public DefaultShiftPatternController(HttpClient httpClient)
+        public DefaultShiftPatternController(ApiService apiService)
         {
-            _httpClient = httpClient;
+            _apiService = apiService;
         }
 
         public async Task<IActionResult> ShiftPatterns()
         {
-            string? token = Request.Cookies["authToken"];
-            _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
-
-            var response = await _httpClient.GetAsync(_apiUrl + "/api/DefaultShiftPattern");
+            var response = await _apiService.GetAsync(ApiRoutes.DefaultShiftPattern.List);
 
             if (response.IsSuccessStatusCode)
             {
                 var patternsData = await response.Content.ReadAsStringAsync();
                 var patterns = JsonSerializer.Deserialize<List<DefaultShiftPattern>>(patternsData, JsonOptions.Default);
-                Console.WriteLine("Patterns:" + JsonSerializer.Serialize(patterns));
                 return View(patterns);
             }
 
@@ -41,11 +38,8 @@ namespace PosClient.Controllers
         [HttpGet]
         public async Task<IActionResult> Create(int pageNumber = 1, int pageSize = 20)
         {
-            string? token = Request.Cookies["authToken"];
-            _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
-
-            var usersApiUrl = ApiRoutes.User.GetPaginated(pageNumber, pageSize);
-            var userResponse = await _httpClient.GetAsync(usersApiUrl);
+            var usersApiUrl = ApiRoutes.User.ListPaginated(pageNumber, pageSize);
+            var userResponse = await _apiService.GetAsync(usersApiUrl);
 
             PaginatedResult<User>? users = null;
             if (userResponse.IsSuccessStatusCode)
@@ -75,10 +69,7 @@ namespace PosClient.Controllers
         [HttpPost]
         public async Task<IActionResult> AssignUser(int userId, int patternId)
         {
-            string? token = Request.Cookies["authToken"];
-            _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
-
-            var response = await _httpClient.PostAsync($"{_apiUrl}/api/DefaultShiftPattern/{patternId}/User/{userId}", null);
+            var response = await _apiService.PostAsync($"{_apiUrl}/api/DefaultShiftPattern/{patternId}/User/{userId}", null);
 
             if (response.IsSuccessStatusCode)
             {
@@ -92,10 +83,7 @@ namespace PosClient.Controllers
         [HttpPost]
         public async Task<IActionResult> RemoveUser(int userId, int patternId)
         {
-            string? token = Request.Cookies["authToken"];
-            _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
-
-            var response = await _httpClient.DeleteAsync($"{_apiUrl}/api/DefaultShiftPattern/{patternId}/User/{userId}");
+            var response = await _apiService.DeleteAsync($"{_apiUrl}/api/DefaultShiftPattern/{patternId}/User/{userId}");
 
             if (response.IsSuccessStatusCode)
             {
@@ -108,9 +96,6 @@ namespace PosClient.Controllers
         [HttpPost]
         public async Task<IActionResult> Create(DefaultShiftPatternCreateViewModel viewModel, List<int> assignedUserIds)
         {
-            string? token = Request.Cookies["authToken"];
-            _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
-
             if (ModelState.IsValid)
             {
                 viewModel.Pattern.StartDate = new DateTime(2000, 1, 1, 
@@ -118,14 +103,14 @@ namespace PosClient.Controllers
                 viewModel.Pattern.EndDate = new DateTime(2000, 1, 1, 
                     viewModel.Pattern.EndDate.Hour, 0, 0, DateTimeKind.Utc);
 
-                var apiUrl = _apiUrl + "/api/DefaultShiftPattern";
+                var apiUrl = ApiRoutes.DefaultShiftPattern.Create;
                 var content = new StringContent(
                     JsonSerializer.Serialize(viewModel.Pattern),
                     Encoding.UTF8,
                     "application/json"
                 );
 
-                var response = await _httpClient.PostAsync(apiUrl, content);
+                var response = await _apiService.PostAsync(apiUrl, content);
                 if (response.IsSuccessStatusCode)
                 {
                     var createdPattern = await response.Content.ReadFromJsonAsync<DefaultShiftPattern>();
@@ -143,13 +128,13 @@ namespace PosClient.Controllers
                 ModelState.AddModelError(string.Empty, $"Error creating shift pattern: {errorMessage}");
             }
 
-            var usersApiUrl = ApiRoutes.User.GetPaginated(1, 20);
-            var userResponse = await _httpClient.GetAsync(usersApiUrl);
+            var usersApiUrl = ApiRoutes.User.ListPaginated(1, 20);
+            var userResponse = await _apiService.GetAsync(usersApiUrl);
             if (userResponse.IsSuccessStatusCode)
             {
                 var usersJson = await userResponse.Content.ReadAsStringAsync();
-                viewModel.AvailableUsers = JsonSerializer.Deserialize<PaginatedResult<User>>(
-                    usersJson, JsonOptions.Default);
+                viewModel.AvailableUsers = JsonSerializer.Deserialize<PaginatedResult<User>>(usersJson, 
+                    JsonOptions.Default);
             }
 
             return View(viewModel);
@@ -159,21 +144,16 @@ namespace PosClient.Controllers
         [HttpGet]
         public async Task<IActionResult> Edit(int id)
         {
-            string? token = Request.Cookies["authToken"];
-            _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
-
-            var apiUrl = _apiUrl + $"/api/DefaultShiftPattern/{id}";
-            var response = await _httpClient.GetAsync(apiUrl);
+            var apiUrl = ApiRoutes.DefaultShiftPattern.GetById(id);
+            var response = await _apiService.GetAsync(apiUrl);
 
             if (response.IsSuccessStatusCode)
             {
                 var patternData = await response.Content.ReadAsStringAsync();
-                var pattern = JsonSerializer.Deserialize<DefaultShiftPattern>(patternData, 
-                   JsonOptions.Default);
+                var pattern = JsonSerializer.Deserialize<DefaultShiftPattern>(patternData, JsonOptions.Default);
 
                 if (pattern != null)
                 {
-                    
                     return View("Create");
                 }
             }
@@ -185,15 +165,12 @@ namespace PosClient.Controllers
         [HttpPost]
         public async Task<IActionResult> Edit(int id, DefaultShiftPattern pattern)
         {
-            string? token = Request.Cookies["authToken"];
-            _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
-
             if (ModelState.IsValid)
             {
-                var apiUrl = _apiUrl + $"/api/DefaultShiftPattern/{id}";
+                var apiUrl = ApiRoutes.DefaultShiftPattern.Update(id);
                 var content = new StringContent(JsonSerializer.Serialize(pattern), Encoding.UTF8, "application/json");
 
-                var response = await _httpClient.PutAsync(apiUrl, content);
+                var response = await _apiService.PutAsync(apiUrl, content);
 
                 if (response.IsSuccessStatusCode)
                 {
@@ -203,18 +180,15 @@ namespace PosClient.Controllers
                 TempData["Error"] = "Failed to update shift pattern.";
             }
 
-            return View(pattern);
+            return RedirectToAction(nameof(ShiftPatterns));
         }
 
         // POST: DefaultShiftPattern/Delete/5
         [HttpPost]
         public async Task<IActionResult> Delete(int id)
         {
-            string? token = Request.Cookies["authToken"];
-            _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
-
-            var apiUrl = _apiUrl + $"/api/DefaultShiftPattern/{id}";
-            var response = await _httpClient.DeleteAsync(apiUrl);
+            var apiUrl = ApiRoutes.DefaultShiftPattern.Delete(id);
+            var response = await _apiService.DeleteAsync(apiUrl);
 
             if (response.IsSuccessStatusCode)
             {

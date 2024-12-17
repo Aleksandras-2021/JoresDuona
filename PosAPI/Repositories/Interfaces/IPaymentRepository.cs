@@ -12,5 +12,7 @@ namespace PosAPI.Repositories
         Task<Payment> GetPaymentByIdAsync(int id);
         Task UpdatePaymentAsync(Payment payment);
         Task DeletePaymentAsync(int id);
+        Task<decimal> GetTotalPaymentsForOrderAsync(int orderId);
+
     }
 }

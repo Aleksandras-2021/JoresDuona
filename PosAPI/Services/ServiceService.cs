@@ -1,4 +1,5 @@
-using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
+using Microsoft.EntityFrameworkCore;
+using System.Transactions;
 using PosAPI.Middlewares;
 using PosAPI.Repositories;
 using PosAPI.Services.Interfaces;
@@ -17,10 +18,15 @@ public class ServiceService: IServiceService
     private readonly ITaxService _taxService;
     private readonly IOrderService _orderService;
     private readonly IOrderRepository _orderRepository;
+    private readonly IDefaultShiftPatternService _defaultShiftPatternService;
+    private readonly ILogger<ServiceService> _logger;
 
     public ServiceService(IUserRepository userRepository, IServiceRepository serviceRepository,
         IScheduleRepository scheduleRepository,IOrderService orderService, 
-        IReservationRepository reservationRepository,ITaxService taxService,IOrderRepository orderRepository)
+        IReservationRepository reservationRepository,ITaxService taxService,IOrderRepository orderRepository,
+        IDefaultShiftPatternService defaultShiftPatternService,
+        ILogger<ServiceService> logger
+        )
     {
         _userRepository = userRepository;
         _serviceRepository = serviceRepository;
@@ -29,6 +35,8 @@ public class ServiceService: IServiceService
         _orderService = orderService;
         _taxService = taxService;
         _orderRepository = orderRepository;
+        _defaultShiftPatternService = defaultShiftPatternService;
+        _logger = logger;
     }
 
     public async Task<List<Service>> GetAuthorizedServices(User? sender)
@@ -54,7 +62,6 @@ public class ServiceService: IServiceService
     public async Task<Service> GetAuthorizedService(int id,User? sender)
     {
         AuthorizationHelper.Authorize("Service", "Read", sender);
-
         var service = await _serviceRepository.GetServiceByIdAsync(id);
         AuthorizationHelper.ValidateOwnershipOrRole(sender, service.BusinessId, sender.BusinessId, "Read");
 
@@ -67,7 +74,6 @@ public class ServiceService: IServiceService
 
         Service newService = new Service()
         {
-
             BusinessId = sender.BusinessId,
             Name = service.Name,
             Description = service.Description,
@@ -78,7 +84,6 @@ public class ServiceService: IServiceService
         };
         
         await _serviceRepository.AddServiceAsync(newService);
-
         
         return newService;
     }
@@ -144,83 +149,123 @@ public class ServiceService: IServiceService
         return availableTimeSlots;
     }
 
-    public async Task CreateAuthorizedReservation(ReservationCreateDTO reservation, User? sender)
+
+public async Task CreateAuthorizedReservation(ReservationCreateDTO reservation, User? sender)
+{
+    AuthorizationHelper.Authorize("Reservation", "Create", sender);
+
+    var service = await _serviceRepository.GetServiceByIdAsync(reservation.ServiceId);
+    AuthorizationHelper.ValidateOwnershipOrRole(sender, service.BusinessId, sender.BusinessId, "Create");
+
+    using (var transaction = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled))
     {
-        AuthorizationHelper.Authorize("Reservation", "Create", sender);
-
-        var service = await _serviceRepository.GetServiceByIdAsync(reservation.ServiceId);
-
-        AuthorizationHelper.ValidateOwnershipOrRole(sender, service.BusinessId, sender.BusinessId, "Create");
-
-        
-        //1. Create an order for reservation
-        var orderId = await _orderService.CreateAuthorizedOrder(sender);
-
-        var order = await _orderRepository.GetOrderByIdAsync(orderId);
-
-        Customer? customer = await _reservationRepository.FindCustomerByPhone(reservation.CustomerPhone);
-        if (customer == null)
+        try
         {
-            customer = new Customer
-            {
-                Name = reservation.CustomerName,
-                Phone = reservation.CustomerPhone,
-                Email = string.Empty,
-            };
+            // 1. Create an order for reservation
+            var orderId = await _orderService.CreateAuthorizedOrder(sender);
+            var order = await _orderRepository.GetOrderByIdAsync(orderId);
 
-            await _reservationRepository.AddCustomer(customer);
-            customer = await _reservationRepository.FindCustomerByPhone(reservation.CustomerPhone);
+            Customer? customer = await _reservationRepository.FindCustomerByPhone(reservation.CustomerPhone);
+            if (customer == null)
+            {
+                customer = new Customer
+                {
+                    Name = reservation.CustomerName,
+                    Phone = reservation.CustomerPhone,
+                    Email = string.Empty,
+                };
+
+                await _reservationRepository.AddCustomer(customer);
+                customer = await _reservationRepository.FindCustomerByPhone(reservation.CustomerPhone);
+            }
+
+            // 2. Calculate the end time for the reservation
+            var startTime = reservation.ReservationTime.ToUniversalTime();
+            var endTime = reservation.ReservationTime.AddMinutes(service.DurationInMinutes).ToUniversalTime();
+
+            // 3. Check for overlapping reservations
+            var isOverlapping = await _reservationRepository.IsReservationOverlappingAsync(reservation.ServiceId, startTime, endTime);
+            var isEmployeeAvailable = await IsValidShiftForReservationAsync(sender.Id, sender, startTime);
+
+            if (!isEmployeeAvailable || isOverlapping || startTime < DateTime.Today)
+                throw new BusinessRuleViolationException($"The selected time slot from {startTime} to {endTime} are invalid. Is employee available: {isEmployeeAvailable}");
+
+            // 4. Create new reservation
+            Reservation newReservation = new Reservation
+            {
+                ReservationTime = reservation.ReservationTime,
+                ReservationEndTime = reservation.ReservationTime.AddMinutes(service.DurationInMinutes),
+                CustomerPhone = reservation.CustomerPhone,
+                CustomerId = customer.Id,
+                BookedAt = DateTime.Now,
+                ServiceId = reservation.ServiceId,
+                CustomerName = reservation.CustomerName,
+                EmployeeId = service.EmployeeId,
+                OrderId = orderId
+            };
+            await _reservationRepository.AddReservationAsync(newReservation);
+
+            // 5. Make OrderService 
+            decimal serviceTax = await _taxService.CalculateTaxByCategory(service.BasePrice, 1, service.Category, service.BusinessId);
+
+            var orderService = new PosShared.Models.OrderService()
+            {
+                ServiceId = service.Id,
+                DurationInMinutes = service.DurationInMinutes,
+                Charge = service.BasePrice,
+                OrderId = orderId,
+                Tax = serviceTax,
+                Total = service.BasePrice + serviceTax
+            };
+            await _orderRepository.AddOrderServiceAsync(orderService);
+
+            order.ChargeAmount += orderService.Charge;
+            order.TaxAmount += orderService.Tax;
+
+            await _orderRepository.UpdateOrderAsync(order);
+
+            // Commit the transaction
+            transaction.Complete();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Error occurred during reservation creation.");
+            throw;
+        }
+    }
+}
+
+    
+    private async Task<bool> IsValidShiftForReservationAsync(int userId,User? sender ,DateTime startTime)
+    {
+        startTime = startTime.ToUniversalTime();
+
+        var patterns = await _defaultShiftPatternService.GetAuthorizedPatternsByUserAsync(userId,sender);
+
+        DayOfWeek dayOfWeek = startTime.DayOfWeek;
+
+        foreach (var pattern in patterns)
+        {
+            // We only care about the patterns that match the day of the week
+            if (pattern.DayOfWeek == dayOfWeek)
+            {
+                // Extract the times from the StartDate and EndDate
+                var patternStartTime = pattern.StartDate.TimeOfDay;
+                var patternEndTime = pattern.EndDate.TimeOfDay;
+
+                // Check if the reservation time falls within this shift pattern's time range
+                if (startTime.TimeOfDay >= patternStartTime && startTime.TimeOfDay <= patternEndTime)
+                {
+                    return true;
+                }
+            }
         }
 
-        if (customer == null)
-            throw new Exception("Failed to create or retrieve customer.");
-        
-        // 2. Calculate the end time for the reservation
-        var startTime = reservation.ReservationTime;
-        var endTime = reservation.ReservationTime.AddMinutes(service.DurationInMinutes);
-        
-
-        // Check for overlapping reservations (it Does not check user schedule)
-        var isOverlapping = await _reservationRepository.IsReservationOverlappingAsync(reservation.ServiceId, startTime, endTime);
-        
-        if (isOverlapping)
-            throw new Exception($"The selected time slot from {startTime} to {endTime} overlaps with an existing reservation.");
-        
-        //3. Create new reservation
-        Reservation newReservation = new Reservation
-        {
-            ReservationTime = reservation.ReservationTime,
-            ReservationEndTime = reservation.ReservationTime.AddMinutes(service.DurationInMinutes),
-            CustomerPhone = reservation.CustomerPhone,
-            CustomerId = customer.Id,
-            BookedAt = DateTime.Now,
-            ServiceId = reservation.ServiceId,
-            CustomerName = reservation.CustomerName,
-            EmployeeId = service.EmployeeId,
-            OrderId = orderId
-        };
-        await _reservationRepository.AddReservationAsync(newReservation);
-
-        //Make OrderService 
-        decimal serviceTax = await _taxService.CalculateTaxByCategory(service.BasePrice,1,service.Category,service.BusinessId);
-
-        // Must specify namespace, because it clashes with another class
-        var orderService = new PosShared.Models.OrderService()
-        {
-            ServiceId = service.Id,
-            DurationInMinutes = service.DurationInMinutes,
-            Charge = service.BasePrice,
-            OrderId = orderId,
-            Tax = serviceTax,
-            Total = service.BasePrice + serviceTax
-        };
-        await _orderRepository.AddOrderServiceAsync(orderService);
-
-        order.ChargeAmount += orderService.Charge;
-        order.TaxAmount += orderService.Tax;
-        
-        await _orderRepository.UpdateOrderAsync(order);
+        // No matching shift pattern found for the given reservation time
+        return false;
     }
+
+
 
     public async Task DeleteAuthorizedReservationAsync(int reservationId, User? sender)
     {

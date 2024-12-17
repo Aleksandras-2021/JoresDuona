@@ -15,25 +15,19 @@ namespace PosClient.Controllers;
 
 public class ItemsController : Controller
 {
-    private readonly HttpClient _httpClient;
-    private readonly IUserSessionService _userSessionService;
-    
-    public ItemsController(HttpClient httpClient, IUserSessionService userSessionService)
+    private readonly ApiService _apiService;
+
+    public ItemsController(ApiService apiService)
     {
-        _httpClient = httpClient;
-        _userSessionService = userSessionService;
+        _apiService = apiService;
     }
 
 
     // GET: Items/Index
     public async Task<IActionResult> Index(int pageNumber = 1, int pageSize = 20)
     {
-
-        string? token = Request.Cookies["authToken"];
-        _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
-
         var apiUrl = ApiRoutes.Items.GetItemsPaginated(pageNumber,pageSize);
-        var response = await _httpClient.GetAsync(apiUrl);
+        var response = await _apiService.GetAsync(apiUrl);
 
         if (response.IsSuccessStatusCode)
         {
@@ -57,24 +51,17 @@ public class ItemsController : Controller
     [HttpPost]
     public async Task<IActionResult> Create(ItemViewModel item)
     {
-        string? token = Request.Cookies["authToken"];
-        _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
-
-
-
         if (item == null)
         {
             ModelState.AddModelError(string.Empty, "Invalid item data.");
             return View(item);
         }
 
-        Console.WriteLine(JsonSerializer.Serialize(item).ToString());
-
         var apiUrl = ApiRoutes.Items.CreateItem;
         var itemJson = JsonSerializer.Serialize(item);
         var content = new StringContent(itemJson, Encoding.UTF8, "application/json");
 
-        var response = await _httpClient.PostAsync(apiUrl, content);
+        var response = await _apiService.PostAsync(apiUrl, content);
 
         if (response.IsSuccessStatusCode)
         {
@@ -91,16 +78,8 @@ public class ItemsController : Controller
     [HttpGet]
     public async Task<IActionResult> Edit(int id)
     {
-        string? token = Request.Cookies["authToken"];
-        if (string.IsNullOrEmpty(token))
-        {
-            return RedirectToAction("Login", "Home");
-        }
-
-        _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
-
         var apiUrl = ApiRoutes.Items.GetItemById(id);
-        var response = await _httpClient.GetAsync(apiUrl);
+        var response = await _apiService.GetAsync(apiUrl);
 
         if (response.IsSuccessStatusCode)
         {
@@ -132,16 +111,13 @@ public class ItemsController : Controller
     [HttpPost]
     public async Task<IActionResult> Edit(int id, ItemViewModel item)
     {
-
-        string? token = Request.Cookies["authToken"];
-        _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
-
+        
         if (ModelState.IsValid)
         {
             var apiUrl = ApiRoutes.Items.UpdateItem(id);
             var content = new StringContent(JsonSerializer.Serialize(item), Encoding.UTF8, "application/json");
 
-            var response = await _httpClient.PutAsync(apiUrl, content);
+            var response = await _apiService.PutAsync(apiUrl, content);
 
             if (response.IsSuccessStatusCode)
             {
@@ -158,16 +134,13 @@ public class ItemsController : Controller
     [HttpGet]
     public async Task<IActionResult> Delete(int id)
     {
-        string? token = Request.Cookies["authToken"];
-        _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
-
         var apiUrl = ApiRoutes.Items.GetItemById(id);
-        var response = await _httpClient.GetAsync(apiUrl);
+        var response = await _apiService.GetAsync(apiUrl);
 
         if (response.IsSuccessStatusCode)
         {
             var itemData = await response.Content.ReadAsStringAsync();
-            var item = JsonSerializer.Deserialize<Item>(itemData);
+            var item = JsonSerializer.Deserialize<Item>(itemData, JsonOptions.Default);
 
             if (item != null)
             {
@@ -183,11 +156,8 @@ public class ItemsController : Controller
     [HttpPost, ActionName("Delete")]
     public async Task<IActionResult> DeleteConfirmed(int id)
     {
-        string? token = Request.Cookies["authToken"];
-        _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
-
         var apiUrl = ApiRoutes.Items.DeleteItem(id);
-        var response = await _httpClient.DeleteAsync(apiUrl);
+        var response = await _apiService.DeleteAsync(apiUrl);
 
         if (response.IsSuccessStatusCode)
         {
@@ -204,15 +174,10 @@ public class ItemsController : Controller
     [HttpGet]
     public async Task<IActionResult> Variations(int itemId)
     {
-        string? token = Request.Cookies["authToken"];
-        _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
-
         ViewBag.ItemId = itemId; // Pass ItemId to the view
 
-
-        // API URL for fetching item variations
         var apiUrl = ApiRoutes.Items.GetItemVariations(itemId);
-        var response = await _httpClient.GetAsync(apiUrl);
+        var response = await _apiService.GetAsync(apiUrl);
 
         if (response.IsSuccessStatusCode)
         {
@@ -246,29 +211,26 @@ public class ItemsController : Controller
         {
             return View("Variations/Create", model);
         }
-
-        string? token = Request.Cookies["authToken"];
-        _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
-
+        
         var apiUrl = ApiRoutes.Items.CreateVariation(model.ItemId);
 
-        ItemVariation variation = new ItemVariation();
-        variation.Name = model.Name;
-        variation.AdditionalPrice = model.AdditionalPrice;
-        variation.ItemId = model.ItemId;
+        var variation = new ItemVariation()
+        {
+            Name = model.Name,
+            AdditionalPrice = model.AdditionalPrice,
+            ItemId = model.ItemId,
+        };
 
         var variationJson = JsonSerializer.Serialize(variation);
         var content = new StringContent(variationJson, Encoding.UTF8, "application/json");
         Console.WriteLine(variationJson);
-        var response = await _httpClient.PostAsync(apiUrl, content);
+        var response = await _apiService.PostAsync(apiUrl, content);
 
         if (response.IsSuccessStatusCode)
         {
-            // Redirect to variations list after successful creation
             return RedirectToAction("Variations", new { itemId = model.ItemId });
         }
 
-        // Handle errors
         var errorMessage = await response.Content.ReadAsStringAsync();
         ModelState.AddModelError(string.Empty, $"Error creating variation: {errorMessage}");
         TempData["Error"] = errorMessage;
@@ -281,17 +243,14 @@ public class ItemsController : Controller
     [HttpGet]
     public async Task<IActionResult> EditVariation(int id)
     {
-        string? token = Request.Cookies["authToken"];
-        _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
-
         var apiUrl = ApiRoutes.Items.GetItemVariationById(id);
-        var response = await _httpClient.GetAsync(apiUrl);
+        var response = await _apiService.GetAsync(apiUrl);
 
         if (response.IsSuccessStatusCode)
         {
             var variationData = await response.Content.ReadAsStringAsync();
 
-            VariationsDTO? variation = JsonSerializer.Deserialize<VariationsDTO>(variationData, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+            VariationsDTO? variation = JsonSerializer.Deserialize<VariationsDTO>(variationData, JsonOptions.Default);
 
             if (variation != null)
             {
@@ -305,9 +264,6 @@ public class ItemsController : Controller
     [HttpPost]
     public async Task<IActionResult> EditVariation(int id, VariationsDTO variation)
     {
-        string? token = Request.Cookies["authToken"];
-        _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
-
         if (!ModelState.IsValid)
         {
             TempData["Error"] = "Invalid input.";
@@ -318,8 +274,7 @@ public class ItemsController : Controller
         var apiUrl = ApiRoutes.Items.UpdateVariation(id);
         var content = new StringContent(JsonSerializer.Serialize(variation), Encoding.UTF8, "application/json");
 
-        var response = await _httpClient.PutAsync(apiUrl, content);
-        Console.WriteLine(response);
+        var response = await _apiService.PutAsync(apiUrl, content);
         if (!response.IsSuccessStatusCode)
         {
             TempData["Error"] = "Failed to update the variation.";
@@ -336,11 +291,8 @@ public class ItemsController : Controller
     [HttpPost]
     public async Task<IActionResult> DeleteVariation([FromForm] int id, [FromForm] int varId)
     {
-        string? token = Request.Cookies["authToken"];
-        _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
-
         var apiUrl = ApiRoutes.Items.DeleteItem(id);
-        var response = await _httpClient.DeleteAsync(apiUrl);
+        var response = await _apiService.DeleteAsync(apiUrl);
 
         if (response.IsSuccessStatusCode)
         {
@@ -350,10 +302,6 @@ public class ItemsController : Controller
         TempData["Error"] = "Failed to delete variation.";
         return RedirectToAction("Variations", new { itemId = id });
     }
-
-
-
-
     #endregion
 
 }

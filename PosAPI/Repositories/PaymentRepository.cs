@@ -1,5 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using PosAPI.Data.DbContext;
+using PosAPI.Middlewares;
 using PosShared.Models;
 
 namespace PosAPI.Repositories
@@ -17,12 +18,12 @@ namespace PosAPI.Repositories
             ArgumentNullException.ThrowIfNull(payment);
 
             var order = await _context.Orders
-                                       .Include(o => o.Payments)
-                                       .FirstOrDefaultAsync(o => o.Id == payment.OrderId);
+                .Include(o => o.Payments)
+                .FirstOrDefaultAsync(o => o.Id == payment.OrderId);
 
             if (order == null)
             {
-                throw new Exception($"Payment for Order with ID {payment.OrderId} is invalid. Order does not exist.");
+                throw new BusinessRuleViolationException($"Payment for Order with ID {payment.OrderId} is invalid. Order does not exist.");
             }
 
             try
@@ -31,7 +32,6 @@ namespace PosAPI.Repositories
 
                 await _context.Payments.AddAsync(payment);
 
-                // Add the payment to the order's collection
                 order.Payments?.Add(payment);
 
 
@@ -39,7 +39,7 @@ namespace PosAPI.Repositories
             }
             catch (DbUpdateException ex)
             {
-                throw new Exception("An error occurred while adding the new payment to the database.", ex);
+                throw new DbUpdateException("An error occurred while adding the new payment to the database.", ex);
             }
         }
 
@@ -85,5 +85,13 @@ namespace PosAPI.Repositories
         {
             throw new NotImplementedException();
         }
+        
+        public async Task<decimal> GetTotalPaymentsForOrderAsync(int orderId)
+        {
+            return await _context.Payments
+                .Where(p => p.OrderId == orderId)
+                .SumAsync(p => p.Amount);
+        }
+
     }
 }

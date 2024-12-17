@@ -77,7 +77,8 @@ public class UserService : IUserService
         if (newUser.BusinessId != sender.BusinessId && sender.Role != UserRole.SuperAdmin)
             newUser.BusinessId = sender.BusinessId;
 
-        
+        await _userRepository.AddUserAsync(newUser);
+
         return newUser;
     }
     

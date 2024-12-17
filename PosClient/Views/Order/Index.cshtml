@@ -2,6 +2,7 @@
     ViewData["Title"] = "Order Page";
 }
 @using PosShared.Models
+@using PosShared
 @model PosShared.PaginatedResult<Order>
 
 @if (TempData["Error"] != null)
@@ -37,7 +38,7 @@
                         <th>Tax Amount</th>
                         <th>Charge</th>
                         <th>Tip</th>
-                        <th colspan="4">Actions</th>
+                        <th colspan="5">Actions</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -71,20 +72,45 @@
                                         </button>
                                     </form>
                                 </td>
-                                <td>
-                                    <form asp-action="UpdateStatus" method="post" class="m-0">
-                                        <input type="hidden" name="orderId" value="@order.Id" />
-                                        <input type="hidden" name="status" value="1" />
-                                        <button type="submit" class="btn btn-warning btn-sm" onclick="return confirm('Are you sure you want to close this order?');">
-                                            <i class="bi bi-lock"></i> Close Order
-                                        </button>
-                                    </form>
-                                </td>
+                                if (order.Status != OrderStatus.Refunded)
+                                {
+                                    <td>
+                                        <form asp-action="UpdateStatus" method="post" class="m-0">
+                                            <input type="hidden" name="orderId" value="@order.Id"/>
+                                            <input type="hidden" name="status" value="1"/>
+                                            <button type="submit" class="btn btn-warning btn-sm" onclick="return confirm('Are you sure you want to close this order?');">
+                                                <i class="bi bi-lock"></i> Close Order
+                                            </button>
+                                        </form>
+                                    </td>
+                                }
+                                else
+                                {
+                                    <td colspan="1"></td>
+                                }
                             }
                             else
                             {
                                 <td colspan="2"></td>
                             }
+                            @if (order.Status != OrderStatus.Refunded)
+                            {
+
+                                <td>
+                                    <form asp-action="Refund" asp-controller="Payment" method="get" class="m-0">
+                                        <input type="hidden" name="orderId" value="@order.Id"/>
+                                        <input type="hidden" name="untaxedAmount" value="@order.ChargeAmount"/>
+                                        <input type="hidden" name="tax" value="@order.TaxAmount"/>
+                                        <button type="submit" class="btn btn-warning btn-sm">
+                                            <i class="bi bi-arrow-clockwise"></i> Refund Order
+                                        </button>
+                                    </form>
+                                </td>
+                            }
+                                                        else
+                                                        {
+                                                            <td colspan="1"></td>
+                                                        }
                             <td>
                                 <a href="@Url.Action("GetOrderPayments", "Payment", new { orderId = order.Id })" class="btn btn-primary btn-sm">
                                     <i class="bi bi-credit-card"></i> Payments

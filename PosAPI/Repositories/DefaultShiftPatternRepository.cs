@@ -1,5 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using PosAPI.Data.DbContext;
+using PosAPI.Migrations;
+using PosShared;
 using PosShared.Models;
 
 namespace PosAPI.Repositories
@@ -7,10 +9,12 @@ namespace PosAPI.Repositories
     public class DefaultShiftPatternRepository : IDefaultShiftPatternRepository
     {
         private readonly ApplicationDbContext _context;
+        private readonly ILogger<DefaultShiftPattern> _logger;
 
-        public DefaultShiftPatternRepository(ApplicationDbContext context)
+        public DefaultShiftPatternRepository(ApplicationDbContext context, ILogger<DefaultShiftPattern> logger)
         {
             _context = context;
+            _logger = logger;
         }
 
         public async Task<DefaultShiftPattern?> GetByIdAsync(int id)
@@ -57,7 +61,7 @@ namespace PosAPI.Repositories
             }
             catch (DbUpdateException ex)
             {
-                throw new Exception("An error occurred while adding the shift pattern to the database.", ex);
+                throw new DbUpdateException("An error occurred while adding the shift pattern to the database.", ex);
             }
         }
 
@@ -72,7 +76,7 @@ namespace PosAPI.Repositories
             }
             catch (DbUpdateException ex)
             {
-                throw new Exception("An error occurred while updating the shift pattern in the database.", ex);
+                throw new DbUpdateException("An error occurred while updating the shift pattern in the database.", ex);
             }
         }
 
@@ -88,7 +92,7 @@ namespace PosAPI.Repositories
                 }
                 catch (DbUpdateException ex)
                 {
-                    throw new Exception("An error occurred while deleting the shift pattern from the database.", ex);
+                    throw new DbUpdateException("An error occurred while deleting the shift pattern from the database.", ex);
                 }
             }
         }
@@ -117,7 +121,7 @@ namespace PosAPI.Repositories
                 }
             }
         }
-
+        
         public async Task RemoveUserFromPatternAsync(int patternId, int userId)
         {
             var pattern = await _context.DefaultShiftPatterns
