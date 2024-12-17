@@ -4,6 +4,7 @@ using PosAPI.Services.Interfaces;
 using PosAPI.Repositories;
 using PosShared.Models;
 using PosShared.Utilities;
+using System.Text.Json;
 
 namespace PosAPI.Controllers;
 
@@ -102,7 +103,7 @@ public class DefaultShiftPatternController : ControllerBase
 
     // POST: api/DefaultShiftPattern
     [HttpPost]
-    public async Task<IActionResult> CreatePattern([FromBody] DefaultShiftPattern pattern)
+    public async Task<IActionResult> CreatePattern([FromBody] DefaultShiftPattern pattern, [FromQuery] List<int> userIds)
     {
         User? sender = await GetUserFromToken();
         if (sender == null)
@@ -118,6 +119,7 @@ public class DefaultShiftPatternController : ControllerBase
 
         try
         {
+
             pattern.StartDate = DateTime.SpecifyKind(pattern.StartDate, DateTimeKind.Utc);
             pattern.EndDate = DateTime.SpecifyKind(pattern.EndDate, DateTimeKind.Utc);
 
@@ -125,24 +127,15 @@ public class DefaultShiftPatternController : ControllerBase
             {
                 return BadRequest("End time must be after start time.");
             }
-    
-            pattern.Users ??= new List<User>();
+
+            await _shiftPatternService.ValidateUserPatternConflictsAsync(pattern, userIds);
 
             var newPattern = await _shiftPatternService.CreateAuthorizedPatternAsync(pattern, sender);
-
-            return CreatedAtAction(
-                nameof(GetPatternById), 
-                new { id = newPattern.Id }, 
-                newPattern
-            );
+            return CreatedAtAction(nameof(GetPatternById), new { id = newPattern.Id }, newPattern);
         }
-        catch (UnauthorizedAccessException ex)
+        catch (InvalidOperationException ex)
         {
-            return Unauthorized(ex.Message);
-        }
-        catch (KeyNotFoundException ex)
-        {
-            return NotFound(ex.Message);
+            return StatusCode(409, "Shift conflict detected: " + ex.Message);
         }
         catch (Exception ex)
         {
@@ -153,29 +146,25 @@ public class DefaultShiftPatternController : ControllerBase
 
     // PUT: api/DefaultShiftPattern/{id}
     [HttpPut("{id}")]
-    public async Task<IActionResult> UpdatePattern(int id, [FromBody] DefaultShiftPattern pattern)
+    public async Task<IActionResult> UpdatePattern(int id, [FromBody] DefaultShiftPattern pattern, [FromQuery] List<int> userIds)
     {
         User? sender = await GetUserFromToken();
+        if (sender == null)
+            return Unauthorized();
 
         if (id != pattern.Id)
             return BadRequest("ID mismatch");
 
         try
         {
+            await _shiftPatternService.ValidateUserPatternConflictsAsync(pattern, userIds, id);
+
             await _shiftPatternService.UpdateAuthorizedPatternAsync(pattern, sender);
             return NoContent();
         }
-        catch (UnauthorizedAccessException ex)
+        catch (InvalidOperationException ex)
         {
-            return Unauthorized(ex.Message);
-        }
-        catch (KeyNotFoundException ex)
-        {
-            return NotFound(ex.Message);
-        }
-        catch (ArgumentException ex)
-        {
-            return BadRequest(ex.Message);
+            return StatusCode(409, "Shift conflict detected: " + ex.Message);
         }
         catch (Exception ex)
         {

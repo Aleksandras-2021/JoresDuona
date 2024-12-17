@@ -152,5 +152,24 @@ namespace PosAPI.Services
 
             await _repository.RemoveUserFromPatternAsync(patternId, userId);
         }
+
+        public async Task ValidateUserPatternConflictsAsync(DefaultShiftPattern pattern, List<int> userIds, int? excludePatternId = null)
+        {
+            foreach (var userId in userIds)
+            {
+                var userPatterns = await _repository.GetByUserIdAsync(userId);
+                if (excludePatternId.HasValue)
+                {
+                    userPatterns = userPatterns.Where(p => p.Id != excludePatternId.Value).ToList();
+                }
+
+                var conflictingPattern = userPatterns.FirstOrDefault(p => p.DayOfWeek == pattern.DayOfWeek);
+                if (conflictingPattern != null)
+                {
+                    var user = await _userRepository.GetUserByIdAsync(userId);
+                    throw new InvalidOperationException($"User {user?.Name} already has a shift pattern assigned on {pattern.DayOfWeek}.");
+                }
+            }
+        }
     }
 }

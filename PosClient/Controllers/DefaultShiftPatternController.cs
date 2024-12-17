@@ -112,34 +112,48 @@ namespace PosClient.Controllers
 
             if (ModelState.IsValid)
             {
-                viewModel.Pattern.StartDate = new DateTime(2000, 1, 1, 
-                    viewModel.Pattern.StartDate.Hour, 0, 0, DateTimeKind.Utc);
-                viewModel.Pattern.EndDate = new DateTime(2000, 1, 1, 
-                    viewModel.Pattern.EndDate.Hour, 0, 0, DateTimeKind.Utc);
-
-                var apiUrl = _apiUrl + "/api/DefaultShiftPattern";
-                var content = new StringContent(
-                    JsonSerializer.Serialize(viewModel.Pattern),
-                    Encoding.UTF8,
-                    "application/json"
-                );
-
-                var response = await _httpClient.PostAsync(apiUrl, content);
-                if (response.IsSuccessStatusCode)
+                try
                 {
-                    var createdPattern = await response.Content.ReadFromJsonAsync<DefaultShiftPattern>();
-                    if (createdPattern != null && assignedUserIds != null)
-                    {
-                        foreach (var userId in assignedUserIds)
-                        {
-                            await AssignUser(userId, createdPattern.Id);
-                        }
-                    }
+                    viewModel.Pattern.StartDate = new DateTime(2000, 1, 1, 
+                        viewModel.Pattern.StartDate.Hour, 0, 0, DateTimeKind.Utc);
+                    viewModel.Pattern.EndDate = new DateTime(2000, 1, 1, 
+                        viewModel.Pattern.EndDate.Hour, 0, 0, DateTimeKind.Utc);
 
-                    return RedirectToAction(nameof(Index));
+                    var apiUrl = $"{_apiUrl}/api/DefaultShiftPattern?{string.Join("&", assignedUserIds.Select(id => $"userIds={id}"))}";
+                    var content = new StringContent(
+                        JsonSerializer.Serialize(viewModel.Pattern),
+                        Encoding.UTF8,
+                        "application/json"
+                    );
+
+                    var response = await _httpClient.PostAsync(apiUrl, content);
+                    if (response.IsSuccessStatusCode)
+                    {
+                        var createdPattern = await response.Content.ReadFromJsonAsync<DefaultShiftPattern>();
+                        if (createdPattern != null && assignedUserIds != null)
+                        {
+                            foreach (var userId in assignedUserIds)
+                            {
+                                await AssignUser(userId, createdPattern.Id);
+                            }
+                        }
+
+                        return RedirectToAction(nameof(Index));
+                    }
+                    if (response.StatusCode == System.Net.HttpStatusCode.Conflict) // 409
+                    {
+                        var errorMessage = await response.Content.ReadAsStringAsync();
+                        TempData["Error"] = errorMessage;
+                    }
+                    else
+                    {
+                        TempData["Error"] = $"Failed to create shift pattern. " + response.StatusCode;
+                    }
                 }
-                var errorMessage = await response.Content.ReadAsStringAsync();
-                ModelState.AddModelError(string.Empty, $"Error creating shift pattern: {errorMessage}");
+                catch (Exception ex)
+                {
+                    TempData["Error"] = ex.Message;
+                }
             }
 
             var usersApiUrl = ApiRoutes.User.GetPaginated(1, 20);
@@ -201,38 +215,53 @@ namespace PosClient.Controllers
 
             if (ModelState.IsValid)
             {
-                var apiUrl = _apiUrl + $"/api/DefaultShiftPattern/{id}";
-                var content = new StringContent(
-                    JsonSerializer.Serialize(pattern),
-                    Encoding.UTF8,
-                    "application/json"
-                );
-
-                var response = await _httpClient.PutAsync(apiUrl, content);
-
-                if (response.IsSuccessStatusCode)
+                try
                 {
-                    if (assignedUserIds != null)
+                    var apiUrl = _apiUrl + $"/api/DefaultShiftPattern/{id}?{string.Join("&", assignedUserIds.Select(id => $"userIds={id}"))}";
+                    var content = new StringContent(
+                        JsonSerializer.Serialize(pattern),
+                        Encoding.UTF8,
+                        "application/json"
+                    );
+
+                    var response = await _httpClient.PutAsync(apiUrl, content);
+
+                    if (response.IsSuccessStatusCode)
                     {
-                        var currentPattern = await _httpClient.GetFromJsonAsync<DefaultShiftPattern>($"{_apiUrl}/api/DefaultShiftPattern/{id}");
-                        var currentUserIds = currentPattern?.Users?.Select(u => u.Id).ToList() ?? new List<int>();
-
-                        foreach (var userId in currentUserIds.Except(assignedUserIds))
+                        if (assignedUserIds != null)
                         {
-                            await _httpClient.DeleteAsync($"{_apiUrl}/api/DefaultShiftPattern/{id}/User/{userId}");
+                            var currentPattern = await _httpClient.GetFromJsonAsync<DefaultShiftPattern>($"{_apiUrl}/api/DefaultShiftPattern/{id}");
+                            var currentUserIds = currentPattern?.Users?.Select(u => u.Id).ToList() ?? new List<int>();
+
+                            foreach (var userId in currentUserIds.Except(assignedUserIds))
+                            {
+                                await _httpClient.DeleteAsync($"{_apiUrl}/api/DefaultShiftPattern/{id}/User/{userId}");
+                            }
+
+                            foreach (var userId in assignedUserIds.Except(currentUserIds))
+                            {
+                                await _httpClient.PostAsync($"{_apiUrl}/api/DefaultShiftPattern/{id}/User/{userId}", null);
+                            }
                         }
 
-                        foreach (var userId in assignedUserIds.Except(currentUserIds))
-                        {
-                            await _httpClient.PostAsync($"{_apiUrl}/api/DefaultShiftPattern/{id}/User/{userId}", null);
-                        }
+                        return RedirectToAction(nameof(Index));
                     }
 
-                    return RedirectToAction(nameof(Index));
+                    if (response.StatusCode == System.Net.HttpStatusCode.Conflict) // 409
+                    {
+                        var errorMessage = await response.Content.ReadAsStringAsync();
+                        TempData["Error"] = errorMessage;
+                    }
+                    else
+                    {
+                        TempData["Error"] = $"Failed to create shift pattern. " + response.StatusCode;
+                    }
+                
                 }
-
-                var errorMessage = await response.Content.ReadAsStringAsync();
-                ModelState.AddModelError(string.Empty, $"Error updating shift pattern: {errorMessage}");
+                catch (Exception ex)
+                {
+                    TempData["Error"] = ex.Message;
+                }
             }
 
             var usersApiUrl = ApiRoutes.User.GetPaginated(1, 20);
