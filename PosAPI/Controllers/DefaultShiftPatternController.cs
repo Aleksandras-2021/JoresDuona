@@ -14,7 +14,6 @@ namespace PosAPI.Controllers;
 public class DefaultShiftPatternController : ControllerBase
 {
     private readonly IDefaultShiftPatternService _shiftPatternService;
-    private readonly IUserRepository _userRepository;
     private readonly IUserTokenService _userTokenService;
 
     public DefaultShiftPatternController(
@@ -22,7 +21,6 @@ public class DefaultShiftPatternController : ControllerBase
         IUserRepository userRepository, IUserTokenService userTokenService)
     {
         _shiftPatternService = shiftPatternService;
-        _userRepository = userRepository;
         _userTokenService = userTokenService;
     }
 
