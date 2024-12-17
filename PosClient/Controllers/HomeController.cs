@@ -47,12 +47,10 @@ namespace PosClient.Controllers
         public async Task<IActionResult> Login(string email, string password)
         {
             var loginRequest = new { Email = email, Password = password };
-
             
             var content = new StringContent(JsonSerializer.Serialize(loginRequest), Encoding.UTF8, "application/json");
 
-            // Call API to validate login
-            var response = await _apiService.PostAsync(_apiUrl + "/api/login", content);
+            var response = await _apiService.PostAsync(ApiRoutes.Auth.Login, content);
 
             if (response.IsSuccessStatusCode)
             {
@@ -108,7 +106,7 @@ namespace PosClient.Controllers
 
             var content = new StringContent(JsonSerializer.Serialize(changePasswordRequest), Encoding.UTF8, "application/json");
             
-            var response = await _apiService.PostAsync(_apiUrl + "/api/change-password", content);
+            var response = await _apiService.PostAsync(ApiRoutes.Auth.ChangePassword, content);
 
             if (response.IsSuccessStatusCode)
             {
@@ -123,15 +121,13 @@ namespace PosClient.Controllers
             }
         }
 
-// GET: Home/ChangePassword
+        // GET: Home/ChangePassword
         [Authorize]
         public IActionResult ChangePassword()
         {
             return View();
         }
-
-
-
+        
         public IActionResult Logout()
         {
 
