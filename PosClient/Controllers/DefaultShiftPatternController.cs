@@ -29,7 +29,6 @@ namespace PosClient.Controllers
             {
                 var patternsData = await response.Content.ReadAsStringAsync();
                 var patterns = JsonSerializer.Deserialize<List<DefaultShiftPattern>>(patternsData, JsonOptions.Default);
-                Console.WriteLine("Patterns:" + JsonSerializer.Serialize(patterns));
                 return View(patterns);
             }
 
@@ -157,11 +156,12 @@ namespace PosClient.Controllers
 
         // GET: DefaultShiftPattern/Edit/5
         [HttpGet]
-        public async Task<IActionResult> Edit(int id)
+        public async Task<IActionResult> Edit(int id, int pageNumber = 1, int pageSize = 20)
         {
             string? token = Request.Cookies["authToken"];
             _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
+            // Get the pattern
             var apiUrl = _apiUrl + $"/api/DefaultShiftPattern/{id}";
             var response = await _httpClient.GetAsync(apiUrl);
 
@@ -169,38 +169,98 @@ namespace PosClient.Controllers
             {
                 var patternData = await response.Content.ReadAsStringAsync();
                 var pattern = JsonSerializer.Deserialize<DefaultShiftPattern>(patternData, 
-                   JsonOptions.Default);
+                    new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
 
-                if (pattern != null)
+                // Get all users
+                var usersApiUrl = ApiRoutes.User.GetPaginated(pageNumber, pageSize);
+                var userResponse = await _httpClient.GetAsync(usersApiUrl);
+
+                if (userResponse.IsSuccessStatusCode)
                 {
-                    
-                    return View("Create");
+                    var usersJson = await userResponse.Content.ReadAsStringAsync();
+                    var users = JsonSerializer.Deserialize<PaginatedResult<User>>(usersJson, 
+                        new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+
+                    var viewModel = new DefaultShiftPatternCreateViewModel
+                    {
+                        Pattern = pattern,
+                        AvailableUsers = users,
+                        AssignedUsers = pattern.Users?.ToList() ?? new List<User>()
+                    };
+
+                    return View(viewModel);
                 }
             }
 
             return NotFound();
         }
 
-        // POST: DefaultShiftPattern/Edit/5
         [HttpPost]
-        public async Task<IActionResult> Edit(int id, DefaultShiftPattern pattern)
+        public async Task<IActionResult> Edit(int id, DefaultShiftPattern pattern, List<int> assignedUserIds)
         {
             string? token = Request.Cookies["authToken"];
             _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
             if (ModelState.IsValid)
             {
+                // Update the pattern
                 var apiUrl = _apiUrl + $"/api/DefaultShiftPattern/{id}";
-                var content = new StringContent(JsonSerializer.Serialize(pattern), Encoding.UTF8, "application/json");
+                var content = new StringContent(
+                    JsonSerializer.Serialize(pattern),
+                    Encoding.UTF8,
+                    "application/json"
+                );
 
                 var response = await _httpClient.PutAsync(apiUrl, content);
 
                 if (response.IsSuccessStatusCode)
                 {
+                    // Update user assignments
+                    if (assignedUserIds != null)
+                    {
+                        // First, get current assigned users
+                        var currentPattern = await _httpClient.GetFromJsonAsync<DefaultShiftPattern>($"{_apiUrl}/api/DefaultShiftPattern/{id}");
+                        var currentUserIds = currentPattern?.Users?.Select(u => u.Id).ToList() ?? new List<int>();
+
+                        // Remove users that are no longer assigned
+                        foreach (var userId in currentUserIds.Except(assignedUserIds))
+                        {
+                            await _httpClient.DeleteAsync($"{_apiUrl}/api/DefaultShiftPattern/{id}/User/{userId}");
+                        }
+
+                        // Add newly assigned users
+                        foreach (var userId in assignedUserIds.Except(currentUserIds))
+                        {
+                            await _httpClient.PostAsync($"{_apiUrl}/api/DefaultShiftPattern/{id}/User/{userId}", null);
+                        }
+                    }
+
                     return RedirectToAction(nameof(ShiftPatterns));
                 }
 
-                TempData["Error"] = "Failed to update shift pattern.";
+                var errorMessage = await response.Content.ReadAsStringAsync();
+                ModelState.AddModelError(string.Empty, $"Error updating shift pattern: {errorMessage}");
+            }
+
+            // If we get here, something failed - reload the form
+            var usersApiUrl = ApiRoutes.User.GetPaginated(1, 20);
+            var userResponse = await _httpClient.GetAsync(usersApiUrl);
+            if (userResponse.IsSuccessStatusCode)
+            {
+                var usersJson = await userResponse.Content.ReadAsStringAsync();
+                var users = JsonSerializer.Deserialize<PaginatedResult<User>>(
+                    usersJson,
+                    new JsonSerializerOptions { PropertyNameCaseInsensitive = true }
+                );
+
+                var viewModel = new DefaultShiftPatternCreateViewModel
+                {
+                    Pattern = pattern,
+                    AvailableUsers = users,
+                    AssignedUsers = new List<User>() // This will be empty on error, but the page will still work
+                };
+
+                return View(viewModel);
             }
 
             return View(pattern);

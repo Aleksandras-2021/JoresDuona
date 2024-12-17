@@ -63,8 +63,6 @@ namespace PosAPI.Repositories
 
         public async Task UpdateAsync(DefaultShiftPattern pattern)
         {
-            ArgumentNullException.ThrowIfNull(pattern);
-
             try
             {
                 _context.DefaultShiftPatterns.Update(pattern);
@@ -72,7 +70,7 @@ namespace PosAPI.Repositories
             }
             catch (DbUpdateException ex)
             {
-                throw new Exception("An error occurred while updating the shift pattern in the database.", ex);
+                throw new Exception("An error occurred while updating the pattern in the database.", ex);
             }
         }
 

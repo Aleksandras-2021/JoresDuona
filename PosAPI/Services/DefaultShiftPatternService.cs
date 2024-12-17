@@ -91,11 +91,12 @@ namespace PosAPI.Services
                 var businessId = existingPattern.Users.First().BusinessId;
                 AuthorizationHelper.ValidateOwnershipOrRole(sender, businessId, sender.BusinessId, "Update");
             }
+        
+            existingPattern.DayOfWeek = pattern.DayOfWeek;
+            existingPattern.StartDate = new DateTime(2000, 1, 1, pattern.StartDate.Hour, 0, 0, DateTimeKind.Utc);
+            existingPattern.EndDate = new DateTime(2000, 1, 1, pattern.EndDate.Hour, 0, 0, DateTimeKind.Utc);
 
-            if (pattern.EndDate <= pattern.StartDate)
-                throw new ArgumentException("End date must be after start date.");
-
-            await _repository.UpdateAsync(pattern);
+            await _repository.UpdateAsync(existingPattern);
         }
 
         public async Task DeleteAuthorizedPatternAsync(int id, User? sender)
