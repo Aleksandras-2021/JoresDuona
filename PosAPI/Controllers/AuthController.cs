@@ -99,17 +99,19 @@ public class AuthController : ControllerBase
         });
     }
 
-    private string GenerateToken(string email, int userId, UserRole role, int businessId)
+    private string GenerateToken(string email, int userId, UserRole role, int? businessId = null)
     {
-        var claims = new[]
+        var claims = new List<Claim>
         {
             new Claim(ClaimTypes.Name, email),
             new Claim("UserId", userId.ToString()),
             new Claim(ClaimTypes.Role, role.ToString()),
-            new Claim("BusinessId", businessId.ToString())
 
         };
-
+        if (businessId.HasValue)
+        {
+            claims.Add(new Claim("BusinessId", businessId.Value.ToString()));
+        }
         var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_jwtSettings.Secret));
         var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
 
