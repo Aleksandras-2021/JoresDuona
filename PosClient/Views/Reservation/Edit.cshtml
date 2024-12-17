@@ -10,11 +10,10 @@
 
 <div class="container mt-4">
     <h2>Edit a Reservation</h2>
-    <input asp-for="Id" class="form-control" required hidden />
-
     <form asp-controller="Reservation" asp-action="Edit" method="post">
         <input asp-for="ServiceId" class="form-control" required hidden />
-            
+                <input asp-for="Id" class="form-control" required />
+
         <div class="form-group mb-3">
             <label asp-for="CustomerName" class="form-label">Customer Name</label>
             <input asp-for="CustomerName" class="form-control" required />

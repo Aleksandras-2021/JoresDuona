@@ -17,7 +17,9 @@ namespace PosAPI.Repositories
         Task UpdateReservationAsync(Reservation reservation);
         Task AddCustomer(Customer customer);
         Task<Customer?> FindCustomerByPhone(string phone);
-        Task<bool> IsReservationOverlappingAsync(int serviceId, DateTime startTime, DateTime endTime);
+
+        Task<bool> IsReservationOverlappingAsync(int serviceId, DateTime startTime, DateTime endTime,
+            int? reservationToIgnoreId = null);
         Task DeleteReservationAsync(int id);
         
     }

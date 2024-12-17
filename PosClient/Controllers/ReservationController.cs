@@ -60,7 +60,7 @@ namespace PosClient.Controllers
                 ServiceId = model.ServiceId,
                 CustomerName = model.CustomerName,
                 CustomerPhone = model.CustomerPhone,
-                ReservationTime = model.ReservationTime,
+                ReservationTime = model.ReservationTime.ToUniversalTime()
             };
             
             
@@ -95,10 +95,11 @@ namespace PosClient.Controllers
                 
                  var model = new ReservationViewModel()
                 {
+                    Id = reservationId,
                     ServiceId = reservation.ServiceId,
                     CustomerName = reservation.CustomerName,
                     CustomerPhone = reservation.CustomerPhone,
-                    ReservationTime = reservation.ReservationTime
+                    ReservationTime = reservation.ReservationTime.ToLocalTime()
                 };
                 return View("~/Views/Reservation/Edit.cshtml", model);
             }
@@ -116,14 +117,15 @@ namespace PosClient.Controllers
                 ServiceId = model.ServiceId,
                 CustomerName = model.CustomerName,
                 CustomerPhone = model.CustomerPhone,
-                ReservationTime = model.ReservationTime,
+                ReservationTime = model.ReservationTime.ToUniversalTime(),
             };
-            
+            Console.WriteLine($"Received ID: {id}"); // Debugging
+
             
             var apiUrl = ApiRoutes.Reservation.Update(id);
             var content = new StringContent(JsonSerializer.Serialize(dto), Encoding.UTF8, "application/json");
             
-            var response = await _apiService.PostAsync(apiUrl,content);
+            var response = await _apiService.PutAsync(apiUrl,content);
 
             if (response.IsSuccessStatusCode)
             {
@@ -133,7 +135,7 @@ namespace PosClient.Controllers
 
             TempData["Error"] = $"Could not update reservation. {response.StatusCode}";
 
-            return View("~/Views/Service/Reserve.cshtml", model);
+            return RedirectToAction("Index","Reservation");
         }
         
         

@@ -83,24 +83,26 @@ public async Task CreateAuthorizedReservationAsync(ReservationCreateDTO reservat
             }
 
             // 2. Calculate the end time for the reservation
-            var startTime = reservation.ReservationTime.ToUniversalTime();
-            var endTime = reservation.ReservationTime.AddMinutes(service.DurationInMinutes).ToUniversalTime();
+            var startTime = reservation.ReservationTime;
+            var endTime = reservation.ReservationTime.AddMinutes(service.DurationInMinutes);
 
             // 3. Check for overlapping reservations
             var isOverlapping = await _reservationRepository.IsReservationOverlappingAsync(reservation.ServiceId, startTime, endTime);
             var isEmployeeAvailable = await IsValidShiftForReservationAsync(service.EmployeeId, sender, startTime);
 
-            if (!isEmployeeAvailable || isOverlapping || startTime < DateTime.Today)
-                throw new BusinessRuleViolationException($"The selected time slot from {startTime} to {endTime} are invalid. Is employee available: {isEmployeeAvailable}");
+            if (!isEmployeeAvailable || isOverlapping || startTime < DateTime.Now.ToUniversalTime())
+                throw new BusinessRuleViolationException($"The selected time slot from {startTime} to {endTime} are invalid. Is employee available: {isEmployeeAvailable} is start<today {startTime<DateTime.Now.ToUniversalTime()}");
 
+            DateTime now = DateTime.Now.ToUniversalTime();
+            
             // 4. Create new reservation
             Reservation newReservation = new Reservation
             {
-                ReservationTime = reservation.ReservationTime,
-                ReservationEndTime = reservation.ReservationTime.AddMinutes(service.DurationInMinutes),
+                ReservationTime = startTime,
+                ReservationEndTime = endTime,
                 CustomerPhone = reservation.CustomerPhone,
                 CustomerId = customer.Id,
-                BookedAt = DateTime.Now,
+                BookedAt = now,
                 ServiceId = reservation.ServiceId,
                 CustomerName = reservation.CustomerName,
                 EmployeeId = service.EmployeeId,
@@ -154,17 +156,19 @@ public async Task CreateAuthorizedReservationAsync(ReservationCreateDTO reservat
     public async Task UpdateAuthorizedReservationAsync(int reservationId, ReservationCreateDTO reservation, User? sender)
     {
         AuthorizationHelper.Authorize("Reservation", "Update", sender);
-        var existingReservation = await  GetAuthorizedReservationAsync(reservationId, sender);
+        var existingReservation = await  _reservationRepository.GetReservationByIdAsync(reservationId);
         var service = await _serviceService.GetAuthorizedService(existingReservation.ServiceId, sender);
-        
-        var startTime = reservation.ReservationTime.ToUniversalTime();
-        var endTime = reservation.ReservationTime.AddMinutes(service.DurationInMinutes).ToUniversalTime();
 
-        var isOverlapping = await _reservationRepository.IsReservationOverlappingAsync(reservation.ServiceId, startTime, endTime);
+        var startTime = reservation.ReservationTime;
+        var endTime = reservation.ReservationTime.AddMinutes(service.DurationInMinutes);
+
+        var isOverlapping = await _reservationRepository.IsReservationOverlappingAsync(service.Id, startTime, endTime,reservationId);
         var isEmployeeAvailable = await IsValidShiftForReservationAsync(service.EmployeeId, sender, startTime);
 
-        if (!isEmployeeAvailable || isOverlapping || startTime < DateTime.Today)
-            throw new BusinessRuleViolationException($"The selected time slot from {startTime} to {endTime} are invalid. Is employee available: {isEmployeeAvailable}");
+        if (!isEmployeeAvailable || isOverlapping || startTime < DateTime.Now.ToUniversalTime())
+            throw new BusinessRuleViolationException($"The selected time slot from {startTime} to {endTime} are invalid. Is employee available: {isEmployeeAvailable} is start < today {startTime<DateTime.Now.ToUniversalTime()} " +
+                                                     $"\n IsOverlapping: {isOverlapping} \n" +
+                                                     $"START {startTime}, NOW: {DateTime.Now.ToUniversalTime()}");
 
         var newReservation = new Reservation()
         {

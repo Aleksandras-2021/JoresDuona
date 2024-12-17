@@ -139,16 +139,16 @@ namespace PosAPI.Repositories
             return customer;
         }
         
-        public async Task<bool> IsReservationOverlappingAsync(int serviceId, DateTime startTime, DateTime endTime)
+        public async Task<bool> IsReservationOverlappingAsync(int serviceId, DateTime startTime, DateTime endTime, int? reservationToIgnoreId = null)
         {
             
             Console.WriteLine($"Checking overlaps for ServiceId: {serviceId}");
             Console.WriteLine($"StartTime: {startTime}, EndTime: {endTime}");
-
             var overlappingReservations = await _context.Reservations
                 .Where(r => r.ServiceId == serviceId &&
                             r.ReservationTime < endTime &&
-                            r.ReservationEndTime > startTime)
+                            r.ReservationEndTime > startTime &&
+                            (reservationToIgnoreId == null || r.Id != reservationToIgnoreId)) // Ignore the specified reservation
                 .ToListAsync();
 
             foreach (var res in overlappingReservations)
@@ -157,8 +157,8 @@ namespace PosAPI.Repositories
             }
 
             return overlappingReservations.Any();
-            
         }
+        
 
         public async Task<Reservation> GetReservationByIdAsync(int id)
         {

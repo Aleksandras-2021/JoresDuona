@@ -12,15 +12,14 @@ using PosShared.ViewModels;
 public class ReservationController : ControllerBase
 {
     private readonly IReservationService _reservationService;
-    private readonly IReservationRepository _reservationRepository;
     private readonly IUserTokenService _userTokenService;
+    private readonly ILogger<ReservationController> _logger;
 
-    public ReservationController(IReservationService reservationService, IReservationRepository reservationRepository,
-        IUserTokenService userTokenService)
+    public ReservationController(IReservationService reservationService, IUserTokenService userTokenService,  ILogger<ReservationController> logger)
     {
         _reservationService = reservationService;
-        _reservationRepository = reservationRepository;
         _userTokenService = userTokenService;
+        _logger = logger;
     }
 
     [HttpGet]
