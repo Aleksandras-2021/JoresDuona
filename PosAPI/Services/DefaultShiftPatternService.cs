@@ -91,11 +91,12 @@ namespace PosAPI.Services
                 var businessId = existingPattern.Users.First().BusinessId;
                 AuthorizationHelper.ValidateOwnershipOrRole(sender, businessId, sender.BusinessId, "Update");
             }
+        
+            existingPattern.DayOfWeek = pattern.DayOfWeek;
+            existingPattern.StartDate = new DateTime(2000, 1, 1, pattern.StartDate.Hour, 0, 0, DateTimeKind.Utc);
+            existingPattern.EndDate = new DateTime(2000, 1, 1, pattern.EndDate.Hour, 0, 0, DateTimeKind.Utc);
 
-            if (pattern.EndDate <= pattern.StartDate)
-                throw new ArgumentException("End date must be after start date.");
-
-            await _repository.UpdateAsync(pattern);
+            await _repository.UpdateAsync(existingPattern);
         }
 
         public async Task DeleteAuthorizedPatternAsync(int id, User? sender)
@@ -150,6 +151,25 @@ namespace PosAPI.Services
             AuthorizationHelper.ValidateOwnershipOrRole(sender, user.BusinessId, sender.BusinessId, "Update");
 
             await _repository.RemoveUserFromPatternAsync(patternId, userId);
+        }
+
+        public async Task ValidateUserPatternConflictsAsync(DefaultShiftPattern pattern, List<int> userIds, int? excludePatternId = null)
+        {
+            foreach (var userId in userIds)
+            {
+                var userPatterns = await _repository.GetByUserIdAsync(userId);
+                if (excludePatternId.HasValue)
+                {
+                    userPatterns = userPatterns.Where(p => p.Id != excludePatternId.Value).ToList();
+                }
+
+                var conflictingPattern = userPatterns.FirstOrDefault(p => p.DayOfWeek == pattern.DayOfWeek);
+                if (conflictingPattern != null)
+                {
+                    var user = await _userRepository.GetUserByIdAsync(userId);
+                    throw new InvalidOperationException($"User {user?.Name} already has a shift pattern assigned on {pattern.DayOfWeek}.");
+                }
+            }
         }
     }
 }

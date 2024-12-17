@@ -1,7 +1,7 @@
 @model PosShared.ViewModels.DefaultShiftPatternCreateViewModel
 
 <div class="container my-4">
-    <h2>Create Shift Pattern</h2>
+    <h2>Edit Shift Pattern</h2>
 
     @if (TempData["Error"] != null)
     {
@@ -10,7 +10,9 @@
         </div>
     }
 
-    <form asp-action="Create" method="post" id="createForm">
+    <form asp-action="Edit" method="post" id="editForm">
+        @Html.AntiForgeryToken()
+        <input type="hidden" asp-for="Pattern.Id" />
 
         <div class="form-group mb-3">
             <label asp-for="Pattern.DayOfWeek" class="control-label">Day of Week</label>
@@ -21,7 +23,7 @@
         <div class="form-group mb-3">
             <label asp-for="Pattern.StartDate" class="control-label">Start Time</label>
             <select asp-for="Pattern.StartDate" class="form-control">
-                @for ( int hour = 0; hour < 24; hour++ )
+                @for (int hour = 0; hour < 24; hour++)
                 {
                     <option value="@(new DateTime(2000, 1, 1, hour, 0, 0))">@(hour.ToString("00")):00</option>
                 }
@@ -32,7 +34,7 @@
         <div class="form-group mb-3">
             <label asp-for="Pattern.EndDate" class="control-label">End Time</label>
             <select asp-for="Pattern.EndDate" class="form-control">
-                @for ( int hour = 0; hour < 24; hour++ )
+                @for (int hour = 0; hour < 24; hour++)
                 {
                     <option value="@(new DateTime(2000, 1, 1, hour, 0, 0))">@(hour.ToString("00")):00</option>
                 }
@@ -130,7 +132,7 @@
         </div>
 
         <div class="form-group mt-4">
-            <button type="submit" class="btn btn-primary">Create Pattern</button>
+            <button type="submit" class="btn btn-primary">Save Changes</button>
             <a asp-action="Index" class="btn btn-secondary">Back to List</a>
         </div>
     </form>
@@ -139,14 +141,19 @@
 @section Scripts {
     @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
     
-    <script>
+     <script>
         $(document).ready(function() {
+            var startTime = new Date($('#Pattern_StartDate').val());
+            var endTime = new Date($('#Pattern_EndDate').val());
+            
+            $('#Pattern_StartDate').val(new Date(2000, 0, 1, startTime.getHours(), 0, 0).toISOString());
+            $('#Pattern_EndDate').val(new Date(2000, 0, 1, endTime.getHours(), 0, 0).toISOString());
+    
             $('.assign-user').click(function(e) {
                 e.preventDefault();
                 var row = $(this).closest('tr');
                 var userId = row.data('user-id');
                 
-                // Move user to assigned table
                 var newRow = row.clone();
                 newRow.find('.btn')
                     .removeClass('btn-success assign-user')
@@ -158,7 +165,7 @@
                 $('#assignedUsersTable tbody').append(newRow);
                 row.remove();
             });
-
+    
             $(document).on('click', '.remove-user', function(e) {
                 e.preventDefault();
                 var row = $(this).closest('tr');
@@ -175,17 +182,16 @@
                 $('.table:not(#assignedUsersTable) tbody').append(newRow);
                 row.remove();
             });
-
-            $('#createForm').submit(function() {
+    
+            $('#editForm').submit(function() {
                 $('#assignedUsersTable tbody tr').each(function() {
                     var userId = $(this).data('user-id');
                     $('<input>').attr({
                         type: 'hidden',
                         name: 'AssignedUserIds',
                         value: userId
-                    }).appendTo('#createForm');
+                    }).appendTo('#editForm');
                 });
-                return true;
             });
         });
     </script>

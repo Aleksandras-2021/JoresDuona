@@ -12,5 +12,7 @@ namespace PosAPI.Services.Interfaces
         Task DeleteAuthorizedPatternAsync(int id, User? sender);
         Task AssignAuthorizedUserToPatternAsync(int patternId, int userId, User? sender);
         Task RemoveAuthorizedUserFromPatternAsync(int patternId, int userId, User? sender);
+        Task ValidateUserPatternConflictsAsync(DefaultShiftPattern pattern, List<int> userIds, int? excludePatternId = null);
+
     }
 }
