@@ -11,6 +11,7 @@ public interface IUserService
     Task<User> CreateAuthorizedUser(CreateUserDTO? user, User? sender);
     Task UpdateAuthorizedUser(int userId, UserDTO updatedUser, User? sender);
     Task DeleteAuthorizedUser(int userId, User? sender);
-
+    Task UpdateUserWithPassword(User user, User? sender);
+    Task<User?> GetUserByEmail(string email);
 
 }

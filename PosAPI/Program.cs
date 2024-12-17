@@ -68,6 +68,8 @@ builder.Services.AddScoped<IBusinessService, BusinessService>();
 builder.Services.AddScoped<ITaxService, TaxService>();
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IServiceService, ServiceService>();
+builder.Services.AddScoped<IReservationService, ReservationService>();
+builder.Services.AddScoped<IPaymentService, PaymentService>();
 builder.Services.AddScoped<IDefaultShiftPatternService, DefaultShiftPatternService>();
 
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");

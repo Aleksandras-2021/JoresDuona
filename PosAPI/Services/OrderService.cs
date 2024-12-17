@@ -109,7 +109,7 @@ public class OrderService : IOrderService
         return order;
     }
 
-    public async Task<int> CreateAuthorizedOrder(User? sender)
+    public async Task<Order> CreateAuthorizedOrder(User? sender)
     {
         AuthorizationHelper.Authorize("Order", "Create", sender);
         Order newOrder = new Order()
@@ -128,7 +128,7 @@ public class OrderService : IOrderService
         };
         await _orderRepository.AddOrderAsync(newOrder);
 
-        return newOrder.Id;
+        return newOrder;
     }
 
     public async Task UpdateAuthorizedOrder(Order order, User? sender)
