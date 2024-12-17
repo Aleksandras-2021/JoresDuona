@@ -1,10 +1,8 @@
-﻿using System.Collections.Generic;
-using System.Threading.Tasks;
-using PosShared.Models;
+﻿using PosShared.Models;
 
-namespace PosAPI.Repositories.Interfaces
+namespace PosAPI.Services.Interfaces
 {
-    public interface IDiscountRepository
+    public interface IDiscountService
     {
         Task<IEnumerable<Discount>> GetAllAsync();
         Task<Discount> GetByIdAsync(int id);
@@ -12,6 +10,5 @@ namespace PosAPI.Repositories.Interfaces
         Task UpdateAsync(Discount discount);
         Task DeleteAsync(int id);
         Task<Discount?> GetActiveDiscountByNameAsync(string discountName);
-   
     }
 }

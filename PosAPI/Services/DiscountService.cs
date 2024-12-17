@@ -1,17 +1,15 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using PosAPI.Data.DbContext;
-using PosAPI.Repositories.Interfaces;
+using PosAPI.Services.Interfaces;
 using PosShared.Models;
-using System.Collections.Generic;
-using System.Threading.Tasks;
 
-namespace PosAPI.Repositories
+namespace PosAPI.Services
 {
-    public class DiscountRepository : IDiscountRepository
+    public class DiscountService : IDiscountService
     {
         private readonly ApplicationDbContext _context;
 
-        public DiscountRepository(ApplicationDbContext context)
+        public DiscountService(ApplicationDbContext context)
         {
             _context = context;
         }
@@ -64,8 +62,6 @@ namespace PosAPI.Repositories
             return await _context.Discounts
                 .FirstOrDefaultAsync(d => d.Description == discountName && now >= d.ValidFrom && now <= d.ValidTo);
         }
-
-
 
 
     }

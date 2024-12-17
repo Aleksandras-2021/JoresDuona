@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using PosAPI.Repositories.Interfaces;
+using PosAPI.Services.Interfaces;
 using PosShared.DTOs;
 using PosShared.Models;
 using System.Net.Http;
@@ -14,9 +15,9 @@ namespace PosAPI.Controllers;
 [Route("api/[controller]")]
 public class DiscountsController : ControllerBase
 {
-    private readonly IDiscountRepository _discountRepository;
+    private readonly IDiscountService _discountRepository;
 
-    public DiscountsController(IDiscountRepository discountRepository)
+    public DiscountsController(IDiscountService discountRepository)
     {
         _discountRepository = discountRepository;
     }

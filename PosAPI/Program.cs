@@ -59,7 +59,6 @@ builder.Services.AddScoped<IServiceRepository, ServiceRepository>();
 builder.Services.AddScoped<IReservationRepository, ReservationRepository>();
 builder.Services.AddScoped<IScheduleRepository, ScheduleRepository>();
 builder.Services.AddScoped<IDefaultShiftPatternRepository, DefaultShiftPatternRepository>();
-builder.Services.AddScoped<IDiscountRepository, DiscountRepository>();
 
 //Add Services here
 builder.Services.AddScoped<IOrderService, PosAPI.Services.OrderService>();
@@ -71,7 +70,7 @@ builder.Services.AddScoped<IServiceService, ServiceService>();
 builder.Services.AddScoped<IUserTokenService, UserTokenService>();
 builder.Services.AddScoped<IReservationService, ReservationService>();
 builder.Services.AddScoped<IPaymentService, PaymentService>();
-
+builder.Services.AddScoped<IDiscountService, DiscountService>();
 builder.Services.AddScoped<IDefaultShiftPatternService, DefaultShiftPatternService>();
 
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
