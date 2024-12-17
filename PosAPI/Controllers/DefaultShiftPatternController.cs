@@ -56,13 +56,10 @@ public class DefaultShiftPatternController : ControllerBase
     public async Task<IActionResult> CreatePattern([FromBody] DefaultShiftPattern pattern, [FromQuery] List<int> userIds)
     {
         User? sender = await _userTokenService.GetUserFromTokenAsync();
-
-
-        if (pattern == null)
+        
+        if (!ModelState.IsValid)
             return BadRequest("Pattern data is null.");
-
-        if (sender.Role == UserRole.Worker)
-            return Unauthorized();
+        
         
         pattern.StartDate = DateTime.SpecifyKind(pattern.StartDate, DateTimeKind.Utc);
         pattern.EndDate = DateTime.SpecifyKind(pattern.EndDate, DateTimeKind.Utc);

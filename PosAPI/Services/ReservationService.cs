@@ -16,18 +16,19 @@ public class ReservationService: IReservationService
     private readonly IOrderRepository _orderRepository;
     private readonly IServiceService _serviceService;
     private readonly ITaxService _taxService;
-    private readonly IDefaultShiftPatternService _defaultShiftPatternService;
+    private readonly IScheduleRepository _scheduleRepository;
+    
     
     public ReservationService(IReservationRepository reservationRepository, 
         IOrderService orderService, IServiceService serviceService,ITaxService taxService,
-        IOrderRepository orderRepository, IDefaultShiftPatternService defaultShiftPatternService)
+        IOrderRepository orderRepository, IScheduleRepository scheduleRepository)
     {
         _reservationRepository = reservationRepository;
         _serviceService = serviceService;
         _taxService = taxService;
         _orderService = orderService;
         _orderRepository = orderRepository;
-        _defaultShiftPatternService = defaultShiftPatternService;
+        _scheduleRepository = scheduleRepository;
     }
 
     public async Task<PaginatedResult<Reservation>> GetAuthorizedReservationsAsync(User? sender, int pageNumber = 1, int pageSize = 10)
@@ -88,10 +89,10 @@ public async Task CreateAuthorizedReservationAsync(ReservationCreateDTO reservat
 
             // 3. Check for overlapping reservations
             var isOverlapping = await _reservationRepository.IsReservationOverlappingAsync(reservation.ServiceId, startTime, endTime);
-            var isEmployeeAvailable = await IsValidShiftForReservationAsync(service.EmployeeId, sender, startTime);
-
+            bool isEmployeeAvailable = await IsEmployeeAvailableAsync(service.EmployeeId, startTime, endTime);
+            
             if (!isEmployeeAvailable || isOverlapping || startTime < DateTime.Now.ToUniversalTime())
-                throw new BusinessRuleViolationException($"The selected time slot from {startTime} to {endTime} are invalid.");
+                throw new BusinessRuleViolationException($"The selected time slot from {startTime} to {endTime} are invalid. Employee available {isEmployeeAvailable}");
 
             DateTime now = DateTime.Now.ToUniversalTime();
             
@@ -163,10 +164,10 @@ public async Task CreateAuthorizedReservationAsync(ReservationCreateDTO reservat
         var endTime = reservation.ReservationTime.AddMinutes(service.DurationInMinutes);
 
         var isOverlapping = await _reservationRepository.IsReservationOverlappingAsync(service.Id, startTime, endTime,existingReservation.Id);
-        var isEmployeeAvailable = await IsValidShiftForReservationAsync(service.EmployeeId, sender, startTime);
+        bool isEmployeeAvailable = await IsEmployeeAvailableAsync(service.EmployeeId, startTime, endTime);
 
         if (!isEmployeeAvailable || isOverlapping || startTime < DateTime.Now.ToUniversalTime())
-            throw new BusinessRuleViolationException($"The selected time slot from {startTime} to {endTime} are invalid.");
+            throw new BusinessRuleViolationException($"The selected time slot from {startTime} to {endTime} are invalid. Employee available {isEmployeeAvailable}");
 
         existingReservation.ServiceId = reservation.ServiceId;
         existingReservation.ReservationTime = startTime;
@@ -177,33 +178,36 @@ public async Task CreateAuthorizedReservationAsync(ReservationCreateDTO reservat
         await _reservationRepository.UpdateReservationAsync(existingReservation);
     }
     
-    private async Task<bool> IsValidShiftForReservationAsync(int userId,User? sender ,DateTime startTime)
+    public async Task<bool> IsEmployeeAvailableAsync(int employeeId, DateTime reservationStartTime, DateTime reservationEndTime)
     {
-        startTime = startTime.ToUniversalTime();
+        // Fetch the employee's schedules that include the reservation date
+        var schedules = await _scheduleRepository.GetSchedulesForDateRangeAsync(reservationStartTime.Date, reservationEndTime.Date, employeeId);
 
-        var patterns = await _defaultShiftPatternService.GetAuthorizedPatternsByUserAsync(userId,sender);
+        // Check if any schedule overlaps with the reservation time
+        bool isWithinSchedule = schedules.Any(schedule =>
+            reservationStartTime >= schedule.StartTime && reservationEndTime <= schedule.EndTime
+        );
 
-        DayOfWeek dayOfWeek = startTime.DayOfWeek;
-
-        foreach (var pattern in patterns)
-        {
-            // We only care about the patterns that match the day of the week
-            if (pattern.DayOfWeek == dayOfWeek)
-            {
-                // Extract the times from the StartDate and EndDate
-                var patternStartTime = pattern.StartDate.TimeOfDay;
-                var patternEndTime = pattern.EndDate.TimeOfDay;
-
-                // Check if the reservation time falls within this shift pattern's time range
-                if (startTime.TimeOfDay >= patternStartTime && startTime.TimeOfDay <= patternEndTime)
-                {
-                    return true;
-                }
-            }
-        }
-
-        // No matching shift pattern found for the given reservation time
-        return false;
+        return isWithinSchedule;
     }
+    
+    public async Task<bool> IsEmployeeAvailableForEditAsync(int employeeId, DateTime reservationStartTime, DateTime reservationEndTime, int? excludeReservationId = null)
+    {
+        // Fetch schedules for the employee
+        var schedules = await _scheduleRepository.GetSchedulesForDateRangeAsync(
+            reservationStartTime.Date, reservationEndTime.Date, employeeId);
+
+        // Check if any schedule overlaps with the new reservation time
+        bool isWithinSchedule = schedules.Any(schedule =>
+                reservationStartTime >= schedule.StartTime &&
+                reservationEndTime <= schedule.EndTime &&
+                (!excludeReservationId.HasValue || schedule.ReservationId != excludeReservationId.Value) // Exclude current reservation
+        );
+
+        return isWithinSchedule;
+    }
+
+
+    
 
 }
