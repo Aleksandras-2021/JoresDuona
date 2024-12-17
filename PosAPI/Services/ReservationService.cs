@@ -91,7 +91,7 @@ public async Task CreateAuthorizedReservationAsync(ReservationCreateDTO reservat
             var isEmployeeAvailable = await IsValidShiftForReservationAsync(service.EmployeeId, sender, startTime);
 
             if (!isEmployeeAvailable || isOverlapping || startTime < DateTime.Now.ToUniversalTime())
-                throw new BusinessRuleViolationException($"The selected time slot from {startTime} to {endTime} are invalid. Is employee available: {isEmployeeAvailable} is start<today {startTime<DateTime.Now.ToUniversalTime()}");
+                throw new BusinessRuleViolationException($"The selected time slot from {startTime} to {endTime} are invalid.");
 
             DateTime now = DateTime.Now.ToUniversalTime();
             
@@ -157,7 +157,6 @@ public async Task CreateAuthorizedReservationAsync(ReservationCreateDTO reservat
     {
         AuthorizationHelper.Authorize("Reservation", "Update", sender);
         var existingReservation = await  _reservationRepository.GetReservationByIdAsync(reservationId);
-        Console.WriteLine("EXISTING VAR: " + existingReservation.Id);
         var service = await _serviceService.GetAuthorizedService(existingReservation.ServiceId, sender);
 
         var startTime = reservation.ReservationTime;
@@ -167,9 +166,7 @@ public async Task CreateAuthorizedReservationAsync(ReservationCreateDTO reservat
         var isEmployeeAvailable = await IsValidShiftForReservationAsync(service.EmployeeId, sender, startTime);
 
         if (!isEmployeeAvailable || isOverlapping || startTime < DateTime.Now.ToUniversalTime())
-            throw new BusinessRuleViolationException($"The selected time slot from {startTime} to {endTime} are invalid. Is employee available: {isEmployeeAvailable} is start < today {startTime<DateTime.Now.ToUniversalTime()} " +
-                                                     $"\n IsOverlapping: {isOverlapping} \n" +
-                                                     $"START {startTime}, NOW: {DateTime.Now.ToUniversalTime()}");
+            throw new BusinessRuleViolationException($"The selected time slot from {startTime} to {endTime} are invalid.");
 
         existingReservation.ServiceId = reservation.ServiceId;
         existingReservation.ReservationTime = startTime;
