@@ -159,7 +159,11 @@ public class OrderService : IOrderService
         
         if (order.Status is OrderStatus.Closed or OrderStatus.Paid or OrderStatus.Refunded)
             throw new BusinessRuleViolationException("Cannot modify closed order");
-
+        
+        await _orderRepository.DeleteOrderItemVariationsAsync(orderId);
+        await _orderRepository.DeleteOrderItemsAsync(orderId);
+        await _orderRepository.DeleteOrderServicesAsync(orderId);
+        
         await _orderRepository.DeleteOrderAsync(orderId);
     }
 
@@ -217,7 +221,6 @@ public class OrderService : IOrderService
             throw new KeyNotFoundException($"Variation with ID {variationId} not found.");
 
         var item = await _itemRepository.GetItemByIdAsync(variation.ItemId);
-
         AuthorizationHelper.ValidateOwnershipOrRole(sender, item.BusinessId, sender.BusinessId, "Read");
 
         return variation;
@@ -281,8 +284,8 @@ public class OrderService : IOrderService
         var orderItemVariations = await _orderRepository.GetOrderItemVariationsByOrderItemIdAsync(orderItemId);
 
         if (!orderItemVariations.Any())
-            throw new KeyNotFoundException($"No variations found for order item with ID {orderItemId}.");
-
+            return new List<OrderItemVariation>();
+        
         var orderItem = await _orderRepository.GetOrderItemById(orderItemId);
         var order = await _orderRepository.GetOrderByIdAsync(orderItem.OrderId);
 
