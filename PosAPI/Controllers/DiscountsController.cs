@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using PosAPI.Repositories.Interfaces;
 using PosAPI.Services.Interfaces;
 using PosShared.DTOs;
@@ -16,10 +17,11 @@ namespace PosAPI.Controllers;
 public class DiscountsController : ControllerBase
 {
     private readonly IDiscountService _discountRepository;
-
-    public DiscountsController(IDiscountService discountRepository)
+    private readonly ILogger<DiscountsController> _logger;
+    public DiscountsController(IDiscountService discountRepository, ILogger<DiscountsController> logger)
     {
         _discountRepository = discountRepository;
+        _logger = logger;
     }
 
     [HttpGet]
@@ -63,45 +65,74 @@ public class DiscountsController : ControllerBase
     [HttpPost]
     public async Task<IActionResult> CreateDiscount([FromBody] DiscountDto discountDto)
     {
+        var debugInfo = new List<string>(); // Use a list to store debug messages
+        debugInfo.Add("CreateDiscount action started.");
+
+        // Log input values
+        debugInfo.Add($"Received DiscountDto: {JsonSerializer.Serialize(discountDto)}");
+        debugInfo.Add($"IsPercentage Value: {discountDto.IsPercentage}");
+
         if (!ModelState.IsValid)
         {
             foreach (var state in ModelState)
             {
                 foreach (var error in state.Value.Errors)
                 {
-                    Console.WriteLine($"Field: {state.Key}, Error: {error.ErrorMessage}");
+                    debugInfo.Add($"Field: {state.Key}, Error: {error.ErrorMessage}");
                 }
             }
-            return BadRequest(ModelState);
+            return BadRequest(new { message = "Invalid input", debugInfo });
         }
 
-        // Automatically assign BusinessId based on sender's claims
+        // Automatically assign BusinessId from claims
         var userBusinessId = GetUserBusinessId();
+        if (userBusinessId == 0)
+        {
+            debugInfo.Add("Failed to retrieve BusinessId from user claims.");
+            return Unauthorized(new { message = "Invalid token. BusinessId not found.", debugInfo });
+        }
+
+        debugInfo.Add($"Retrieved BusinessId: {userBusinessId}");
 
         var discount = new Discount
         {
             BusinessId = userBusinessId,
             Description = discountDto.Description,
             Amount = discountDto.Amount,
-            IsPercentage = discountDto.IsPercentage,
+            IsPercentage = discountDto.IsPercentage, // Explicitly assign IsPercentage
             ValidFrom = DateTime.SpecifyKind(discountDto.ValidFrom, DateTimeKind.Utc),
             ValidTo = DateTime.SpecifyKind(discountDto.ValidTo, DateTimeKind.Utc)
         };
 
-        await _discountRepository.AddAsync(discount);
+        debugInfo.Add($"Saving Discount: {JsonSerializer.Serialize(discount)}");
 
-        // Return the created discount (without IDs in DiscountDto)
-        var responseDto = new DiscountDto
+        try
         {
-            Description = discount.Description,
-            Amount = discount.Amount,
-            IsPercentage = discount.IsPercentage,
-            ValidFrom = discount.ValidFrom,
-            ValidTo = discount.ValidTo
-        };
+            await _discountRepository.AddAsync(discount);
+            debugInfo.Add("Discount saved successfully.");
+        }
+        catch (Exception ex)
+        {
+            debugInfo.Add($"Error saving discount: {ex.Message}");
+            return StatusCode(500, new { message = "Internal Server Error. Could not save discount.", debugInfo });
+        }
 
-        return CreatedAtAction(nameof(GetDiscount), new { id = discount.Id }, responseDto);
+        // Return debug info along with success response
+        return CreatedAtAction(nameof(GetDiscount), new { id = discount.Id }, new
+        {
+            message = "Discount created successfully.",
+            debugInfo,
+            discount = new DiscountDto
+            {
+                Description = discount.Description,
+                Amount = discount.Amount,
+                IsPercentage = discount.IsPercentage,
+                ValidFrom = discount.ValidFrom,
+                ValidTo = discount.ValidTo
+            }
+        });
     }
+
 
     [HttpPut("{id}")]
     public async Task<IActionResult> Update(int id, [FromBody] DiscountDto discountDto)

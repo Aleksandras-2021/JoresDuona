@@ -65,7 +65,6 @@
             input.addEventListener('change', function() {
                 let date = new Date(this.value);
                 date.setMinutes(0);
-                this.value = date.toISOString().slice(0, -8);
             });
         });
     </script>

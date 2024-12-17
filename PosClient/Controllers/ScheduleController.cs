@@ -126,6 +126,86 @@ namespace PosClient.Controllers
             return RedirectToAction("Schedules", new { userId });
         }
 
+        [HttpPost]
+        public async Task<IActionResult> LoadShiftPatterns(int userId, DateTime weekStart)
+        {
+            try
+            {
+                var patternsResponse = await _apiService.GetAsync($"{_apiUrl}/api/DefaultShiftPattern/User/{userId}");
+                if (!patternsResponse.IsSuccessStatusCode)
+                    return BadRequest("Could not load patterns");
+
+                var patterns = await patternsResponse.Content.ReadFromJsonAsync<List<DefaultShiftPattern>>();
+                if (patterns == null || !patterns.Any())
+                {
+                    TempData["Message"] = "No shift patterns found for this user";
+                    return RedirectToAction("Schedules", new { userId });
+                }
+
+                var weekEnd = weekStart.AddDays(7);
+                var schedulesResponse = await _apiService.GetAsync(
+                    $"{_apiUrl}/api/Schedule/{userId}/User?startDate={weekStart:yyyy-MM-dd}&endDate={weekEnd:yyyy-MM-dd}");
+
+                var existingSchedules = new List<Schedule>();
+                if (schedulesResponse.IsSuccessStatusCode)
+                {
+                    existingSchedules = await schedulesResponse.Content.ReadFromJsonAsync<List<Schedule>>() ?? new List<Schedule>();
+                }
+
+                var createdSchedules = new List<Schedule>();
+                foreach (var pattern in patterns)
+                {
+                    for (int i = 0; i < 7; i++)
+                    {
+                        var currentDate = weekStart.AddDays(i);
+                        if (currentDate.DayOfWeek == pattern.DayOfWeek)
+                        {
+                            var existingSchedule = existingSchedules.FirstOrDefault(s => 
+                                s.StartTime.Date == currentDate.Date);
+
+                            if (existingSchedule == null)
+                            {
+                                var newSchedule = new Schedule
+                                {
+                                    UserId = userId,
+                                    StartTime = currentDate.Date.Add(pattern.StartDate.TimeOfDay),
+                                    EndTime = currentDate.Date.Add(pattern.EndDate.TimeOfDay),
+                                    LastUpdate = DateTime.UtcNow
+                                };
+
+                                var content = new StringContent(
+                                    JsonSerializer.Serialize(newSchedule),
+                                    Encoding.UTF8,
+                                    "application/json");
+
+                                var createResponse = await _apiService.PostAsync($"{_apiUrl}/api/Schedule", content);
+                                if (createResponse.IsSuccessStatusCode)
+                                {
+                                    createdSchedules.Add(await createResponse.Content.ReadFromJsonAsync<Schedule>());
+                                }
+                            }
+                        }
+                    }
+                }
+
+                if (createdSchedules.Any())
+                {
+                    TempData["Message"] = $"Successfully created {createdSchedules.Count} schedules from patterns";
+                }
+                else
+                {
+                    TempData["Message"] = "No new schedules were created (all pattern days already had schedules)";
+                }
+
+                return RedirectToAction("Schedules", new { userId });
+            }
+            catch (Exception ex)
+            {
+                TempData["Error"] = $"Error loading shift patterns: {ex.Message}";
+                return RedirectToAction("Schedules", new { userId });
+            }
+        }
+
         // GET: Schedule/WeekView
         public async Task<IActionResult> WeekView(DateTime? date = null)
         {
