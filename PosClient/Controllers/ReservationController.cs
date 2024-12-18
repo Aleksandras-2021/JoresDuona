@@ -32,7 +32,7 @@ namespace PosClient.Controllers
         {
             var reservations = await GetAllReservations(1,10);
             var activeReservations = reservations.Items
-                .Where(i => i.ReservationEndTime > DateTime.Now)
+                .Where(i => i.ReservationEndTime.ToLocalTime() > DateTime.Now)
                 .ToList();
 
             reservations.Items = activeReservations;

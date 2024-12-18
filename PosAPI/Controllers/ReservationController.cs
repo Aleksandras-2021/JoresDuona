@@ -1,11 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Logging;
-using PosAPI.Repositories;
 using PosAPI.Services.Interfaces;
 using PosShared.DTOs;
 using PosShared.Models;
-using PosShared.Utilities;
-using PosShared.ViewModels;
 
 [Route("api/[controller]")]
 [ApiController]

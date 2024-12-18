@@ -5,6 +5,7 @@ namespace PosAPI.Services.Interfaces;
 
 public interface IPaymentService
 {
+    Task<List<Payment>> GetAllPayments(User? sender);
     Task<List<Payment?>> GetAuthorizedOrderPayments(int orderId, User? sender);
     Task<Payment> CreateAuthorizedOrderPayment(AddPaymentDTO payment, User? sender);
     Task<Payment> GetAuthorizedPaymentById(int id, User? sender);

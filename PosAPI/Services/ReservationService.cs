@@ -92,8 +92,8 @@ public async Task CreateAuthorizedReservationAsync(ReservationCreateDTO reservat
             bool isEmployeeAvailable = await IsEmployeeAvailableAsync(service.EmployeeId, startTime, endTime);
             
             if (!isEmployeeAvailable || isOverlapping || startTime < DateTime.Now.ToUniversalTime())
-                throw new BusinessRuleViolationException($"The selected time slot from {startTime} to {endTime} are invalid. Employee available {isEmployeeAvailable}");
-
+                throw new ReservationRuleViolationException(isEmployeeAvailable,isOverlapping,startTime < DateTime.Now.ToUniversalTime());
+            
             DateTime now = DateTime.Now.ToUniversalTime();
             
             // 4. Create new reservation
@@ -167,7 +167,7 @@ public async Task CreateAuthorizedReservationAsync(ReservationCreateDTO reservat
         bool isEmployeeAvailable = await IsEmployeeAvailableAsync(service.EmployeeId, startTime, endTime); //Checks Employee schedule
 
         if (!isEmployeeAvailable || isOverlapping || startTime < DateTime.Now.ToUniversalTime())
-            throw new BusinessRuleViolationException($"The selected time slot from {startTime} to {endTime} are invalid. Employee available {isEmployeeAvailable}, isOverlapping {isOverlapping}");
+            throw new ReservationRuleViolationException(isEmployeeAvailable,isOverlapping,startTime < DateTime.Now.ToUniversalTime());
 
         existingReservation.ServiceId = reservation.ServiceId;
         existingReservation.ReservationTime = startTime;

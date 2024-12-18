@@ -16,14 +16,10 @@ namespace PosAPI.Controllers;
 [ApiController]
 public class TaxController : ControllerBase
 {
-    private readonly ILogger<TaxController> _logger;
-    private readonly ITaxRepository _taxRepository;
     private readonly IUserTokenService _userTokenService;
     private readonly ITaxService _taxService;
-    public TaxController(ILogger<TaxController> logger, ITaxRepository taxRepository, IUserTokenService userTokenService, ITaxService taxService)
+    public TaxController(IUserTokenService userTokenService, ITaxService taxService)
     {
-        _logger = logger;
-        _taxRepository = taxRepository;
         _userTokenService = userTokenService;
         _taxService = taxService;
     }
@@ -62,7 +58,7 @@ public class TaxController : ControllerBase
             Category = tax.Category,
         };
         
-        await _taxRepository.AddTaxAsync(newTax);
+        await _taxService.CreateAuthorizedTaxAsync(newTax,sender);
 
         return CreatedAtAction(nameof(GetTaxById), new { id = newTax.Id }, newTax);
     }
@@ -90,6 +86,6 @@ public class TaxController : ControllerBase
     {
         User? sender = await _userTokenService.GetUserFromTokenAsync();
         await _taxService.DeleteAuthorizedTaxAsync(id,sender);
-        return NoContent();
+        return Ok();
     }
 }
