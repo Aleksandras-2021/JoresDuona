@@ -54,13 +54,13 @@
                         <tr>
                             <td>@order.Id</td>
                             <td>@order.UserId</td>
-                            <td>@order.CreatedAt.ToString("g")</td>
+                            <td>@order.CreatedAt.ToLocalTime().ToString("g")</td>
                             <td>
                                 <span class="badge @GetStatusBadgeClass(order.Status)">
                                     @order.Status
                                 </span>
                             </td>
-                            <td>@order.ClosedAt?.ToString("g")</td>
+                            <td>@order.ClosedAt?.ToLocalTime().ToString("g")</td>
                             <td>@order.TaxAmount.ToString("C")</td>
                             <td>@order.ChargeAmount.ToString("C")</td>
                             <td>@order.TipAmount.ToString("C")</td>

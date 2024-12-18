@@ -16,14 +16,12 @@ public class OrderController : ControllerBase
     private readonly IOrderRepository _orderRepository;
     private readonly IUserTokenService _userTokenService;
     private readonly IOrderService _orderService;
-    private readonly ILogger<OrderController> _logger;
 
-    public OrderController(IOrderRepository orderRepository, IUserTokenService userTokenService, IOrderService orderService, ILogger<OrderController> logger)
+    public OrderController(IOrderRepository orderRepository, IUserTokenService userTokenService, IOrderService orderService)
     {
         _orderRepository = orderRepository;
         _userTokenService = userTokenService;
         _orderService = orderService;
-        _logger = logger;
     }
 
     // GET: api/Order
@@ -32,11 +30,7 @@ public class OrderController : ControllerBase
     {
         User? sender = await _userTokenService.GetUserFromTokenAsync();
         var paginatedOrders = await _orderService.GetAuthorizedOrders(sender, pageNumber, pageSize);
-
-        if (paginatedOrders.Items.Count > 0)
-            return Ok(paginatedOrders);
-        else
-            return NotFound("No Orders found.");
+        return Ok(paginatedOrders);
     }
 
 
@@ -67,7 +61,7 @@ public class OrderController : ControllerBase
         order.Status = status;
 
         if (order.Status == OrderStatus.Closed)
-            order.ClosedAt = DateTime.UtcNow.AddHours(2);
+            order.ClosedAt = DateTime.UtcNow;
             
         await _orderRepository.UpdateOrderAsync(order);
 

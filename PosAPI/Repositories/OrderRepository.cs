@@ -160,15 +160,19 @@ public class OrderRepository : IOrderRepository
         orderItem.Order = order;
         orderItem.Item = item;
 
-        try
+        var existingOrderItem = await _context.OrderItems
+            .FirstOrDefaultAsync(v => v.ItemId == orderItem.ItemId && v.OrderId == orderItem.OrderId);
+
+        if (existingOrderItem  != null)
+        {
+            existingOrderItem.Quantity += orderItem.Quantity;
+        }
+        else
         {
             await _context.OrderItems.AddAsync(orderItem);
-            await _context.SaveChangesAsync();
         }
-        catch (DbUpdateException ex)
-        {
-            throw new DbUpdateException("An error occurred while adding the new order item to the database.", ex);
-        }
+        
+        await _context.SaveChangesAsync();
     }
 
     public async Task<List<OrderItem>> GetOrderItemsByOrderIdAsync(int orderId)

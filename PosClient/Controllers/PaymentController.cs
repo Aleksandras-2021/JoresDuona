@@ -69,13 +69,12 @@ public class PaymentController : Controller
 
             if (payments != null && payments.Any())
             {
-                DateTime today = DateTime.Today;
-                today = DateTime.SpecifyKind(today, DateTimeKind.Utc);
+                DateTime now = DateTime.Now;
 
                 var model = new RefundViewModel() 
                 {
                     Payments = payments.Where(p => p.Amount > 0).ToList(),
-                    RefundDate = today,
+                    RefundDate = now,
                     Amount = untaxedAmount + tax,
                     Reason = string.Empty,
                 };
@@ -212,7 +211,7 @@ public class PaymentController : Controller
             {
                 OrderId = orderId,
                 EmployeeId = order.UserId,
-                ClosedAt = order.ClosedAt,
+                ClosedAt = order.ClosedAt?.ToLocalTime(),
                 OrderItems = orderItems,
                 OrderItemVariatons = orderItemVariations,
                 OrderServices = orderServices,

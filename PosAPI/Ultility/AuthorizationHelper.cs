@@ -6,7 +6,7 @@ public static class AuthorizationHelper
 {
     public static void Authorize(string endpoint, string action, User? sender)
     {
-        if (sender == null || !RolePermissions.CanAccess(endpoint, action, sender.Role) || sender.EmploymentStatus != EmploymentStatus.Active)
+        if (sender == null || !RolePermissions.CanAccess(endpoint, action, sender.Role) || sender.EmploymentStatus == EmploymentStatus.Fired)
         {
             throw new UnauthorizedAccessException($"You are not authorized to perform '{action}' on '{endpoint}'.");
         }

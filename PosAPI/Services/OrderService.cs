@@ -115,7 +115,7 @@ public class OrderService : IOrderService
         Order newOrder = new Order()
         {
             BusinessId = sender.BusinessId,
-            CreatedAt = DateTime.UtcNow.AddHours(2),
+            CreatedAt = DateTime.UtcNow,
             ClosedAt = null,
             UserId = sender.Id,
             Status = OrderStatus.Open,
@@ -146,6 +146,24 @@ public class OrderService : IOrderService
         existingOrder.DiscountAmount = order.DiscountAmount;
         existingOrder.TaxAmount = order.TaxAmount;
         existingOrder.TipAmount = order.TipAmount;
+        
+        await _orderRepository.UpdateOrderAsync(existingOrder);
+    }
+    
+    public async Task UpdateAuthorizedOrderStatus(int orderId, OrderStatus status, User? sender)
+    {
+        AuthorizationHelper.Authorize("Order", "Update", sender);
+        var existingOrder = await _orderRepository.GetOrderByIdAsync(orderId);
+
+        if (existingOrder.Status is OrderStatus.Closed or OrderStatus.Paid or OrderStatus.Refunded)
+            throw new BusinessRuleViolationException("Cannot modify closed order");
+
+        if (existingOrder.Status == OrderStatus.Closed && status != OrderStatus.Refunded)
+            return;
+        
+        existingOrder.Status = status;
+        if(status == OrderStatus.Closed)
+            existingOrder.ClosedAt = DateTime.UtcNow;
         
         await _orderRepository.UpdateOrderAsync(existingOrder);
     }

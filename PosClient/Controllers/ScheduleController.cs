@@ -106,7 +106,7 @@ namespace PosClient.Controllers
             }
 
             var errorContent = await response.Content.ReadAsStringAsync();
-            TempData["Error"] = "Failed to create schedule. Please try again.";
+            TempData["Error"] = "Failed to create schedule. Please try again." + response.StatusCode;
             return View("~/Views/User/Schedule/Create.cshtml", model);
         }
 
@@ -122,7 +122,7 @@ namespace PosClient.Controllers
                 return RedirectToAction("Schedules", new { userId });
             }
 
-            TempData["Error"] = "Failed to delete schedule.";
+            TempData["Error"] = "Failed to delete schedule. " + response.StatusCode;
             return RedirectToAction("Schedules", new { userId });
         }
 
