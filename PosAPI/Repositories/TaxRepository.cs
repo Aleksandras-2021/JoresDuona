@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using PosAPI.Data.DbContext;
+using PosAPI.Middlewares;
 using PosShared.Models;
 
 namespace PosAPI.Repositories
@@ -14,7 +15,7 @@ namespace PosAPI.Repositories
             Tax? taxForCategory = await GetTaxByCategoryAsync(tax.Category,tax.BusinessId);
 
             if (taxForCategory != null)
-                throw new Exception($"Tax with category {tax.Category.ToString()} already exists ");
+                throw new BusinessRuleViolationException($"Tax with category {tax.Category.ToString()} already exists ");
 
             try
             {
@@ -23,7 +24,7 @@ namespace PosAPI.Repositories
             }
             catch (DbUpdateException ex)
             {
-                throw new Exception("An error occurred while adding the new Tax to the database.", ex);
+                throw new DbUpdateException("An error occurred while adding the new Tax to the database.", ex);
             }
 
         }
@@ -74,7 +75,7 @@ namespace PosAPI.Repositories
             Tax? taxForCategory = await GetTaxByCategoryAsync(tax.Category,tax.BusinessId);
         
             if (taxForCategory != null && taxForCategory != existingTax)
-                throw new Exception($"Tax with category {tax.Category.ToString()} already exists ");
+                throw new BusinessRuleViolationException($"Tax with category {tax.Category.ToString()} already exists ");
             
             _context.Set<Tax>().Update(existingTax);
             await _context.SaveChangesAsync();
@@ -84,7 +85,7 @@ namespace PosAPI.Repositories
             var tax = await _context.Set<Tax>().FindAsync(id);
             if (tax == null)
             {
-                throw new KeyNotFoundException($"Item with ID {id} not found.");
+                throw new KeyNotFoundException($"Tax with ID {id} not found.");
             }
 
             _context.Set<Tax>().Remove(tax);
