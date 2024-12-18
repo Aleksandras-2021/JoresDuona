@@ -12,7 +12,7 @@
     <h2>Edit a Reservation</h2>
     <form asp-controller="Reservation" asp-action="Edit" method="post">
         <input asp-for="ServiceId" class="form-control" required hidden />
-                <input asp-for="Id" class="form-control" required />
+                <input asp-for="Id" class="form-control" required  readonly/>
 
         <div class="form-group mb-3">
             <label asp-for="CustomerName" class="form-label">Customer Name</label>

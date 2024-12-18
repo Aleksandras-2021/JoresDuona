@@ -22,29 +22,28 @@ namespace PosClient.Controllers
         [HttpGet]
         public async Task<IActionResult> Index(int pageNumber = 1, int pageSize = 10)
         {
-            var apiUrl = ApiRoutes.Reservation.ListPaginated(pageNumber,pageSize);
-            var response = await _apiService.GetAsync(apiUrl);
-        
-            if (response.IsSuccessStatusCode)
-            {
-                var reservations = await response.Content.ReadFromJsonAsync<PaginatedResult<Reservation>>();
-                return View(reservations ?? new PaginatedResult<Reservation>());
-            }
-
-            TempData["Error"] = "Could not load reservations.";
-            return View(new PaginatedResult<Reservation>());
+            var reservations = await GetAllReservations(pageNumber,pageSize);
+            return View(reservations);
         }
 
         // GET: Reservation/Reserve/5
         [HttpGet]
-        public IActionResult Reserve(int serviceId)
+        public async Task <IActionResult> Reserve(int serviceId,int pageNumber = 1, int pageSize = 10)
         {
+            var reservations = await GetAllReservations(1,10);
+            var activeReservations = reservations.Items
+                .Where(i => i.ReservationEndTime > DateTime.Now)
+                .ToList();
+
+            reservations.Items = activeReservations;
+            
             ReservationViewModel model = new ReservationViewModel()
             {
                 ServiceId = serviceId,
                 CustomerName = string.Empty,
                 CustomerPhone = string.Empty,
-                ReservationTime = DateTime.Now
+                ReservationTime = DateTime.Now,
+                Reservations = reservations,
             };
             
             return View("~/Views/Service/Reserve.cshtml", model);
@@ -77,7 +76,7 @@ namespace PosClient.Controllers
 
             TempData["Error"] = $"Could not Create reservation. {response.StatusCode}";
 
-            return View("~/Views/Service/Reserve.cshtml", model);
+            return RedirectToAction(nameof(Reserve), new { serviceId = model.ServiceId });
         }
         
         
@@ -154,5 +153,22 @@ namespace PosClient.Controllers
 
             return RedirectToAction("Index");
         }
+
+
+        private async Task<PaginatedResult<Reservation>> GetAllReservations(int pageNumber,int pageSize)
+        {
+            var apiUrl = ApiRoutes.Reservation.ListPaginated(pageNumber,pageSize);
+            var response = await _apiService.GetAsync(apiUrl);
+        
+            if (response.IsSuccessStatusCode)
+            {
+                var reservations = await response.Content.ReadFromJsonAsync<PaginatedResult<Reservation>>();
+                return (reservations ?? new PaginatedResult<Reservation>());
+            }
+            TempData["Error"] = "Error response status: " + response.StatusCode;
+            return (new PaginatedResult<Reservation>());
+        }
+        
+        
     }
 }
