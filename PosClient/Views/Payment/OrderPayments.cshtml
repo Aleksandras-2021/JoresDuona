@@ -27,7 +27,7 @@
                     <td>@payment.Id</td>
                     <td>@payment.Amount.ToString("C")</td>
                     <td>@payment.PaymentMethod</td>
-                    <td>@payment.PaymentDate</td>
+                    <td>@payment.PaymentDate.ToLocalTime()</td>
                 </tr>
             }
         </tbody>

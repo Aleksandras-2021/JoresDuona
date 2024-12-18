@@ -38,7 +38,7 @@
                     <tr>
                         <td>@payment.Id</td>
                         <td>@payment.Amount.ToString("C")</td>
-                        <td>@payment.PaymentDate.ToShortDateString()</td>
+                        <td>@payment.PaymentDate.ToLocalTime().ToShortDateString()</td>
                         <td>@payment.PaymentMethod</td>
                         <td>
                             <form asp-action="Refund" asp-controller="Payment" method="post" style="margin: 0;">
