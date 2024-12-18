@@ -22,9 +22,9 @@ public class AuthController : ControllerBase
     private readonly JwtSettings _jwtSettings;
     private readonly IUserService _userService;
     private readonly IUserTokenService _userTokenService;
-    
 
-    public AuthController(ILogger<AuthController> logger, IOptions<JwtSettings> jwtSettings,IUserService userService,IUserTokenService userTokenService)
+
+    public AuthController(ILogger<AuthController> logger, IOptions<JwtSettings> jwtSettings, IUserService userService, IUserTokenService userTokenService)
     {
         _logger = logger;
         _jwtSettings = jwtSettings.Value;
@@ -41,7 +41,7 @@ public class AuthController : ControllerBase
             return BadRequest("Old password and new password are required.");
         }
 
-        var sender =await  _userTokenService.GetUserFromTokenAsync();
+        var sender = await _userTokenService.GetUserFromTokenAsync();
 
         // Verify the old password
         if (!BCrypt.Net.BCrypt.Verify(request.OldPassword, sender.PasswordHash))
@@ -57,8 +57,8 @@ public class AuthController : ControllerBase
 
         return Ok(new { message = "Password changed successfully." });
     }
-    
-    
+
+
     [HttpPost("login")]
     public async Task<IActionResult> Login([FromBody] LoginRequest request)
     {
@@ -85,9 +85,9 @@ public class AuthController : ControllerBase
             HttpOnly = true, // Prevent client-side access
             Secure = true, // Set to true if using HTTPS
             SameSite = SameSiteMode.None, // Required for cross-origin requests
-            Expires = DateTime.UtcNow.AddDays(1) // Cookie expiration
+            Expires = DateTime.UtcNow.AddMinutes(_jwtSettings.ExpirationInMinutes) // Cookie expiration
         });
-        _logger.LogInformation("LoginController: Token:" + token);
+        //_logger.LogInformation("LoginController: Token:" + token);
         return Ok(new
         {
             message = "Login successful",
@@ -129,7 +129,7 @@ public class AuthController : ControllerBase
         }
         return BCrypt.Net.BCrypt.Verify(password, passwordHash);
     }
-    
+
     public class ChangePasswordRequest
     {
         public string OldPassword { get; set; }

@@ -84,11 +84,11 @@ public class ExceptionHandlingMiddleware
         catch (Exception ex)
         {
             var controllerAction = GetControllerAndAction(context);
-            _logger.LogError($"500 Internal Server Error in {controllerAction}. Message: {ex.Message}");
+            _logger.LogWarning($"500 Internal Server Error in {controllerAction}. Message: {ex.Message}");
             context.Response.StatusCode = StatusCodes.Status500InternalServerError;
             await context.Response.WriteAsJsonAsync(new { message = "An unexpected error occurred. Contact support if the issue persists." });
         }
-        
+
     }
 
     private string GetControllerAndAction(HttpContext context)
