@@ -78,6 +78,7 @@ using System.Threading.Tasks;
                 // Define the token validation parameters
                 var validationParameters = new TokenValidationParameters
                 {
+
                     ValidateIssuer = false, 
                     ValidateAudience = false,
                     ValidateLifetime = true, // Ensures the token is not expired
