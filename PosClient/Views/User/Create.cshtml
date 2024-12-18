@@ -1,5 +1,11 @@
 ﻿@using PosShared.Models
 @model PosShared.DTOs.CreateUserDTO
+@using PosClient.Services
+@inject IUserSessionService UserSessionService
+
+@{
+    var userRole = UserSessionService.GetCurrentUserRole()?.ToString();
+}
 
 <h2>Create User</h2>
 
@@ -20,24 +26,30 @@
             <span asp-validation-for="Username" class="text-danger"></span>
         </div>
 
-            <div class="form-group">
-                <label class="control-label">Password</label>
-                <input asp-for="Password" class="form-control" />
-                <span asp-validation-for="Password" class="text-danger"></span>
-            </div>
-
         <div class="form-group">
-            <label asp-for="BusinessId" class="control-label"></label>
-            <input asp-for="BusinessId" class="form-control" />
-            <span asp-validation-for="BusinessId" class="text-danger"></span>
+            <label class="control-label">Password</label>
+            <input asp-for="Password" class="form-control" />
+            <span asp-validation-for="Password" class="text-danger"></span>
         </div>
 
+        @if (userRole == "SuperAdmin")
+        {
             <div class="form-group">
-                <label asp-for="Email" class="control-label"></label>
-                <input asp-for="Email" class="form-control" placeholder="Enter your email" type="email" required />
-                <span asp-validation-for="Email" class="text-danger"></span>
+                <label asp-for="BusinessId" class="control-label"></label>
+                <input asp-for="BusinessId" class="form-control" />
+                <span asp-validation-for="BusinessId" class="text-danger"></span>
             </div>
+        }
+        else
+        {
+            <input asp-for="BusinessId" type="hidden" value="1" />
+        }
 
+        <div class="form-group">
+            <label asp-for="Email" class="control-label"></label>
+            <input asp-for="Email" class="form-control" placeholder="Enter your email" type="email" required />
+            <span asp-validation-for="Email" class="text-danger"></span>
+        </div>
 
         <div class="form-group">
             <label asp-for="Phone" class="control-label"></label>
