@@ -6,6 +6,7 @@ using System.Text;
 using System.Text.Json;
 using PosClient.Services;
 using PosShared.DTOs;
+using PosClient.Models;
 
 namespace PosClient.Controllers
 {
@@ -74,7 +75,10 @@ namespace PosClient.Controllers
                return RedirectToAction("Index");
             }
 
-            TempData["Error"] = $"Could not Create reservation. {response.StatusCode}";
+            var errorResponse = await response.Content.ReadAsStringAsync();
+            var errorMessageObj = JsonSerializer.Deserialize<Dictionary<string, string>>(errorResponse);
+            var message = errorMessageObj?["message"] ?? "An error occurred.";
+            TempData["Error"] = message;
 
             return RedirectToAction(nameof(Reserve), new { serviceId = model.ServiceId });
         }
