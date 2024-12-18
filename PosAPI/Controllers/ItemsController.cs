@@ -17,13 +17,10 @@ namespace PosAPI.Controllers;
 [ApiController]
 public class ItemsController : ControllerBase
 {
-    private readonly ILogger<ItemsController> _logger;
     private readonly IUserTokenService _userTokenService;
     private readonly IItemService _itemService;
-    public ItemsController(ILogger<ItemsController> logger, IItemRepository itemRepository, 
-        IUserTokenService userTokenService,IItemService itemService)
+    public ItemsController(IUserTokenService userTokenService,IItemService itemService)
     {
-        _logger = logger;
         _userTokenService = userTokenService;
         _itemService = itemService;
     }
@@ -36,10 +33,7 @@ public class ItemsController : ControllerBase
         
         var paginatedItems = await _itemService.GetAuthorizedItemsAsync(sender, pageNumber, pageSize);
 
-        if (paginatedItems.Items.Count > 0)
-            return Ok(paginatedItems);
-        else
-            return NotFound("No Items found.");
+        return Ok(paginatedItems);
     }
     
     // GET: api/Items/{id}
@@ -75,67 +69,6 @@ public class ItemsController : ControllerBase
     {
         User? sender = await _userTokenService.GetUserFromTokenAsync();
         await _itemService.DeleteAuthorizedItemAsync(id,sender);
-        _logger.LogInformation($"User with id {sender.Id} deleted item with id {id} at {DateTime.Now}");
         return Ok();
     }
-
-    // GET: api/Items/{id}/Variations
-    [HttpGet("{id}/Variations")]
-    public async Task<IActionResult> GetAllItemVariations(int id)
-    {
-        User? sender = await _userTokenService.GetUserFromTokenAsync();
-        List<ItemVariation> variations = await _itemService.GetAuthorizedItemVariationsAsync(id, sender);
-        return Ok(variations);
-    }
-
-    // GET: api/Items/Variations{varId}
-    [HttpGet("Variations/{varId}")]
-    public async Task<IActionResult> GetItemVariationById(int varId)
-    {
-        User? sender = await _userTokenService.GetUserFromTokenAsync();
-        
-        ItemVariation? variation = await _itemService.GetAuthorizedItemVariationByIdAsync(varId,sender);
-
-        VariationsDTO variationDTO = new VariationsDTO
-        {
-            AdditionalPrice = variation.AdditionalPrice,
-            Name = variation.Name,
-            Id = variation.Id,
-            ItemId = variation.ItemId
-        };
-            return Ok(variationDTO);
-    }
-
-    // POST: api/Items/id/Variations
-    [HttpPost("{id}/Variations")]
-    public async Task<IActionResult> CreateVariation([FromBody] ItemVariation variation)
-    {
-        User? sender = await _userTokenService.GetUserFromTokenAsync();
-        var newVariation = await _itemService.CreateAuthorizedItemVariationAsync(variation, sender);
-        return CreatedAtAction(
-            nameof(GetItemVariationById),
-            new { id = newVariation.Id, varId = newVariation.Id },
-            newVariation
-            );
-    }
-
-
-    // DELETE: api/Items/Variations/{id}
-    [HttpDelete("Variations/{varId}")]
-    public async Task<IActionResult> DeleteVariation(int varId)
-    {
-        User? sender = await _userTokenService.GetUserFromTokenAsync();
-        await _itemService.DeleteAuthorizedItemVariationAsync(varId, sender);
-        return Ok();
-    }
-
-    // PUT: api/Items/Variations/{id}
-    [HttpPut("Variations/{id}")]
-    public async Task<IActionResult> UpdateVariation(int id, VariationsDTO variation)
-    {
-        User? sender = await _userTokenService.GetUserFromTokenAsync();
-        await _itemService.UpdateAuthorizedItemVariationAsync(id,variation,sender);
-        return Ok();
-    }
-    
 }

@@ -11,7 +11,6 @@ namespace PosClient.Controllers
 {
     public class TaxController : Controller
     {
-
         private readonly ApiService _apiService;
 
         private readonly string _apiUrl = ApiRoutes.ApiBaseUrl;
@@ -24,7 +23,7 @@ namespace PosClient.Controllers
         [HttpGet]
         public async Task<IActionResult> Index()
         {
-            var response = await _apiService.GetAsync(_apiUrl + "/api/Tax");
+            var response = await _apiService.GetAsync(ApiRoutes.Tax.List);
             if (response.IsSuccessStatusCode)
             {
                 var taxData = await response.Content.ReadAsStringAsync();
@@ -32,7 +31,7 @@ namespace PosClient.Controllers
                 return View(taxes);
             }
 
-            TempData["Error"] = "Unable to fetch taxes. Please try again.";
+            TempData["Error"] = "Unable to fetch taxes." + response.StatusCode;
             return View(new List<Tax>());
         }
 
@@ -46,25 +45,26 @@ namespace PosClient.Controllers
         public async Task<IActionResult> Create(TaxDTO tax)
         {
             var content = new StringContent(JsonSerializer.Serialize(tax), Encoding.UTF8, "application/json");
-            var response = await _apiService.PostAsync(_apiUrl + $"/api/Tax", content);
+            var response = await _apiService.PostAsync(ApiRoutes.Tax.Create, content);
 
             if (response.IsSuccessStatusCode)
             {
                 return RedirectToAction("Index");
             }
 
-            TempData["Error"] = "Failed to create tax. See if tax with same category does not already exist.\n";
+            TempData["Error"] = "Failed to create tax. See if tax with same category does not already exist.\n" + response.StatusCode;
             return View(tax);
         }
 
         [HttpGet]
         public async Task<IActionResult> Edit(int id)
         {
-            var response = await _apiService.GetAsync(_apiUrl + $"/api/Tax/{id}");
+            var response = await _apiService.GetAsync(ApiRoutes.Tax.GetById(id));
             if (response.IsSuccessStatusCode)
             {
                 var taxData = await response.Content.ReadAsStringAsync();
                 var tax = JsonSerializer.Deserialize<Tax>(taxData, JsonOptions.Default);
+                
                 TaxDTO taxDto = new TaxDTO()
                 {
                     Amount = tax.Amount,
@@ -76,7 +76,7 @@ namespace PosClient.Controllers
                 return View(taxDto);
             }
 
-            TempData["Error"] = "Failed to fetch tax. Please try again.";
+            TempData["Error"] = "Failed to fetch tax." + response.StatusCode;
             return RedirectToAction("Index");
         }
 
@@ -85,27 +85,27 @@ namespace PosClient.Controllers
         {
             var content = new StringContent(JsonSerializer.Serialize(tax), Encoding.UTF8, "application/json");
 
-            var response = await _apiService.PutAsync(_apiUrl + $"/api/Tax/{id}", content);
+            var response = await _apiService.PutAsync(ApiRoutes.Tax.Update(id), content);
 
             if (response.IsSuccessStatusCode)
             {
                 return RedirectToAction("Index");
             }
 
-            TempData["Error"] = "Failed to update tax. Please try again.";
+            TempData["Error"] = "Failed to update tax. " + response.StatusCode;
             return View(tax);
         }
 
         [HttpPost]
         public async Task<IActionResult> Delete(int id)
         {
-            var response = await _apiService.DeleteAsync(_apiUrl + $"/api/Tax/{id}");
+            var response = await _apiService.DeleteAsync(ApiRoutes.Tax.Delete(id));
             if (response.IsSuccessStatusCode)
             {
                 return RedirectToAction("Index");
             }
 
-            TempData["Error"] = "Failed to delete tax. Please try again.";
+            TempData["Error"] = "Failed to delete tax. " + response.StatusCode;
             return RedirectToAction("Index");
         }
         

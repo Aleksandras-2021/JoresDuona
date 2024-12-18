@@ -51,6 +51,15 @@ public static class ApiRoutes
         public static string UpdateVariation(int variationId) => $"{ApiBaseUrl}/api/Items/Variations/{variationId}";
         public static string DeleteVariations(int variationId) => $"{ApiBaseUrl}/api/Items/Variations/{variationId}";
     }
+    
+    public static class Tax
+    {
+        public static string List => $"{ApiBaseUrl}/api/Tax";
+        public static string GetById(int taxId) => $"{ApiBaseUrl}/api/Tax/{taxId}";
+        public static string Create => $"{ApiBaseUrl}/api/Tax";
+        public static string Update(int taxId) => $"{ApiBaseUrl}/api/Tax/{taxId}";
+        public static string Delete(int itemId) => $"{ApiBaseUrl}/api/Tax/{itemId}";
+    }
 
     public static class Business
     {
