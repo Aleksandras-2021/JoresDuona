@@ -143,7 +143,7 @@ public class ItemService: IItemService
         return variation;
     }
     
-    public async Task<List<ItemVariation>> GetAuthorizedItemVariationsAsync(int id, User sender)
+    public async Task<List<ItemVariation>> GetAuthorizedItemVariationsAsync(int id, User? sender)
     {
         AuthorizationHelper.Authorize("Items", "List", sender);
         var item = await _itemRepository.GetItemByIdAsync(id);

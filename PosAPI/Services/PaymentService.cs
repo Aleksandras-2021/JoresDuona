@@ -55,16 +55,19 @@ public class PaymentService: IPaymentService
     public async Task<Payment> CreateAuthorizedOrderPayment(AddPaymentDTO payment, User? sender)
     {
         AuthorizationHelper.Authorize("Payment", "Create", sender);
-
         Order? order = await _orderRepository.GetOrderByIdWithPaymentsAsync(payment.OrderId);
         AuthorizationHelper.ValidateOwnershipOrRole(sender, order.BusinessId, sender.BusinessId, "List");
 
+        if (payment.Amount < 0)
+            throw new BusinessRuleViolationException("Cannot make a negative payment");
 
+        DateTime now = DateTime.Now.ToUniversalTime();
+        
         var newPayment = new Payment()
         {
             OrderId = payment.OrderId,
             PaymentMethod = payment.PaymentMethod,
-            PaymentDate = DateTime.UtcNow.AddHours(2),
+            PaymentDate = now,
             Amount = payment.Amount,
             PaymentGateway = PaymentGateway.Stripe, // Always Stripe
             TransactionId = null,
@@ -104,12 +107,14 @@ public class PaymentService: IPaymentService
             throw new BusinessRuleViolationException("Refund must be higher than 0");
         }
 
+        DateTime now = DateTime.Now.ToUniversalTime();
+        
         //refund  is a negative payment
         var newPayment = new Payment()
         {
             OrderId = payment.OrderId,
             PaymentMethod = payment.PaymentMethod,
-            PaymentDate =   DateTime.UtcNow.AddHours(2),
+            PaymentDate = now,
             Amount = payment.Amount * (-1),
             PaymentGateway = PaymentGateway.Stripe, // Always Stripe
         };

@@ -1,3 +1,4 @@
+using System.Data;
 using PosAPI.Middlewares;
 using PosAPI.Repositories;
 using PosAPI.Services.Interfaces;
@@ -53,7 +54,7 @@ public class UserService : IUserService
             throw new MissingFieldException();
 
         if (await _userRepository.GetUserByEmailAsync(user.Email) != null)
-            throw new Exception("User with that email already exists");
+            throw new DuplicateNameException("User with that email already exists");
 
         User newUser = new User();
 
