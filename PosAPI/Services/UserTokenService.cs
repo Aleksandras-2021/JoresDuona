@@ -78,8 +78,9 @@ using System.Threading.Tasks;
                 // Define the token validation parameters
                 var validationParameters = new TokenValidationParameters
                 {
-                    ValidateIssuer = false, // Set to true if you want to validate the issuer
-                    ValidateAudience = false, // Set to true if you want to validate the audience
+
+                    ValidateIssuer = false, 
+                    ValidateAudience = false,
                     ValidateLifetime = true, // Ensures the token is not expired
                     ValidateIssuerSigningKey = true, // Ensures the token signature is valid
                     IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_jwtSettings.Secret))
