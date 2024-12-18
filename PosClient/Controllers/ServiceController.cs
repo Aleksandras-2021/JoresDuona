@@ -34,7 +34,6 @@ public class ServiceController : Controller
                 return View(services ?? new List<Service>());
             }
 
-            TempData["Error"] = "Could not retrieve services.";
             return View(new List<Service>());
         }
         catch (Exception ex)

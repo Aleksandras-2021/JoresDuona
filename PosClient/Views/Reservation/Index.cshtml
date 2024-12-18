@@ -1,7 +1,11 @@
+@{
+    ViewData["Title"] = "Reservations Page";
+}
+
 @model PosShared.PaginatedResult<PosShared.Models.Reservation>
 
 <div class="container mt-4">
-    <h2>Reservations</h2>
+    <h1 class="text-center mb-4">@ViewData["Title"]</h1>
 
     @if (TempData["Error"] != null)
     {
@@ -12,9 +16,9 @@
 
     @if (!Model.Items.Any())
     {
-        <div class="alert alert-info">
-            No reservations found.
-        </div>
+       <div class="alert alert-info" role="alert">
+           <i class="bi bi-exclamation-circle"></i> No reservations found.
+       </div>
     }
     else
     {
