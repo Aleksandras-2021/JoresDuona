@@ -21,6 +21,26 @@ public class PaymentService: IPaymentService
         _orderService = orderService;
         _orderRepository = orderRepository;
     }
+
+    public async Task<List<Payment>> GetAllPayments(User? sender)
+    {
+        AuthorizationHelper.Authorize("Payment", "List", sender);
+        
+        List<Payment> payments;
+
+        if (sender.Role == UserRole.SuperAdmin)
+        {
+            payments = await _paymentRepository.GetAllPaymentsAsync();
+        }
+        else
+        {
+            payments = await _paymentRepository.GetAllBusinessPaymentsAsync(sender.BusinessId);
+        }
+
+        return payments;
+    }
+
+    
     
     public async Task<List<Payment?>> GetAuthorizedOrderPayments(int orderId, User? sender)
     {
