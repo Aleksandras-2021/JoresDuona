@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using PosAPI.Data.DbContext;
+using PosAPI.Middlewares;
 using PosAPI.Repositories.Interfaces;
 using PosShared;
 using PosShared.Models;
@@ -72,7 +73,7 @@ namespace PosAPI.Repositories
 
             if (hasOverlap)
             {
-                throw new Exception("This schedule overlaps with an existing schedule for this user.");
+                throw new BusinessRuleViolationException("This schedule overlaps with an existing schedule for this user.");
             }
 
             schedule.LastUpdate = DateTime.UtcNow;
@@ -127,14 +128,30 @@ namespace PosAPI.Repositories
             return schedule;
         }
 
-        public async Task<List<Schedule>> GetSchedulesForDateRangeAsync(DateTime startDate, DateTime endDate)
+        public async Task<List<Schedule>> GetSchedulesForDateRangeAsync(DateTime startDate, DateTime endDate, int? employeeId = null)
         {
-            return await _context.Set<Schedule>()
-                .Include(s => s.User)
-                .Where(s => s.StartTime >= startDate && 
-                            s.EndTime <= endDate)
-                .OrderBy(s => s.StartTime)
-                .ToListAsync();
+
+            if (employeeId != null) //if employee is inputed, then filter to only that employees schedule
+            { 
+                return await _context.Set<Schedule>()
+                    .Include(s => s.User)
+                    .Where(s => s.User.Id == employeeId &&
+                                s.StartTime.Date <= endDate.Date &&
+                                s.EndTime.Date >= startDate.Date)
+                    .OrderBy(s => s.StartTime)
+                    .ToListAsync();
+                
+            }
+            else//if not Give all
+            {
+                return await _context.Set<Schedule>()
+                    .Include(s => s.User)
+                    .Where(s => s.StartTime >= startDate && 
+                                s.EndTime <= endDate)
+                    .OrderBy(s => s.StartTime)
+                    .ToListAsync();
+            }
         }
+
     }
 }

@@ -12,7 +12,8 @@ namespace PosAPI.Repositories
         Task<List<Schedule>> GetSchedulesByUserIdAsync(int userId, DateTime startDate, DateTime endDate);
         Task<List<Schedule>> GetSchedulesByBusinessIdAsync(int businessId, DateTime startDate, DateTime endDate);
 
-        Task<List<Schedule>> GetSchedulesForDateRangeAsync(DateTime startDate, DateTime endDate);
-        
+        Task<List<Schedule>>
+            GetSchedulesForDateRangeAsync(DateTime startDate, DateTime endDate, int? employeeId = null);
+
     }
 }

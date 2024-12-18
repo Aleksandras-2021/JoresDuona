@@ -16,29 +16,7 @@ namespace PosAPI.Repositories
             _context = context;
             _logger = logger;
         }
-
         
-        
-        //Deprecated method, but leave here for now
-        public async Task<bool> CheckAvailability(int serviceId, DateTime requestedTime)
-        {
-            try
-            {
-                // Basic check if there are any overlapping reservations
-                var service = await _context.Services.FindAsync(serviceId);
-                if (service == null)
-                    return false;
-
-                var endTime = requestedTime.AddMinutes(service.DurationInMinutes);
-                return !await HasOverlappingReservationsAsync(requestedTime, endTime);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError($"Error checking availability: {ex.Message}");
-                return false;
-            }
-        }
-
         public async Task<PaginatedResult<Reservation>> GetAllReservationsAsync(int pageNumber, int pageSize)
         {
             var totalCount = await _context.Reservations
@@ -121,7 +99,7 @@ namespace PosAPI.Repositories
             }
             catch (DbUpdateException ex)
             {
-                throw new Exception("An error occurred while deleting the reservation from the database.", ex);
+                throw new DbUpdateException("An error occurred while deleting the reservation from the database.", ex);
             }
         }
 

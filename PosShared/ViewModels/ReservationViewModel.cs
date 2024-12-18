@@ -9,5 +9,7 @@ namespace PosShared.ViewModels
         public string CustomerName { get; set; }
         public string CustomerPhone { get; set; }
         public DateTime ReservationTime { get; set; }
+
+        public PaginatedResult<Reservation> Reservations { get; set; }
     }
 }
