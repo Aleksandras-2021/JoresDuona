@@ -66,6 +66,8 @@ builder.Services.AddScoped<IScheduleRepository, ScheduleRepository>();
 builder.Services.AddScoped<IDefaultShiftPatternRepository, DefaultShiftPatternRepository>();
 
 //Add Services here
+builder.Services.AddSingleton<FileLogger>();
+
 builder.Services.AddScoped<IOrderService, PosAPI.Services.OrderService>();
 builder.Services.AddScoped<IItemService, ItemService>();
 builder.Services.AddScoped<IBusinessService, BusinessService>();

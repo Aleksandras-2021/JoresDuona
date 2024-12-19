@@ -81,6 +81,9 @@ public class TaxService : ITaxService
         {
             totalTaxAmount = 0;
         }
+        
+        totalTaxAmount = Math.Ceiling(totalTaxAmount * 100) / 100;
+
 
         return totalTaxAmount;
     }
