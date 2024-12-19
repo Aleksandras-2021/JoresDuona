@@ -29,8 +29,9 @@ public class ExceptionHandlingMiddleware
         {
             var controllerAction = GetControllerAndAction(context);
             _logger.LogWarning($"409 Conflict - Reservation rule violation in {controllerAction}. Message: {ex}");
+            string exMessage = ($"{ex}");
             context.Response.StatusCode = StatusCodes.Status409Conflict;
-            await context.Response.WriteAsJsonAsync(new { message = ex.Message });
+            await context.Response.WriteAsJsonAsync(new { message = exMessage });
         }
         catch (ArgumentNullException ex)
         {

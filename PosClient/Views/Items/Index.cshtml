@@ -1,7 +1,8 @@
-﻿@model PosShared.PaginatedResult<PosShared.Models.Item>
+﻿@{
+    ViewData["Title"] = "Items Page";
+}
 
-<h1>Items</h1>
-
+@model PosShared.PaginatedResult<PosShared.Models.Item>
 
 @if (TempData["Error"] != null)
 {
@@ -116,6 +117,12 @@
             }
         </ul>
     </nav>
+    }
+    else
+    {
+        <div class="alert alert-info text-center" role="alert">
+            <i class="bi bi-exclamation-circle"></i> No items found.
+        </div>
     }
 </div>
 
