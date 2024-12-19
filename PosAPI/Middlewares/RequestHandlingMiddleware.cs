@@ -19,12 +19,12 @@ public class RequestHandlingMiddleware
 
         string logMessage = $"Handling request: {context.Request.Method} {context.Request.Path} - {context.Request.QueryString} - UserId: {(userId.HasValue ? userId.Value.ToString() : "Anonymous")}";
         _logger.LogInformation(logMessage);
-        _fileLogger.LogToFile(logMessage);
+        await _fileLogger.LogToFileAsync(logMessage);
 
         await _next(context);
 
         logMessage = $"Response: {context.Response.StatusCode} for {context.Request.Method} {context.Request.Path} - UserId: {(userId.HasValue ? userId.Value.ToString() : "Anonymous")}";
         _logger.LogInformation(logMessage);
-        _fileLogger.LogToFile(logMessage);
+        await _fileLogger.LogToFileAsync(logMessage);
     }
 }

@@ -22,57 +22,60 @@ public class ExceptionHandlingMiddleware
         }
         catch (BusinessRuleViolationException ex)
         {
-            HandleException(context, ex, StatusCodes.Status400BadRequest, "400 Bad Request - Business rule violation", ex.Message);
+            await HandleExceptionAsync(context, ex, StatusCodes.Status400BadRequest, "400 Bad Request - Business rule violation", ex.Message);
         }
         catch (ReservationRuleViolationException ex)
         {
-            HandleException(context, ex, StatusCodes.Status409Conflict, "409 Conflict - Reservation rule violation", ex.ToString());
+            await HandleExceptionAsync(context, ex, StatusCodes.Status409Conflict, "409 Conflict - Reservation rule violation", ex.ToString());
         }
         catch (ArgumentNullException ex)
         {
-            HandleException(context, ex, StatusCodes.Status400BadRequest, "400 Bad Request - Missing argument", ex.Message);
+            await HandleExceptionAsync(context, ex, StatusCodes.Status400BadRequest, "400 Bad Request - Missing argument", ex.Message);
         }
         catch (UnauthorizedAccessException ex)
         {
-            HandleException(context, ex, StatusCodes.Status403Forbidden, "403 Forbidden - Unauthorized access", ex.Message);
+            await HandleExceptionAsync(context, ex, StatusCodes.Status403Forbidden, "403 Forbidden - Unauthorized access", ex.Message);
         }
         catch (KeyNotFoundException ex)
         {
-            HandleException(context, ex, StatusCodes.Status404NotFound, "404 Not Found - Resource not found", ex.Message);
+            await HandleExceptionAsync(context, ex, StatusCodes.Status404NotFound, "404 Not Found - Resource not found", ex.Message);
         }
         catch (DbException ex)
         {
-            HandleException(context, ex, StatusCodes.Status500InternalServerError, "500 Internal Server Error - Database error", "A database error occurred.");
+            await HandleExceptionAsync(context, ex, StatusCodes.Status500InternalServerError, "500 Internal Server Error - Database error", "A database error occurred.");
         }
         catch (InvalidOperationException ex)
         {
-            HandleException(context, ex, StatusCodes.Status409Conflict, "409 Conflict - Invalid operation", ex.Message);
+            await HandleExceptionAsync(context, ex, StatusCodes.Status409Conflict, "409 Conflict - Invalid operation", ex.Message);
         }
         catch (NotSupportedException ex)
         {
-            HandleException(context, ex, StatusCodes.Status405MethodNotAllowed, "405 Method Not Allowed - Unsupported operation", ex.Message);
+            await HandleExceptionAsync(context, ex, StatusCodes.Status405MethodNotAllowed, "405 Method Not Allowed - Unsupported operation", ex.Message);
         }
         catch (TimeoutException ex)
         {
-            HandleException(context, ex, StatusCodes.Status504GatewayTimeout, "504 Gateway Timeout - Timeout occurred", "The request timed out. Please try again later.");
+            await HandleExceptionAsync(context, ex, StatusCodes.Status504GatewayTimeout, "504 Gateway Timeout - Timeout occurred", "The request timed out. Please try again later.");
         }
         catch (Exception ex)
         {
-            HandleException(context, ex, StatusCodes.Status500InternalServerError, "500 Internal Server Error", "An unexpected error occurred. Contact support if the issue persists.");
+            await HandleExceptionAsync(context, ex, StatusCodes.Status500InternalServerError, "500 Internal Server Error", "An unexpected error occurred. Contact support if the issue persists.");
         }
     }
 
-    private void HandleException(HttpContext context, Exception ex, int statusCode, string logPrefix, string responseMessage)
+    private async Task HandleExceptionAsync(HttpContext context, Exception ex, int statusCode, string logPrefix, string responseMessage)
     {
         var controllerAction = GetControllerAndAction(context);
         string logMessage = $"{logPrefix} in {controllerAction}. Message: {ex.Message}";
 
+        // Log to console/logger
         _logger.LogWarning(logMessage);
 
-        _fileLogger.LogToFile(logMessage);
+        // Log to file (async)
+        await _fileLogger.LogToFileAsync(logMessage);
 
+        // Set response
         context.Response.StatusCode = statusCode;
-        context.Response.WriteAsJsonAsync(new { message = responseMessage }).Wait();
+        await context.Response.WriteAsJsonAsync(new { message = responseMessage });
     }
 
     private string GetControllerAndAction(HttpContext context)

@@ -1,27 +1,27 @@
-using System;
-using System.IO;
-
 public class FileLogger
 {
-    private readonly string _logDirectory = "Logs";
-
+    private readonly string _logDirectory;
+    
     public FileLogger()
     {
-        // Ensure the log directory exists
-        if (!Directory.Exists(_logDirectory))
-        {
-            Directory.CreateDirectory(_logDirectory);
-        }
+        _logDirectory = "Logs"; // Default log directory
+        Directory.CreateDirectory(_logDirectory); // Ensure the log directory exists
     }
 
-    public void LogToFile(string message)
+    public async Task LogToFileAsync(string message)
     {
-        string logFilePath = Path.Combine(_logDirectory, $"log-{DateTime.UtcNow:yyyy-MM-dd}.txt");
-        string logEntry = $"{DateTime.UtcNow:O} {message}{Environment.NewLine}";
-
-        lock (logFilePath) // Thread-safety for file writes
+        try
         {
-            File.AppendAllText(logFilePath, logEntry);
+            var logFilePath = Path.Combine(_logDirectory, $"log-{DateTime.UtcNow:yyyy-MM-dd}.txt");
+
+            await using (var writer = new StreamWriter(logFilePath, append: true))
+            {
+                await writer.WriteLineAsync($"{DateTime.UtcNow:yyyy-MM-dd HH:mm:ss} - {message}");
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Error writing to log file: {ex.Message}");
         }
     }
 }
