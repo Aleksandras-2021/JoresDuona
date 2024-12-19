@@ -4,29 +4,27 @@ public class RequestHandlingMiddleware
 {
     private readonly RequestDelegate _next;
     private readonly ILogger<RequestHandlingMiddleware> _logger;
+    private readonly FileLogger _fileLogger;
 
-    public RequestHandlingMiddleware(RequestDelegate next, ILogger<RequestHandlingMiddleware> logger)
+    public RequestHandlingMiddleware(RequestDelegate next, ILogger<RequestHandlingMiddleware> logger, FileLogger fileLogger)
     {
         _next = next;
         _logger = logger;
+        _fileLogger = fileLogger; // Use the DI-provided instance
     }
 
     public async Task Invoke(HttpContext context)
     {
         var userId = Ultilities.ExtractUserIdFromToken(context.Request.Headers["Authorization"].ToString());
 
-        _logger.LogInformation("Handling request: {Method} {Path} - {QueryString} - UserId: {UserId}", 
-            context.Request.Method, 
-            context.Request.Path, 
-            context.Request.QueryString, 
-            userId.HasValue ? userId.Value.ToString() : "Anonymous");
+        string logMessage = $"Handling request: {context.Request.Method} {context.Request.Path} - {context.Request.QueryString} - UserId: {(userId.HasValue ? userId.Value.ToString() : "Anonymous")}";
+        _logger.LogInformation(logMessage);
+        _fileLogger.LogToFile(logMessage);
 
         await _next(context);
 
-        _logger.LogInformation("Response: {StatusCode} for {Method} {Path} - UserId: {UserId}",
-            context.Response.StatusCode, 
-            context.Request.Method, 
-            context.Request.Path,
-            userId.HasValue ? userId.Value.ToString() : "Anonymous");
+        logMessage = $"Response: {context.Response.StatusCode} for {context.Request.Method} {context.Request.Path} - UserId: {(userId.HasValue ? userId.Value.ToString() : "Anonymous")}";
+        _logger.LogInformation(logMessage);
+        _fileLogger.LogToFile(logMessage);
     }
 }
