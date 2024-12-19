@@ -87,16 +87,17 @@ public class UserService : IUserService
         AuthorizationHelper.Authorize("User", "Update", sender);
         var existingUser = await _userRepository.GetUserByIdAsync(userId);
         AuthorizationHelper.ValidateOwnershipOrRole(sender,existingUser.BusinessId ,sender.BusinessId, "Update");
-
         
         existingUser.BusinessId = updatedUser.BusinessId;
         existingUser.Username = updatedUser.Username;
         existingUser.Name = updatedUser.Name;
-        existingUser.Email = updatedUser.Email;
         existingUser.Phone = updatedUser.Email;
         existingUser.Address = updatedUser.Address;
         existingUser.Role = updatedUser.Role;
         existingUser.EmploymentStatus = updatedUser.EmploymentStatus;
+        
+        if(await _userRepository.GetUserByEmailAsync(updatedUser.Email) == null)
+            existingUser.Email = updatedUser.Email;
 
         // Role and Business ID logic
         if (sender.Role != UserRole.SuperAdmin && updatedUser.Role == UserRole.SuperAdmin)

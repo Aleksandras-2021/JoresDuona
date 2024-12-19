@@ -78,9 +78,6 @@ public class UserController : Controller
         {
             string userData = await response.Content.ReadAsStringAsync();
             UserDTO? user = JsonSerializer.Deserialize<UserDTO>(userData,JsonOptions.Default);
-
-
-            Console.WriteLine(response);
             
             if (user != null)
             {
